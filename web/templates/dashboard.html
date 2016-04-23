@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <link rel="stylesheet" href="/static/main.css">
+    <script type="text/javascript" src="/static/dashboard.js"></script>
+</head>
+<body>
+    <div id="header">
+        <div>GASP</div>
+    </div>
+    <div id="content">
+        <div class="section">
+            <h2>Active Jobs</h2>
+            <br/>
+                <button>Create Job</button>
+            <br/>
+        </div>
+
+        <div class="section">
+            <h2>Finished Jobs</h2>
+            <table>
+                <tr>
+                    <td>
+                        --
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="overlay" style="display:block">
+        <form name="ped_upload_form">
+            <input type="file" name="ped_file" accept=".ped" /> <br/>
+            <button type="submit">Upload PED file</button>
+            <button>Cancel</button>
+            <br/>
+            <progress name="ped_file_upload_progress" value="0" max="100"></progress>
+        </form>
+    </div>
+
+    <div id="footer">
+
+    </div>
+</body>
+</html>

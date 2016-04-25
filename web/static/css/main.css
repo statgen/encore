@@ -4,6 +4,60 @@ html,body
     margin: 0px;
     padding: 0px;
     font-family: Arial, sans-serif;
+    color: #333333;
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+table tr th,
+table tr td {
+    border-right: 1px solid #BBBBBB;
+    border-bottom: 1px solid #BBBBBB;
+    padding: 6px 5px 5px 5px;
+}
+table tr th:first-child,
+table tr td:first-child {
+    border-left: 1px solid #BBBBBB;
+}
+table tr th:first-child,
+table tr td:first-child {
+    border-left: 1px solid #BBBBBB;
+}
+table tr th {
+    background: #eee;
+    text-align: left;
+    color: #666666;
+}
+
+table tr th,
+table tr:first-child td
+{
+    border-top: 1px solid #BBBBBB;
+}
+
+/* top-left border-radius */
+table tr:first-child th:first-child,
+table.Info tr:first-child td:first-child {
+    border-top-left-radius: 4px;
+}
+
+/* top-right border-radius */
+table tr:first-child th:last-child,
+table.Info tr:first-child td:last-child {
+    border-top-right-radius: 4px;
+}
+
+/* bottom-left border-radius */
+table tr:last-child td:first-child {
+    border-bottom-left-radius: 4px;
+}
+
+/* bottom-right border-radius */
+table tr:last-child td:last-child {
+    border-bottom-right-radius: 4px;
 }
 
 h1
@@ -17,13 +71,19 @@ h2
     font-weight: normal;
 }
 
+button,
+input
+{
+    outline: none;
+}
+
 button
 {
     padding: 6px 12px;
+    margin: 0px;
     background: #333333;
     color: #DDDDDD;
     border: 1px solid #333333;
-    outline: none;
     border-radius: 3px;
 }
 
@@ -37,9 +97,24 @@ button:active
     border-color: #FFFFFF;
 }
 
-progress
+.hflex
 {
-    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.vflex
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.hflex > *,
+.vflex > *
+{
 }
 
 .overlay
@@ -55,20 +130,53 @@ progress
 
 .overlay > form
 {
+    border-radius: 4px;
     width:500px;
-    height:300px;
+    height:200px;
     background: #EEEEEE;
     border: 1px solid #333333;
     position:fixed;
     top:50%;
     left:50%;
-    margin-top:-150px; /* negative half the size of height */
+    margin-top:-100px; /* negative half the size of height */
     margin-left:-250px; /* negative half the size of width */
+    box-shadow: 0px 0px 15px 2px rgba(0, 0, 0, 0.35);
 }
 
-.overlay > form > input
+.overlay > form > *
 {
-    margin: 10px;
+    margin: 0px 10px;
+}
+
+.overlay > form label
+{
+    width: 25%;
+    text-align: right;
+    font-size: 18px;
+}
+
+.overlay > form input
+{
+    width: 70%;
+    font-size: 16px;
+    padding: 3px 5px;
+    border-radius: 4px;
+    border: none;
+}
+
+.overlay > form button
+{
+    width: 60%;
+}
+
+.overlay > form progress
+{
+    width: 100%;
+}
+
+.overlay > form input[name=ped_filename]
+{
+    cursor: pointer;
 }
 
 #content
@@ -110,15 +218,8 @@ progress
 
 .section
 {
-    border: 1px solid #666666;
-    border-radius: 3px;
     padding: 0px;
     margin: 30px 0px;
-}
-
-.section button
-{
-    margin: 6px;
 }
 
 .section-title
@@ -126,26 +227,21 @@ progress
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #666666;
-    padding: 4px 10px;
-    color: #CCCCCC;
-    min-height: 40px;
+    color: #333333;
+    margin: 5px 3px;
 }
 
-.section-title button:active
+#create_job_button
 {
-    border-color: #666666;
+    background: transparent;
+    color: #333333;
+    border: none;
+    font-size: 24px;
+    padding: 2px 4px;
 }
 
-.section-row
+#create_job_button:hover
 {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 5px 10px;
+    color: #4169E1;
 }
 
-form
-{
-    margin: 25px;
-}

@@ -2,9 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>GASP | Dashboard</title>
 
     <link rel="stylesheet" href="/static/css/main.css">
+
+    <script id="table_row_tmpl" type="x-tmpl">
+        <tr>
+            <td>{{name}}</td>
+            <td>{{creation_date}}</td>
+            <td>{{status}}</td>
+        </tr>
+    </script>
+
+    <script id="empty_table_row_tmpl" type="x-tmpl">
+        <tr>
+            <td colspan="3" align="center"></td>
+        </tr>
+    </script>
     <script type="text/javascript" src="/static/js/dashboard.js"></script>
 </head>
 <body>
@@ -12,38 +26,54 @@
         <div>GASP</div>
     </div>
     <div id="content">
-        <div class="section">
-            <div class="section-title">
-                <h2>Active Jobs</h2>
-                <button id="create_job_button">Create Job</button>
-            </div>
-            <div class="section-row">
-                <span>There are no running jobs.</span>
-            </div>
-        </div>
 
         <div class="section">
             <div class="section-title">
-                <h2>Finished Jobs</h2>
+                <h2>Jobs</h2>
+                <button id="create_job_button">+</button>
             </div>
-            <div class="section-row">
-                There are no finished jobs.
-            </div>
+            <table>
+                <tr>
+                    <th>Job Name</th>
+                    <th>Creation Date</th>
+                    <th>Status</th>
+                </tr>
+                <!--<tr>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                </tr>
+                <tr>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                </tr>-->
+                <tr>
+                    <td colspan="3" align="center">Loading ...</td>
+                </tr>
+            </table>
         </div>
     </div>
 
     <div class="overlay" id="upload_overlay" style="display:none">
-        <form name="ped_upload_form">
-            <div style="height: 70%">
-                <input type="file" name="ped_file" accept=".ped" />
+        <form name="ped_upload_form" class="vflex">
+            <br>
+            <input style="display: none" type="file" name="ped_file" accept=".ped" />
+            <div class="hflex">
+                <label>PED File:</label>
+                <input type="text" readonly name="ped_filename" placeholder="Select PED file ..."/>
             </div>
-            <div style="height: 20%">
+            <div class="hflex">
+                <label>Job Name:</label>
+                <input type="text" name="job_name" />
+            </div>
+            <br/>
+            <div class="hflex">
                 <button type="submit">Upload PED file</button>
             </div>
-
-            <progress name="ped_file_upload_progress" value="0" max="100" style="height: 10%"></progress>
-
-
+            <div class="hflex">
+                <progress name="ped_file_upload_progress" value="0" max="100"></progress>
+            </div>
         </form>
     </div>
 

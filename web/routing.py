@@ -29,6 +29,5 @@ def handle_ped_file_upload():
 #     return render_template('500.html'), 500
 
 
-app.debug = True
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

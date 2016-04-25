@@ -1,0 +1,6 @@
+JOB_DATA_FOLDER = "./"
+
+MYSQL_DATABASE_HOST = "my_host"
+MYSQL_DATABASE_DB = "my_db"
+MYSQL_DATABASE_USER = "my_user"
+MYSQL_DATABASE_PASSWORD = "my_pass"

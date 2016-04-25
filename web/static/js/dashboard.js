@@ -70,5 +70,20 @@ document.onreadystatechange = function()
             ev.preventDefault();
             uploadFile();
         });
+
+        document.getElementById("create_job_button").addEventListener("click", function(ev)
+        {
+            document.getElementById("upload_overlay").style.display = "block";
+        });
+
+        document.getElementById("upload_overlay").addEventListener("click", function(ev)
+        {
+            document.getElementById("upload_overlay").style.display = "none";
+        });
+
+        document.getElementsByName("ped_upload_form")[0].addEventListener("click", function(ev)
+        {
+            ev.stopPropagation();
+        });
     }
 };

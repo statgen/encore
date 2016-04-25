@@ -6,22 +6,35 @@ html,body
     font-family: Arial, sans-serif;
 }
 
+h1
+{
+    font-weight: normal;
+}
+
 h2
 {
-    background: #666666;
-    padding: 5px 10px;
     margin: 0px;
-    color: #CCCCCC;
+    font-weight: normal;
 }
 
 button
 {
-    font-size: 18px;
-    margin: 4px 8px;
     padding: 6px 12px;
-    background: #999999;
-    color: #111111;
-    border: 0px solid #CCCCCC;
+    background: #333333;
+    color: #DDDDDD;
+    border: 1px solid #333333;
+    outline: none;
+    border-radius: 3px;
+}
+
+button:hover
+{
+    color: #FFFFFF;
+}
+
+button:active
+{
+    border-color: #FFFFFF;
 }
 
 progress
@@ -60,8 +73,12 @@ progress
 
 #content
 {
-    width: 1048px;
-    margin: 0px auto;
+    margin: 0px 50px;
+}
+
+#content > *
+{
+    width: 100%;
 }
 
 #header
@@ -94,6 +111,7 @@ progress
 .section
 {
     border: 1px solid #666666;
+    border-radius: 3px;
     padding: 0px;
     margin: 30px 0px;
 }
@@ -101,6 +119,30 @@ progress
 .section button
 {
     margin: 6px;
+}
+
+.section-title
+{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #666666;
+    padding: 4px 10px;
+    color: #CCCCCC;
+    min-height: 40px;
+}
+
+.section-title button:active
+{
+    border-color: #666666;
+}
+
+.section-row
+{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 5px 10px;
 }
 
 form

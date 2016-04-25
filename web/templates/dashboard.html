@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Title</title>
 
-    <link rel="stylesheet" href="/static/main.css">
-    <script type="text/javascript" src="/static/dashboard.js"></script>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <script type="text/javascript" src="/static/js/dashboard.js"></script>
 </head>
 <body>
     <div id="header">
@@ -13,31 +13,37 @@
     </div>
     <div id="content">
         <div class="section">
-            <h2>Active Jobs</h2>
-            <br/>
-                <button>Create Job</button>
-            <br/>
+            <div class="section-title">
+                <h2>Active Jobs</h2>
+                <button id="create_job_button">Create Job</button>
+            </div>
+            <div class="section-row">
+                <span>There are no running jobs.</span>
+            </div>
         </div>
 
         <div class="section">
-            <h2>Finished Jobs</h2>
-            <table>
-                <tr>
-                    <td>
-                        --
-                    </td>
-                </tr>
-            </table>
+            <div class="section-title">
+                <h2>Finished Jobs</h2>
+            </div>
+            <div class="section-row">
+                There are no finished jobs.
+            </div>
         </div>
     </div>
 
-    <div class="overlay" style="display:block">
+    <div class="overlay" id="upload_overlay" style="display:none">
         <form name="ped_upload_form">
-            <input type="file" name="ped_file" accept=".ped" /> <br/>
-            <button type="submit">Upload PED file</button>
-            <button>Cancel</button>
-            <br/>
-            <progress name="ped_file_upload_progress" value="0" max="100"></progress>
+            <div style="height: 70%">
+                <input type="file" name="ped_file" accept=".ped" />
+            </div>
+            <div style="height: 20%">
+                <button type="submit">Upload PED file</button>
+            </div>
+
+            <progress name="ped_file_upload_progress" value="0" max="100" style="height: 10%"></progress>
+
+
         </form>
     </div>
 

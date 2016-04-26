@@ -24,10 +24,14 @@ def get_dashboard():
 def post_api_jobs():
     return job_handlers.post_to_jobs()
 
+@app.route("/api/jobs", methods=["GET"])
+def get_api_jobs():
+    return job_handlers.get_jobs()
+
 
 @app.route("/api/job/<job_id>", methods=["GET"])
-def get_api_jobs(job_id):
-    return job_handlers.get_jobs(job_id)
+def get_api_job(job_id):
+    return job_handlers.get_job(job_id)
 
 
 # @app.errorhandler(500)

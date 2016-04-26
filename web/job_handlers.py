@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request, json, Response, current_app
 import sql_pool
+import MySQLdb
 import uuid
 #from werkzeug import secure_filename
 
@@ -30,10 +31,11 @@ def post_to_jobs():
                 cur.execute("INSERT INTO jobs (id, name, user_id) VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s)", (job_id, request.form["job_name"], 1))
                 sql = """
                     INSERT INTO status_changes (job_id, status_id)
-                    SELECT UNHEX(REPLACE(%s,'-','')), statuses.id
+                    SELECT uuid_to_bin(%s), statuses.id
                     FROM statuses
                     WHERE statuses.name = 'created'
-                    LIMIT 1"""
+                    LIMIT 1
+                    """
                 cur.execute(sql, (job_id,))
                 db.commit()
             except:
@@ -50,6 +52,27 @@ def post_to_jobs():
 
 def get_jobs():
     resp = Response(mimetype='application/json')
+
+    db = sql_pool.get_conn()
+    cur = db.cursor(MySQLdb.cursors.DictCursor)
+    sql = """
+        SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(latest_statuses.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS last_updated
+        FROM jobs
+        LEFT JOIN
+        (
+            SELECT job_id, status_id, MAX(creation_date) AS creation_date
+            FROM status_changes
+            GROUP BY job_id, status_id
+        ) AS latest_statuses
+        ON latest_statuses.job_id = jobs.id
+        LEFT JOIN statuses ON latest_statuses.status_id = statuses.id
+        WHERE jobs.user_id = %s
+        """
+    cur.execute(sql, (1,))
+    results = cur.fetchall()
+
+    resp.set_data(json.dumps(results))
+
     return resp
 
 def get_job(job_id):

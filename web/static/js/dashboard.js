@@ -74,7 +74,7 @@ function uploadFile()
         xhr.addEventListener("load", uploadComplete, false);
         xhr.addEventListener("error", uploadFailed, false);
         xhr.addEventListener("abort", uploadCanceled, false);
-        xhr.open("POST", "/api/ped-files");
+        xhr.open("POST", "/api/jobs");
         xhr.send(fd);
     }
 }

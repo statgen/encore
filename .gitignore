@@ -2,3 +2,4 @@
 .idea
 venv/
 *.wsgi
+flask_config.py

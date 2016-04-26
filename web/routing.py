@@ -1,6 +1,6 @@
 import os
 from flask import Flask, render_template, send_from_directory
-import ped_upload
+import job_handlers
 
 app = Flask(__name__)
 
@@ -8,20 +8,26 @@ APP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))   # refers to applica
 APP_STATIC_PATH = os.path.join(APP_ROOT_PATH, 'static')
 APP_TEMPLATES_PATH = os.path.join(APP_ROOT_PATH, 'templates')
 
+app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
 
 @app.route("/")
 def index():
     return "Hello ooooooooo World!"
 
 
-@app.route("/dashboard")
-def dashboard_view():
+@app.route("/dashboard", methods=["GET"])
+def get_dashboard():
     return render_template("dashboard.html")
 
 
-@app.route("/api/ped-files", methods=["POST"])
-def handle_ped_file_upload():
-    return ped_upload.handle_upload()
+@app.route("/api/jobs", methods=["POST"])
+def post_api_jobs():
+    return job_handlers.post_to_jobs()
+
+
+@app.route("/api/job/<job_id>", methods=["GET"])
+def get_api_jobs(job_id):
+    return job_handlers.get_jobs(job_id)
 
 
 # @app.errorhandler(500)

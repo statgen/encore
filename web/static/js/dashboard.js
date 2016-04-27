@@ -38,11 +38,14 @@ function bindTableRows()
         if (table_rows[i].hasAttribute("data-id"))
         {
             var r = table_rows[i];
-            r.addEventListener("click", function (ev)
+            (function (row_element)
             {
-                var job_id = r.getAttribute("data-id");
-                window.location = "/jobs/" + job_id;
-            });
+                row_element.addEventListener("click", function (ev)
+                {
+                    var job_id = row_element.getAttribute("data-id");
+                    window.location = "/jobs/" + job_id;
+                });
+            })(r);
         }
     }
 }

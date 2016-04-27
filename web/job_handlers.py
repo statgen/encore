@@ -73,8 +73,8 @@ def get_jobs():
             GROUP BY job_id
         ) AS latest_statuses
         ON latest_statuses.job_id = jobs.id
-        LEFT JOIN status_changes AS current_status_changes ON current_status_changes.id = latest_statuses.id
-        LEFT JOIN statuses ON current_status_changes.status_id = statuses.id
+        LEFT JOIN status_changes AS current_statuses ON current_statuses.id = latest_statuses.id
+        LEFT JOIN statuses ON current_statuses.status_id = statuses.id
         WHERE jobs.user_id = %s
         ORDER BY earliest_statuses.creation_date DESC
         """
@@ -109,8 +109,8 @@ def get_job_details_view(job_id):
             GROUP BY job_id
         ) AS latest_statuses
         ON latest_statuses.job_id = jobs.id
-        LEFT JOIN status_changes AS current_status_changes ON current_status_changes.id = latest_statuses.id
-        LEFT JOIN statuses ON current_status_changes.status_id = statuses.id
+        LEFT JOIN status_changes AS current_statuses ON current_statuses.id = latest_statuses.id
+        LEFT JOIN statuses ON current_statuses.status_id = statuses.id
         WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
         """
     cur.execute(sql, (1, job_id))

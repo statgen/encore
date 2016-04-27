@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GASP | Dashboard</title>
+
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/job_details.css">
+</head>
+<body>
+    <div id="header">
+        <div>GASP</div>
+    </div>
+    <div id="content">
+
+        <div class="section">
+            <div class="section-title">
+                <h2>Job Details</h2>
+            </div>
+            <table id="job_details_table">
+                <tr>
+                    <th>Job Name</th>
+                    <td>{{ job.name }}</td>
+                </tr>
+                <tr>
+                    <th>Date Created</th>
+                    <td>{{ job.creation_date }}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>{{ job.status }}</td>
+                </tr>
+                {% if job.error_message %}
+                <tr>
+                    <th>Error Message</th>
+                    <td>{{ job.error_message }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                <h2>Job History</h2>
+            </div>
+            <table id="job_status_history_table">
+                {% for change in job.history %}
+                <tr>
+                    <th>{{ change.ts }}</th>
+                    <td>{{ change.status }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <div id="footer">
+
+    </div>
+</body>
+</html>

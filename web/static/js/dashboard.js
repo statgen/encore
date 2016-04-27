@@ -28,6 +28,44 @@ function fileSelected()
     }
 }
 
+
+
+function bindTableRows()
+{
+    var table_rows = document.getElementById("jobs_table").getElementsByTagName("tr");
+    for (var i = 0; i < table_rows.length; ++i)
+    {
+        if (table_rows[i].hasAttribute("data-id"))
+        {
+            var r = table_rows[i];
+            r.addEventListener("click", function (ev)
+            {
+                var job_id = r.getAttribute("data-id");
+                window.location = "/jobs/" + job_id;
+            });
+        }
+    }
+}
+
+function fetchJobs()
+{
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", function(ev)
+    {
+        var jobs = JSON.parse(xhr.responseText);
+        console.log(jobs);
+
+        var jobs_table = document.getElementById("jobs_table");
+        jobs_table.innerHTML = ejs.render(document.getElementById("table_row_tmpl").innerText, {"jobs" : jobs });
+        bindTableRows();
+    }, false);
+
+    xhr.addEventListener("error", uploadFailed, false);
+    xhr.addEventListener("abort", uploadCanceled, false);
+    xhr.open("GET", "/api/jobs");
+    xhr.send();
+}
+
 function uploadProgress(evt)
 {
     if (evt.lengthComputable)
@@ -44,7 +82,20 @@ function uploadProgress(evt)
 function uploadComplete(evt)
 {
     /* This event is raised when the server send back a response */
-    alert(evt.target.responseText);
+    var resp = JSON.parse(evt.target.responseText);
+    if (!resp)
+    {
+        alert("A Server Error Occured");
+    }
+    else if (resp.error)
+    {
+        alert(resp.error)
+    }
+    else
+    {
+        fetchJobs();
+        hideUploadOverlay()
+    }
 }
 
 function uploadFailed(evt)
@@ -85,6 +136,7 @@ document.onreadystatechange = function()
 {
     if (document.readyState === "complete")
     {
+        fetchJobs();
         document.getElementsByName("ped_upload_form")[0].addEventListener("submit", function(ev)
         {
             ev.preventDefault();
@@ -116,13 +168,13 @@ document.onreadystatechange = function()
             fileSelected();
         });
 
-        document.onkeyup = function(e)
+        document.addEventListener("keyup", function(e)
         {
             if (e.keyCode == 27) // ESC
             {
                 hideUploadOverlay();
             }
-        };
+        });
 
     }
 };

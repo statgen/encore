@@ -1,0 +1,7 @@
+
+#job_details_table th, #job_status_history_table th
+{
+    text-align: right;
+    width: 20%;
+}
+

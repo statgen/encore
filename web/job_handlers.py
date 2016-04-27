@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, json, Response, current_app
+from flask import render_template, request, json, Response, current_app
 import sql_pool
 import MySQLdb
 import uuid
@@ -48,6 +48,7 @@ def post_to_jobs():
             ped_file.save(os.path.join(job_directory, "input.ped"))
             #TODO: Run validation
             #TODO: Queue Job
+            resp.set_data(json.dumps({"id": job_id}))
     return resp
 
 def get_jobs():
@@ -56,17 +57,26 @@ def get_jobs():
     db = sql_pool.get_conn()
     cur = db.cursor(MySQLdb.cursors.DictCursor)
     sql = """
-        SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(latest_statuses.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS last_updated
+        SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(earliest_statuses.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date
         FROM jobs
         LEFT JOIN
         (
-            SELECT job_id, status_id, MAX(creation_date) AS creation_date
+            SELECT job_id, MIN(creation_date) AS creation_date
             FROM status_changes
-            GROUP BY job_id, status_id
+            GROUP BY job_id
+        ) AS earliest_statuses
+        ON earliest_statuses.job_id = jobs.id
+        LEFT JOIN
+        (
+            SELECT job_id, MAX(id) AS id
+            FROM status_changes
+            GROUP BY job_id
         ) AS latest_statuses
         ON latest_statuses.job_id = jobs.id
-        LEFT JOIN statuses ON latest_statuses.status_id = statuses.id
+        LEFT JOIN status_changes AS current_status_changes ON current_status_changes.id = latest_statuses.id
+        LEFT JOIN statuses ON current_status_changes.status_id = statuses.id
         WHERE jobs.user_id = %s
+        ORDER BY earliest_statuses.creation_date DESC
         """
     cur.execute(sql, (1,))
     results = cur.fetchall()
@@ -79,4 +89,46 @@ def get_job(job_id):
     resp = Response(mimetype='application/json')
     return resp
 
+def get_job_details_view(job_id):
+    db = sql_pool.get_conn()
+    cur = db.cursor(MySQLdb.cursors.DictCursor)
+    sql = """
+        SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(earliest_statuses.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date
+        FROM jobs
+        LEFT JOIN
+        (
+            SELECT job_id, MIN(creation_date) AS creation_date
+            FROM status_changes
+            GROUP BY job_id
+        ) AS earliest_statuses
+        ON earliest_statuses.job_id = jobs.id
+        LEFT JOIN
+        (
+            SELECT job_id, MAX(id) AS id
+            FROM status_changes
+            GROUP BY job_id
+        ) AS latest_statuses
+        ON latest_statuses.job_id = jobs.id
+        LEFT JOIN status_changes AS current_status_changes ON current_status_changes.id = latest_statuses.id
+        LEFT JOIN statuses ON current_status_changes.status_id = statuses.id
+        WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
+        """
+    cur.execute(sql, (1, job_id))
 
+    if cur.rowcount == 0:
+        return "Job does not exist.", 404
+    else:
+        job_data = cur.fetchone()
+
+        sql = """
+            SELECT DATE_FORMAT(status_changes.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS ts, statuses.name as status
+            FROM jobs
+            LEFT JOIN status_changes ON jobs.id = status_changes.job_id
+            LEFT JOIN statuses ON status_changes.status_id = statuses.id
+            WHERE jobs.user_id = %s AND status_changes.job_id = uuid_to_bin(%s)
+            ORDER BY status_changes.creation_date DESC, status_changes.id DESC
+            """
+        cur.execute(sql, (1, job_id))
+        job_data["history"] = cur.fetchall()
+
+        return render_template("job_details.html", job=job_data)

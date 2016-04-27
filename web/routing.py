@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template, send_from_directory
 import job_handlers
+import re
 
 app = Flask(__name__)
 
@@ -19,6 +20,13 @@ def index():
 def get_dashboard():
     return render_template("dashboard.html")
 
+@app.route("/jobs/<job_id>", methods=["GET"])
+def get_job(job_id):
+    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
+        return "Not Found", 404
+    else:
+        return job_handlers.get_job_details_view(job_id)
+
 
 @app.route("/api/jobs", methods=["POST"])
 def post_api_jobs():
@@ -29,7 +37,7 @@ def get_api_jobs():
     return job_handlers.get_jobs()
 
 
-@app.route("/api/job/<job_id>", methods=["GET"])
+@app.route("/api/jobs/<job_id>", methods=["GET"])
 def get_api_job(job_id):
     return job_handlers.get_job(job_id)
 

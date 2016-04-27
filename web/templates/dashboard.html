@@ -5,13 +5,26 @@
     <title>GASP | Dashboard</title>
 
     <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
 
     <script id="table_row_tmpl" type="x-tmpl">
         <tr>
-            <td>{{name}}</td>
-            <td>{{creation_date}}</td>
-            <td>{{status}}</td>
+            <th>Job Name</th>
+            <th>Date Created</th>
+            <th>Status</th>
         </tr>
+        <% jobs.forEach(function(j) { %>
+        <tr data-id="<%= j.id; %>">
+            <td><%= j.name; %></td>
+            <td><%= j.creation_date; %></td>
+            <td><%= j.status; %></td>
+        </tr>
+        <% }); %>
+        <% if (jobs.length === 0) { %>
+        <tr>
+            <td colspan="4" align="center">No jobs were found.</td>
+        </tr>
+        <% } %>
     </script>
 
     <script id="empty_table_row_tmpl" type="x-tmpl">
@@ -19,6 +32,8 @@
             <td colspan="3" align="center"></td>
         </tr>
     </script>
+
+    <script type="text/javascript" src="/static/js/ejs.js"></script>
     <script type="text/javascript" src="/static/js/dashboard.js"></script>
 </head>
 <body>
@@ -32,10 +47,10 @@
                 <h2>Jobs</h2>
                 <button id="create_job_button">+</button>
             </div>
-            <table>
+            <table id="jobs_table">
                 <tr>
                     <th>Job Name</th>
-                    <th>Creation Date</th>
+                    <th>Date Created</th>
                     <th>Status</th>
                 </tr>
                 <!--<tr>

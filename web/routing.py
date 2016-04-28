@@ -1,13 +1,13 @@
 import os
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, session, send_from_directory
 import job_handlers
 import re
 
-app = Flask(__name__)
-
-APP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))   # refers to application_top
+APP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC_PATH = os.path.join(APP_ROOT_PATH, 'static')
 APP_TEMPLATES_PATH = os.path.join(APP_ROOT_PATH, 'templates')
+
+app = Flask(__name__)
 
 app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
 
@@ -16,9 +16,10 @@ def index():
     return "Hello ooooooooo World!"
 
 
-@app.route("/dashboard", methods=["GET"])
-def get_dashboard():
-    return render_template("dashboard.html")
+@app.route("/jobs", methods=["GET"])
+def get_jobs():
+    session["user_id"] = 1
+    return render_template("job_list.html")
 
 @app.route("/jobs/<job_id>", methods=["GET"])
 def get_job(job_id):

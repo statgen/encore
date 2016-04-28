@@ -85,19 +85,26 @@ function uploadProgress(evt)
 function uploadComplete(evt)
 {
     /* This event is raised when the server send back a response */
-    var resp = JSON.parse(evt.target.responseText);
-    if (!resp)
+    try
     {
-        alert("A Server Error Occured");
+        var resp = JSON.parse(evt.target.responseText);
+        if (!resp)
+        {
+            alert("A Server Error Occured");
+        }
+        else if (resp.error)
+        {
+            alert(resp.error);
+        }
+        else
+        {
+            fetchJobs();
+            hideUploadOverlay();
+        }
     }
-    else if (resp.error)
+    catch(e)
     {
-        alert(resp.error)
-    }
-    else
-    {
-        fetchJobs();
-        hideUploadOverlay()
+        alert(e);
     }
 }
 

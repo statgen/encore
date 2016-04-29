@@ -22,8 +22,7 @@ def get_sign_in():
 
 @app.route("/jobs", methods=["GET"])
 def get_jobs():
-    session["user_id"] = 1
-    return render_template("job_list.html")
+    return job_handlers.get_job_list_view()
 
 @app.route("/jobs/<job_id>", methods=["GET"])
 def get_job(job_id):

@@ -61,6 +61,11 @@
     cursor: pointer;
 }
 
+.overlay > form > div.hflex
+{
+    width: 80%;
+}
+
 #create_job_button
 {
     background: transparent;

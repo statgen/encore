@@ -1,6 +1,8 @@
 from flask import render_template, request, json, current_app, redirect, session
 import urllib2
 from rauth import OAuth2Service
+from user import User
+import sql_pool
 
 googleinfo = urllib2.urlopen("https://accounts.google.com/.well-known/openid-configuration")
 google_params = json.load(googleinfo)
@@ -22,9 +24,13 @@ def get_sign_in_view():
                   "redirect_uri": "http://localhost:5000/sign-in"},
             decoder = json.loads,
             verify = False)
-        me = oauth_session.get("", verify=False).json()
-        session["user_id"] = 1 #TODO: check whitelist.
-        return redirect("/jobs")
+        user_data = oauth_session.get("", verify=False).json()
+        user = User.from_email(user_data["email"], sql_pool.get_conn())
+        if user:
+            session["user_email"] = user.email
+            return redirect("/jobs")
+        else:
+            return render_template("/sign_in.html", error_message="User not authorized.")
     elif "authorize" in request.args:
         return redirect(oauth_service.get_authorize_url(
             scope="email",

@@ -1,5 +1,6 @@
 import os
-from flask import render_template, request, json, Response, current_app, session, redirect
+from flask import render_template, request, json, Response, current_app, redirect
+from user import User
 import sql_pool
 import MySQLdb
 import uuid
@@ -13,11 +14,18 @@ ALLOWED_EXTENSIONS = set(['ped'])
 # def allowed_file(filename):
 #     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
+def get_job_list_view():
+    user = User.from_session_key("user_email", sql_pool.get_conn())
+    if not user:
+        return redirect("/sign-in")
+    return render_template("job_list.html")
 
 def post_to_jobs():
     resp = Response(mimetype='application/json')
-    if "user_id" not in session:
-        resp.status_code = 400
+    db = sql_pool.get_conn()
+    user = User.from_session_key("user_email", db)
+    if not user:
+        resp.status_code = 401
         resp.set_data(json.dumps({"error": "Session expired."}))
     else:
         if request.method != 'POST':
@@ -44,11 +52,10 @@ def post_to_jobs():
                     resp.status_code = 400
                     resp.set_data(json.dumps({"error": err}))
                 else:
-                    db = sql_pool.get_conn()
                     db.begin()
                     try:
                         cur = db.cursor()
-                        cur.execute("INSERT INTO jobs (id, name, user_id) VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s)", (job_id, request.form["job_name"], session["user_id"]))
+                        cur.execute("INSERT INTO jobs (id, name, user_id) VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s)", (job_id, request.form["job_name"], user.rid))
                         sql = """
                             INSERT INTO status_changes (job_id, status_id)
                             SELECT uuid_to_bin(%s), statuses.id
@@ -68,9 +75,10 @@ def post_to_jobs():
 
 def get_jobs():
     resp = Response(mimetype='application/json')
-
-    if "user_id" not in session:
-        resp.status_code = 400;
+    db = sql_pool.get_conn()
+    user = User.from_session_key("user_email", db)
+    if not user:
+        resp.status_code = 401;
         resp.set_data(json.dumps({"error":"Session expired"}))
     else:
         db = sql_pool.get_conn()
@@ -97,19 +105,21 @@ def get_jobs():
             WHERE jobs.user_id = %s
             ORDER BY earliest_statuses.creation_date DESC
             """
-        cur.execute(sql, (session["user_id"],))
+        cur.execute(sql, (user.rid,))
         results = cur.fetchall()
-
         resp.set_data(json.dumps(results))
-
     return resp
+
 
 def get_job(job_id):
     resp = Response(mimetype='application/json')
     return resp
 
+
 def get_job_details_view(job_id):
-    if "user_id" not in session:
+    db = sql_pool.get_conn()
+    user = User.from_session_key("user_email", db)
+    if not user:
         return redirect("/sign-in")
     else:
         db = sql_pool.get_conn()
@@ -135,7 +145,7 @@ def get_job_details_view(job_id):
             LEFT JOIN statuses ON current_statuses.status_id = statuses.id
             WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
             """
-        cur.execute(sql, (session["user_id"], job_id))
+        cur.execute(sql, (user.rid, job_id))
 
         if cur.rowcount == 0:
             return "Job does not exist.", 404
@@ -150,7 +160,7 @@ def get_job_details_view(job_id):
                 WHERE jobs.user_id = %s AND status_changes.job_id = uuid_to_bin(%s)
                 ORDER BY status_changes.creation_date DESC, status_changes.id DESC
                 """
-            cur.execute(sql, (session["user_id"], job_id))
+            cur.execute(sql, (user.rid, job_id))
             job_data["history"] = cur.fetchall()
 
             return render_template("job_details.html", job=job_data)

@@ -5,7 +5,7 @@
     <title>GASP | Dashboard</title>
 
     <link rel="stylesheet" href="/static/css/main.css">
-    <link rel="stylesheet" href="/static/css/sign_in.css">
+    <!--<link rel="stylesheet" href="/static/css/sign_in.css">-->
 </head>
 <body>
 <div id="header">
@@ -15,7 +15,9 @@
 
     <div class="hflex" style="height: 500px;">
         <form class="vflex" style="width: 300px; height: 100px; border: 1px solid #333333; border-radius: 4px;">
+            <div>&nbsp;</div>
             <button name="authorize" type="submit">Sign In With Google</button>
+            <div style="color: #FF0000">&nbsp;{{ error_message }}&nbsp;</div>
         </form>
     </div>
 

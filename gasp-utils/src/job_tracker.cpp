@@ -41,10 +41,14 @@ std::string escape_string(MYSQL* conn, const std::string& input)
 
 job_status str_to_job_status(std::string input)
 {
-  if (input == "created")   return job_status::created;
-  if (input == "queued")    return job_status::queued;
-  if (input == "started")   return job_status::started;
-  if (input == "completed") return job_status::completed;
+  if (input == "created")           return job_status::created;
+  if (input == "queued")            return job_status::queued;
+  if (input == "started")           return job_status::started;
+  if (input == "succeeded")         return job_status::succeeded;
+  if (input == "failed")            return job_status::failed;
+  if (input == "cancel_requested")  return job_status::cancel_requested;
+  if (input == "cancelled")         return job_status::cancelled;
+  if (input == "quarantined")       return job_status::quarantined;
   return job_status::invalid;
 }
 
@@ -54,8 +58,8 @@ bool job_tracker::query_pending_jobs(MYSQL* conn, std::vector<job>& jobs)
 
   std::string sql =
     "SELECT bin_to_uuid(jobs.id) AS id, statuses.name AS status FROM jobs "
-      "LEFT JOIN statuses ON statuses.id = jobs.status_id "
-      "WHERE (statuses.name='created' OR statuses.name='queued' OR statuses.name='started')";
+    "LEFT JOIN statuses ON statuses.id = jobs.status_id "
+    "WHERE (statuses.name='created' OR statuses.name='queued' OR statuses.name='started')";
 
   if (mysql_query(conn, sql.c_str()) != 0)
   {

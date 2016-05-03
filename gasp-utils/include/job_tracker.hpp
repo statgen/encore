@@ -12,7 +12,11 @@ enum class job_status
   created,
   queued,
   started,
-  completed
+  cancel_requested,
+  cancelled,
+  failed,
+  succeeded,
+  quarantined
 };
 
 class job

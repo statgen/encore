@@ -23,10 +23,6 @@
                     <td>{{ job.name }}</td>
                 </tr>
                 <tr>
-                    <th>Date Created</th>
-                    <td>{{ job.creation_date }}</td>
-                </tr>
-                <tr>
                     <th>Status</th>
                     <td>{{ job.status }}</td>
                 </tr>
@@ -36,20 +32,14 @@
                     <td>{{ job.error_message }}</td>
                 </tr>
                 {% endif %}
-            </table>
-        </div>
-
-        <div class="section">
-            <div class="section-title">
-                <h2>Job History</h2>
-            </div>
-            <table id="job_status_history_table">
-                {% for change in job.history %}
                 <tr>
-                    <th>{{ change.ts }}</th>
-                    <td>{{ change.status }}</td>
+                    <th>Date Created</th>
+                    <td>{{ job.creation_date }}</td>
                 </tr>
-                {% endfor %}
+                <tr>
+                    <th>Last Updated</th>
+                    <td>{{ job.modified_date }}</td>
+                </tr>
             </table>
         </div>
     </div>

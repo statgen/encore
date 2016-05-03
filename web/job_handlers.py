@@ -52,22 +52,12 @@ def post_to_jobs():
                     resp.status_code = 400
                     resp.set_data(json.dumps({"error": err}))
                 else:
-                    db.begin()
-                    try:
-                        cur = db.cursor()
-                        cur.execute("INSERT INTO jobs (id, name, user_id) VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s)", (job_id, request.form["job_name"], user.rid))
-                        sql = """
-                            INSERT INTO status_changes (job_id, status_id)
-                            SELECT uuid_to_bin(%s), statuses.id
-                            FROM statuses
-                            WHERE statuses.name = 'created'
-                            LIMIT 1
-                            """
-                        cur.execute(sql, (job_id,))
-                        db.commit()
-                    except:
-                        db.rollback()
-                        raise
+                    cur = db.cursor()
+                    cur.execute("""
+                        INSERT INTO jobs (id, name, user_id, status_id)
+                        VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'created'))
+                        """, (job_id, request.form["job_name"], user.rid))
+                    db.commit()
 
                     #TODO: Queue Job
                     resp.set_data(json.dumps({"id": job_id}))
@@ -84,26 +74,11 @@ def get_jobs():
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
-            SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(earliest_statuses.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date
+            SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
             FROM jobs
-            LEFT JOIN
-            (
-                SELECT job_id, MIN(creation_date) AS creation_date
-                FROM status_changes
-                GROUP BY job_id
-            ) AS earliest_statuses
-            ON earliest_statuses.job_id = jobs.id
-            LEFT JOIN
-            (
-                SELECT job_id, MAX(id) AS id
-                FROM status_changes
-                GROUP BY job_id
-            ) AS latest_statuses
-            ON latest_statuses.job_id = jobs.id
-            LEFT JOIN status_changes AS current_statuses ON current_statuses.id = latest_statuses.id
-            LEFT JOIN statuses ON current_statuses.status_id = statuses.id
+            LEFT JOIN statuses ON jobs.status_id = statuses.id
             WHERE jobs.user_id = %s
-            ORDER BY earliest_statuses.creation_date DESC
+            ORDER BY jobs.creation_date DESC
             """
         cur.execute(sql, (user.rid,))
         results = cur.fetchall()
@@ -125,24 +100,9 @@ def get_job_details_view(job_id):
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
-            SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(earliest_statuses.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date
+            SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
             FROM jobs
-            LEFT JOIN
-            (
-                SELECT job_id, MIN(creation_date) AS creation_date
-                FROM status_changes
-                GROUP BY job_id
-            ) AS earliest_statuses
-            ON earliest_statuses.job_id = jobs.id
-            LEFT JOIN
-            (
-                SELECT job_id, MAX(id) AS id
-                FROM status_changes
-                GROUP BY job_id
-            ) AS latest_statuses
-            ON latest_statuses.job_id = jobs.id
-            LEFT JOIN status_changes AS current_statuses ON current_statuses.id = latest_statuses.id
-            LEFT JOIN statuses ON current_statuses.status_id = statuses.id
+            LEFT JOIN statuses ON jobs.status_id = statuses.id
             WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
             """
         cur.execute(sql, (user.rid, job_id))
@@ -151,16 +111,5 @@ def get_job_details_view(job_id):
             return "Job does not exist.", 404
         else:
             job_data = cur.fetchone()
-
-            sql = """
-                SELECT DATE_FORMAT(status_changes.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS ts, statuses.name as status
-                FROM jobs
-                LEFT JOIN status_changes ON jobs.id = status_changes.job_id
-                LEFT JOIN statuses ON status_changes.status_id = statuses.id
-                WHERE jobs.user_id = %s AND status_changes.job_id = uuid_to_bin(%s)
-                ORDER BY status_changes.creation_date DESC, status_changes.id DESC
-                """
-            cur.execute(sql, (user.rid, job_id))
-            job_data["history"] = cur.fetchall()
 
             return render_template("job_details.html", job=job_data)

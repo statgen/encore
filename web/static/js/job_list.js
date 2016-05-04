@@ -56,7 +56,6 @@ function fetchJobs()
     xhr.addEventListener("load", function(ev)
     {
         var jobs = JSON.parse(xhr.responseText);
-        console.log(jobs);
 
         var jobs_table = document.getElementById("jobs_table");
         jobs_table.innerHTML = ejs.render(document.getElementById("table_row_tmpl").innerText, {"jobs" : jobs });

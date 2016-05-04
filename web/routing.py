@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, session, send_from_directory
+from flask import Flask, render_template, session, send_from_directory, redirect
 import job_handlers
 import sign_in_handler
 import re
@@ -14,7 +14,7 @@ app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
 
 @app.route("/")
 def index():
-    return "Hello ooooooooo World!"
+    return redirect("/jobs")
 
 @app.route("/sign-in", methods=["GET"])
 def get_sign_in():

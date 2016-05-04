@@ -43,7 +43,12 @@
     font-size: 16px;
     padding: 3px 5px;
     border-radius: 4px;
-    border: none;
+    border: 1px solid #FFFFFF;
+}
+
+.overlay > form input.error
+{
+    border-color: #FF0000;
 }
 
 .overlay > form button

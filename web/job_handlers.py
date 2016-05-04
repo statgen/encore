@@ -59,7 +59,6 @@ def post_to_jobs():
                         """, (job_id, request.form["job_name"], user.rid))
                     db.commit()
 
-                    #TODO: Queue Job
                     resp.set_data(json.dumps({"id": job_id}))
     return resp
 

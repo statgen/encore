@@ -120,10 +120,14 @@ function uploadCanceled(evt)
 
 function uploadFile()
 {
+    $("[name=ped_filename],[name=job_name]").removeClass("error");
     var job_name = document.getElementsByName("job_name")[0].value;
     if (document.getElementsByName("ped_file")[0].files.length !== 1 || !job_name)
     {
-        // TODO: Mark inputs with red border.
+        if (document.getElementsByName("ped_file")[0].files.length < 1)
+            $("[name=ped_filename]").addClass("error");
+        if (!job_name)
+            $("[name=job_name]").addClass("error");
     }
     else
     {

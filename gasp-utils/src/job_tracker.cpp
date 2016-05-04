@@ -7,6 +7,15 @@
 #include <chrono>
 #include <fstream>
 #include <stdlib.h>
+#include <ctime>
+#include <iomanip>
+
+void log(std::ostream& os, const std::string& message)
+{
+  auto now = std::chrono::system_clock::now();
+  time_t in_time = std::chrono::system_clock::to_time_t(now);
+  os << std::put_time(std::localtime(&in_time), "%Y-%m-%d %X") << ": " << message << std::endl;
+}
 
 class close_mysql_conn
 {
@@ -59,7 +68,7 @@ bool job_tracker::query_pending_jobs(MYSQL* conn, std::vector<job>& jobs)
   std::string sql =
     "SELECT bin_to_uuid(jobs.id) AS id, statuses.name AS status FROM jobs "
     "LEFT JOIN statuses ON statuses.id = jobs.status_id "
-    "WHERE (statuses.name='created' OR statuses.name='queued' OR statuses.name='started')";
+    "WHERE (statuses.name='created' OR statuses.name='queued' OR statuses.name='started' OR statuses.name='cancel_requested')";
 
   if (mysql_query(conn, sql.c_str()) != 0)
   {
@@ -90,7 +99,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
   std::ofstream log_ofs(job_directory + "/log.txt", std::ios::app);
   if (!log_ofs.good())
   {
-    // Log file cannot be opened. Something is horribly wrong. Contact admin.
+    // Log file cannot be opened. Something is horribly wrong. TODO: Contact admin.
   }
   else
   {
@@ -106,11 +115,11 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
         std::string sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name='quarantined' LIMIT 1) WHERE id = uuid_to_bin('" + escape_string(conn, j.id()) + "')";
         if (mysql_query(conn, sql.c_str()) != 0)
         {
-          //TODO: log error
+          log(log_ofs, mysql_error(conn));
         }
         else
         {
-          //TODO: log status change
+          log(log_ofs, "Updated status to 'quarantined' (batch script already exists for job).");
         }
       }
       else
@@ -135,11 +144,11 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
         std::string sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name='queued' LIMIT 1) WHERE id = uuid_to_bin('" + escape_string(conn, j.id()) + "')";
         if (mysql_query(conn, sql.c_str()) != 0)
         {
-          //TODO: log error
+          log(log_ofs, mysql_error(conn));
         }
         else
         {
-          //TODO: log status change
+          log(log_ofs, "Updated status to 'queued'.");
         }
       }
     }
@@ -151,11 +160,11 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
         std::string sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name='started' LIMIT 1) WHERE id = uuid_to_bin('" + escape_string(conn, j.id()) + "')";
         if (mysql_query(conn, sql.c_str()) != 0)
         {
-          //TODO: log error
+          log(log_ofs, mysql_error(conn));
         }
         else
         {
-          //TODO: log status change
+          log(log_ofs, "Updated status to 'started'.");
         }
       }
     }
@@ -170,13 +179,17 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
         std::string sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name='" + new_job_status + "' LIMIT 1) WHERE id = uuid_to_bin('" + escape_string(conn, j.id()) + "')";
         if (mysql_query(conn, sql.c_str()) != 0)
         {
-          //TODO: log error
+          log(log_ofs, mysql_error(conn));
         }
         else
         {
-          //TODO: log status change
+          log(log_ofs, "Updated status to '" + new_job_status + "'.");
         }
       }
+    }
+    else if (j.status() == job_status::cancel_requested)
+    {
+      //TODO: scancel
     }
   }
 }

@@ -1,5 +1,5 @@
 import os
-from flask import render_template, request, json, Response, current_app, redirect
+from flask import render_template, request, json, Response, current_app, redirect, send_file
 from user import User
 import sql_pool
 import MySQLdb
@@ -97,7 +97,6 @@ def get_job_details_view(job_id):
     if not user:
         return redirect("/sign-in")
     else:
-        db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
             SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
@@ -113,3 +112,17 @@ def get_job_details_view(job_id):
             job_data = cur.fetchone()
 
             return render_template("job_details.html", job=job_data)
+
+def get_job_output(job_id):
+    db = sql_pool.get_conn()
+    user = User.from_session_key("user_email", db)
+    if not user:
+        return redirect("/sign-in")
+    else:
+        try:
+            job_directory = os.path.join(current_app.config.get("UPLOAD_FOLDER", "./"), job_id)
+            output_file_path = os.path.join(job_directory, "output.epacts")
+            return send_file(output_file_path, as_attachment=True)
+
+        except:
+            return "File Not Found", 404

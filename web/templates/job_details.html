@@ -6,6 +6,10 @@
 
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/job_details.css">
+
+    <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="/static/js/job_details.js"></script>
+
 </head>
 <body>
     <div id="header">
@@ -41,6 +45,29 @@
                     <td>{{ job.modified_date }}</td>
                 </tr>
             </table>
+        </div>
+
+        <form class="section" action="/jobs/{{ job.id }}/output">
+            <button type="submit">Download Output</button>
+        </form>
+
+        <div class="section">
+
+            <ul class="tabs">
+                <li class="active" rel="tab1">LocusZoom</li>
+                <li rel="tab2">Manhattan</li>
+            </ul>
+            <div class="tab-container">
+
+                <div id="tab1" class="tab-content">
+                    T1
+                </div>
+                <div id="tab2" class="tab-content">
+                    T2
+                </div>
+
+            </div>
+
         </div>
     </div>
 

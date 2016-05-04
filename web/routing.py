@@ -31,6 +31,13 @@ def get_job(job_id):
     else:
         return job_handlers.get_job_details_view(job_id)
 
+@app.route("/jobs/<job_id>/output", methods=["GET"])
+def get_job_output(job_id):
+    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
+        return "Not Found", 404
+    else:
+        return job_handlers.get_job_output(job_id)
+
 
 @app.route("/api/jobs", methods=["POST"])
 def post_api_jobs():

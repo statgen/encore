@@ -40,7 +40,7 @@ def post_to_jobs():
                 ped_file = request.files["ped_file"];
                 job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
                 os.mkdir(job_directory)
-                os.chmod(job_directory, "777")
+                os.chmod(job_directory, 0o777)
                 ped_file_path = os.path.join(job_directory, "input.ped")
                 ped_file.save(ped_file_path)
 

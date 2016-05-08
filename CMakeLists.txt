@@ -7,18 +7,39 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
+find_path(MYSQL_INCLUDE_DIR
+          NAMES "mysql.h"
+          PATHS $ENV{MYSQL_INCLUDE_DIR}
+          "/usr/include/mysql"
+          "/usr/local/include/mysql"
+          "/usr/mysql/include/mysql")
+
+find_library(MYSQL_LIBRARY
+             NAMES "mysqlclient"
+             PATHS $ENV{MYSQL_LIB_DIR}
+             "/lib/mysql"
+             "/lib64/mysql"
+             "/usr/lib/mysql"
+             "/usr/lib64/mysql"
+             "/usr/local/lib/mysql"
+             "/usr/local/lib64/mysql"
+             "/usr/mysql/lib/mysql"
+             "/usr/mysql/lib64/mysql")
+
+message(WARNING ${MYSQL_INCLUDE_DIR})
+message(WARNING ${MYSQL_LIBRARY})
+
 include_directories("gasp-utils/include")
 
 add_executable(validate-ped
-        gasp-utils/src/validate_ped.cpp
-        gasp-utils/include/pedigree_validation.hpp)
+               gasp-utils/src/validate_ped.cpp)
 
 
 
 add_executable(jobstatusd
-        gasp-utils/src/jobstatusd.cpp
-        gasp-utils/src/job_tracker.cpp
-        gasp-utils/include/job_tracker.hpp)
+               gasp-utils/src/jobstatusd.cpp
+               gasp-utils/src/job_tracker.cpp
+               gasp-utils/include/job_tracker.hpp)
 
-target_include_directories(jobstatusd PRIVATE $ENV{MYSQL_DIR}/include)
-target_link_libraries(jobstatusd $ENV{MYSQL_DIR}/lib/libmysqlclient.a)
+target_include_directories(jobstatusd PRIVATE ${MYSQL_INCLUDE_DIR})
+target_link_libraries(jobstatusd ${MYSQL_LIBRARY})

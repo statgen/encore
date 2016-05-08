@@ -4,4 +4,4 @@ import MySQLdb
 from flask import current_app
 
 def get_conn():
-    return MySQLdb.connect(host=current_app.config.get("MYSQL_HOST"), user=current_app.config.get("MYSQL_USER"), passwd=current_app.config.get("MYSQL_PASSWORD"), db=current_app.config.get("MYSQL_DB"))
+    return MySQLdb.connect(host="localhost", user="gasp_user", passwd=current_app.config.get("MYSQL_PASSWORD"), db="gasp")

@@ -38,7 +38,7 @@ def post_to_jobs():
             else:
                 job_id = str(uuid.uuid4())
                 ped_file = request.files["ped_file"];
-                job_directory = os.path.join(current_app.config.get("UPLOAD_FOLDER", "./"), job_id)
+                job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
                 os.mkdir(job_directory)
                 ped_file_path = os.path.join(job_directory, "input.ped")
                 ped_file.save(ped_file_path)
@@ -119,7 +119,7 @@ def get_job_output(job_id):
         return redirect("/sign-in")
     else:
         try:
-            job_directory = os.path.join(current_app.config.get("UPLOAD_FOLDER", "./"), job_id)
+            job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
             output_file_path = os.path.join(job_directory, "output.epacts")
             return send_file(output_file_path, as_attachment=True)
 

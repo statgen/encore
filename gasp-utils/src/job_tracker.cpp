@@ -2,13 +2,12 @@
 
 #include <sys/stat.h>
 #include <thread>
-#include <vector>
-#include <mysql.h>
 #include <chrono>
 #include <fstream>
 #include <stdlib.h>
 #include <ctime>
 #include <iomanip>
+#include <iostream>
 
 void log(std::ostream& os, const std::string& message)
 {
@@ -99,6 +98,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
   std::ofstream log_ofs(job_directory + "/log.txt", std::ios::app);
   if (!log_ofs.good())
   {
+    std::cerr << "Cannot open " << job_directory << "/log.txt" << std::endl;
     // Log file cannot be opened. Something is horribly wrong. TODO: Contact admin.
   }
   else
@@ -184,6 +184,8 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
         else
         {
           log(log_ofs, "Updated status to '" + new_job_status + "'.");
+
+          // TODO: send email.
         }
       }
     }

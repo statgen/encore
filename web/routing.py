@@ -11,18 +11,23 @@ APP_TEMPLATES_PATH = os.path.join(APP_ROOT_PATH, 'templates')
 app = Flask(__name__)
 
 app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
+app.config["PROPAGATE_EXCEPTIONS"] = True
+
 
 @app.route("/")
 def index():
     return redirect("/jobs")
 
+
 @app.route("/sign-in", methods=["GET"])
 def get_sign_in():
     return sign_in_handler.get_sign_in_view()
 
+
 @app.route("/jobs", methods=["GET"])
 def get_jobs():
     return job_handlers.get_job_list_view()
+
 
 @app.route("/jobs/<job_id>", methods=["GET"])
 def get_job(job_id):
@@ -30,6 +35,7 @@ def get_job(job_id):
         return "Not Found", 404
     else:
         return job_handlers.get_job_details_view(job_id)
+
 
 @app.route("/jobs/<job_id>/output", methods=["GET"])
 def get_job_output(job_id):
@@ -42,6 +48,7 @@ def get_job_output(job_id):
 @app.route("/api/jobs", methods=["POST"])
 def post_api_jobs():
     return job_handlers.post_to_jobs()
+
 
 @app.route("/api/jobs", methods=["GET"])
 def get_api_jobs():

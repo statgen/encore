@@ -21,7 +21,7 @@ def get_sign_in_view():
         oauth_session = oauth_service.get_auth_session(
             data={"code": request.args["code"],
                   "grant_type": "authorization_code",
-                  "redirect_uri": "http://localhost:5000/sign-in"},
+                  "redirect_uri": request.base_url},
             decoder = json.loads,
             verify = False)
         user_data = oauth_session.get("", verify=False).json()
@@ -36,7 +36,7 @@ def get_sign_in_view():
             scope="email",
             response_type="code",
             prompt="select_account",
-            redirect_uri="http://localhost:5000/sign-in"))
+            redirect_uri=request.base_url))
     else:
         return render_template("/sign_in.html")
 

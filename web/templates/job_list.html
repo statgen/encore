@@ -44,6 +44,52 @@
     <div id="content">
 
         <div class="section">
+            <style type="text/css">
+                /*.ubox-dragndrop,
+                .ubox-uploading,
+                .ubox-success,
+                .ubox-error
+                {
+                    display: none;
+                }*/
+
+                .ubox
+                {
+                    height: 220px;
+                    background-color: white;
+                    outline: 2px dashed #666666;
+                    outline-offset: -10px;
+                }
+
+                .ubox.is-dragged-over
+                {
+                    background: rgba(0, 50, 255, 0.2);
+                }
+
+                .ubox .ubox-dragndrop
+                {
+                    display: inline;
+                }
+
+                .ubox button
+                {
+                    font-size: 14px;
+                }
+            </style>
+            <form class="ubox vflex" method="post" action="" enctype="multipart/form-data">
+                <br/>
+                <svg class="ubox-icon" xmlns="http://www.w3.org/2000/svg" width="50" height="43" viewBox="0 0 50 43"><path d="M48.4 26.5c-.9 0-1.7.7-1.7 1.7v11.6h-43.3v-11.6c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v13.2c0 .9.7 1.7 1.7 1.7h46.7c.9 0 1.7-.7 1.7-1.7v-13.2c0-1-.7-1.7-1.7-1.7zm-24.5 6.1c.3.3.8.5 1.2.5.4 0 .9-.2 1.2-.5l10-11.6c.7-.7.7-1.7 0-2.4s-1.7-.7-2.4 0l-7.1 8.3v-25.3c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v25.3l-7.1-8.3c-.7-.7-1.7-.7-2.4 0s-.7 1.7 0 2.4l10 11.6z"></path></svg>
+                <input style="display: none" class="ubox-file" type="file" name="ped_file" id="ubox_file_input" />
+                <label for="ubox_file_input"><strong>Choose a file</strong><span class="ubox-dragndrop"> or drag it here</span>.</label>
+                <button class="ubox-button" type="button" name="upload" style="display: none">Create New Job</button>
+                <br/>
+                <!--<div class="ubox-uploading">Uploading&hellip;</div>
+                <div class="ubox-success">Done!</div>
+                <div class="ubox-error">Error! <span></span>.</div>-->
+            </form>
+        </div>
+
+        <div class="section">
             <div class="section-title">
                 <h2>Jobs</h2>
                 <button id="create_job_button">+</button>

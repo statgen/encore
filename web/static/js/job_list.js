@@ -159,7 +159,7 @@ function uploadFile()
 }
 
 
-
+var dropped_files = [];
 document.onreadystatechange = function()
 {
     if (document.readyState === "complete")
@@ -203,6 +203,58 @@ document.onreadystatechange = function()
                 hideUploadOverlay();
             }
         });
+
+
+        var has_modern_upload = function() {
+            var div = document.createElement('div');
+            return (('draggable' in div) || ('ondragstart' in div && 'ondrop' in div)) && 'FormData' in window && 'FileReader' in window;
+        }();
+
+        if (!has_modern_upload)
+        {
+            alert("Browser not supported");
+        }
+        else
+        {
+            var ubox_form = $('form.ubox');
+            ubox_form.on('drag dragstart dragend dragover dragenter dragleave drop', function(e)
+            {
+                e.preventDefault();
+                e.stopPropagation();
+            })
+            .on('dragover dragenter', function()
+            {
+                ubox_form.addClass('is-dragged-over');
+            })
+            .on('dragleave dragend drop', function()
+            {
+                ubox_form.removeClass('is-dragged-over');
+            })
+            .on('drop', function(e)
+            {
+                if (e.originalEvent.dataTransfer.items.length) // TODO: Filter directory.
+                    dropped_files = e.originalEvent.dataTransfer.files;
+                else
+                    dropped_files = [];
+
+                if (dropped_files.length)
+                    $(".ubox-button").show();
+                else
+                {
+                    $(".ubox-button").hide();
+                }
+            });
+
+            var file_input = $("form.ubox [name=ped_file]")[0];
+            $(file_input).on("change", function()
+            {
+                dropped_files = file_input.files || [];
+                if (dropped_files.length)
+                    $(".ubox-button").show();
+                else
+                    $(".ubox-button").hide();
+            });
+        }
 
     }
 };

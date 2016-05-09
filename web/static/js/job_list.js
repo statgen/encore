@@ -68,12 +68,18 @@ function fetchJobs()
     xhr.send();
 }
 
+
+function setProgressBarValue(progress)
+{
+    document.getElementsByName("ped_file_upload_progress")[0].value = progress.toString();
+}
+
 function uploadProgress(evt)
 {
     if (evt.lengthComputable)
     {
         var percentComplete = Math.round(evt.loaded * 100 / evt.total);
-        document.getElementsByName("ped_file_upload_progress")[0].value = percentComplete.toString();
+        setProgressBarValue(percentComplete);
     }
     else
     {
@@ -81,40 +87,16 @@ function uploadProgress(evt)
     }
 }
 
-function uploadComplete(evt)
-{
-    /* This event is raised when the server send back a response */
-    try
-    {
-        var resp = JSON.parse(evt.target.responseText);
-        if (!resp)
-        {
-            alert("A Server Error Occured");
-        }
-        else if (resp.error)
-        {
-            alert(resp.error);
-        }
-        else
-        {
-            fetchJobs();
-            hideUploadOverlay();
-        }
-    }
-    catch(e)
-    {
-        alert(e);
-    }
-}
-
 function uploadFailed(evt)
 {
     alert("There was an error attempting to upload the file.");
+    setProgressBarValue(0);
 }
 
 function uploadCanceled(evt)
 {
     alert("The upload has been canceled by the user or the browser dropped the connection.");
+    setProgressBarValue(0);
 }
 
 function uploadFile()
@@ -135,7 +117,40 @@ function uploadFile()
         fd.append("job_name", job_name);
         var xhr = new XMLHttpRequest();
         xhr.upload.addEventListener("progress", uploadProgress, false);
-        xhr.addEventListener("load", uploadComplete, false);
+        xhr.addEventListener("load", function (evt)
+        {
+            /* This event is raised when the server send back a response */
+            if (xhr.status >= 200 && xhr.status < 300)
+            {
+                try
+                {
+                    var resp = JSON.parse(evt.target.responseText);
+                    if (!resp)
+                    {
+                        alert("A Server Error Occured");
+                    }
+                    else if (resp.error)
+                    {
+                        alert(resp.error);
+                    }
+                    else
+                    {
+                        fetchJobs();
+                        hideUploadOverlay();
+                    }
+                }
+                catch (e)
+                {
+                    alert(e);
+                    setProgressBarValue(0);
+                }
+            }
+            else
+            {
+                alert(xhr.statusText);
+                setProgressBarValue(0);
+            }
+        }, false);
         xhr.addEventListener("error", uploadFailed, false);
         xhr.addEventListener("abort", uploadCanceled, false);
         xhr.open("POST", "/api/jobs");

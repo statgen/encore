@@ -1,4 +1,5 @@
 import os
+import shutil
 from flask import render_template, request, json, Response, current_app, redirect, send_file
 from user import User
 import sql_pool
@@ -26,41 +27,44 @@ def post_to_jobs():
     user = User.from_session_key("user_email", db)
     if not user:
         resp.status_code = 401
-        resp.set_data(json.dumps({"error": "Session expired."}))
+        resp.status = "SESSION EXPIRED"
     else:
         if request.method != 'POST':
             resp.status_code = 405
-            resp.set_data(json.dumps({"error": "Not a POST request."}))
+            resp.status = "NOT A POST REQUEST"
         else:
             if "job_name" not in request.form or "ped_file" not in request.files:
                 resp.status_code = 400
-                resp.set_data(json.dumps({"error": "Invalid file."}))
+                resp.status = "INVALID FILE"
             else:
                 job_id = str(uuid.uuid4())
-                ped_file = request.files["ped_file"];
-                job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-                os.mkdir(job_directory)
-                os.chmod(job_directory, 0o777)
-                ped_file_path = os.path.join(job_directory, "input.ped")
-                ped_file.save(ped_file_path)
-
-                validate_exe = os.path.join(current_app.config.root_path, "../bin/validate-ped")
-                p = subprocess.Popen([validate_exe, ped_file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                out, err = p.communicate()
-                if p.returncode != 0:
-                    if job_id: # rmtree would be bad if uuid4() returns an empty string.
-                        os.rmtree(job_directory)
-                    resp.status_code = 400
-                    resp.set_data(json.dumps({"error": err}))
+                if not job_id:
+                    resp.status_code = 500
+                    resp.status = "COULD NOT GENERATE JOB ID"
                 else:
-                    cur = db.cursor()
-                    cur.execute("""
-                        INSERT INTO jobs (id, name, user_id, status_id)
-                        VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'created'))
-                        """, (job_id, request.form["job_name"], user.rid))
-                    db.commit()
+                    ped_file = request.files["ped_file"]
+                    job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
+                    os.mkdir(job_directory)
+                    os.chmod(job_directory, 0o777)
+                    ped_file_path = os.path.join(job_directory, "input.ped")
+                    ped_file.save(ped_file_path)
 
-                    resp.set_data(json.dumps({"id": job_id}))
+                    validate_exe = os.path.join(current_app.config.root_path, "../bin/validate-ped")
+                    p = subprocess.Popen([validate_exe, ped_file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    out, err = p.communicate()
+                    if p.returncode != 0:
+                        shutil.rmtree(job_directory)
+                        resp.status_code = 400
+                        resp.status = err.upper()
+                    else:
+                        cur = db.cursor()
+                        cur.execute("""
+                            INSERT INTO jobs (id, name, user_id, status_id)
+                            VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'created'))
+                            """, (job_id, request.form["job_name"], user.rid))
+                        db.commit()
+
+                        resp.set_data(json.dumps({"id": job_id}))
     return resp
 
 def get_jobs():
@@ -69,7 +73,7 @@ def get_jobs():
     user = User.from_session_key("user_email", db)
     if not user:
         resp.status_code = 401;
-        resp.set_data(json.dumps({"error":"Session expired"}))
+        resp.status = "SESSION EXPIRED"
     else:
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)

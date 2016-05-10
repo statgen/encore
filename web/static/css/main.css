@@ -97,7 +97,7 @@ button
     border-radius: 3px;
 }
 
-button:hover
+button:not([disabled]):hover
 {
     color: #FFFFFF;
 }
@@ -105,6 +105,11 @@ button:hover
 button:active
 {
     border-color: #FFFFFF;
+}
+
+button[disabled]
+{
+    opacity: 0.6;
 }
 
 .hflex

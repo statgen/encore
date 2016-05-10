@@ -22,25 +22,26 @@ def get_job_list_view():
     return render_template("job_list.html")
 
 def post_to_jobs():
-    resp = Response(mimetype='application/json')
+    resp = Response(mimetype="application/json")
     db = sql_pool.get_conn()
     user = User.from_session_key("user_email", db)
     if not user:
         resp.status_code = 401
-        resp.status = "SESSION EXPIRED"
+        resp.set_data(json.dumps({"error": "SESSION EXPIRED"}))
     else:
         if request.method != 'POST':
             resp.status_code = 405
-            resp.status = "NOT A POST REQUEST"
+            resp.mimetype = "text/plain"
+            resp.set_data(json.dumps({"error": "NOT A POST REQUEST"}))
         else:
             if "job_name" not in request.form or "ped_file" not in request.files:
                 resp.status_code = 400
-                resp.status = "INVALID FILE"
+                resp.set_data(json.dumps({"error": "INVALID FILE"}))
             else:
                 job_id = str(uuid.uuid4())
                 if not job_id:
                     resp.status_code = 500
-                    resp.status = "COULD NOT GENERATE JOB ID"
+                    resp.set_data(json.dumps({"error": "COULD NOT GENERATE JOB ID"}))
                 else:
                     ped_file = request.files["ped_file"]
                     job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
@@ -55,7 +56,7 @@ def post_to_jobs():
                     if p.returncode != 0:
                         shutil.rmtree(job_directory)
                         resp.status_code = 400
-                        resp.status = err.upper()
+                        resp.set_data(json.dumps({"error": err.upper()}))
                     else:
                         cur = db.cursor()
                         cur.execute("""

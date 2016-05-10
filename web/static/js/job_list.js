@@ -1,11 +1,12 @@
 
+var dropped_files = [];
 
-function hideUploadOverlay()
-{
-    document.getElementById("upload_overlay").style.display = "none";
-    document.getElementsByName("ped_upload_form")[0].reset();
-    document.getElementsByName("ped_file_upload_progress")[0].value = 0;
-}
+// function hideUploadOverlay()
+// {
+//     document.getElementById("upload_overlay").style.display = "none";
+//     document.getElementsByName("ped_upload_form")[0].reset();
+//     document.getElementsByName("ped_file_upload_progress")[0].value = 0;
+// }
 
 function fileSelected()
 {
@@ -71,7 +72,8 @@ function fetchJobs()
 
 function setProgressBarValue(progress)
 {
-    document.getElementsByName("ped_file_upload_progress")[0].value = progress.toString();
+    //document.getElementsByName("ped_file_upload_progress")[0].value = progress.toString();
+    $(".ubox-progress").css("width", progress.toString() + "%");
 }
 
 function uploadProgress(evt)
@@ -101,20 +103,21 @@ function uploadCanceled(evt)
 
 function uploadFile()
 {
-    $("[name=ped_filename],[name=job_name]").removeClass("error");
-    var job_name = document.getElementsByName("job_name")[0].value;
-    if (document.getElementsByName("ped_file")[0].files.length !== 1 || !job_name)
+    //$("[name=ped_filename],[name=job_name]").removeClass("error");
+    //var job_name = document.getElementsByName("job_name")[0].value;
+    //if (document.getElementsByName("ped_file")[0].files.length !== 1 || !job_name)
+    //{
+    //    if (document.getElementsByName("ped_file")[0].files.length < 1)
+    //        $("[name=ped_filename]").addClass("error");
+    //    if (!job_name)
+    //        $("[name=job_name]").addClass("error");
+    //}
+    //else
     {
-        if (document.getElementsByName("ped_file")[0].files.length < 1)
-            $("[name=ped_filename]").addClass("error");
-        if (!job_name)
-            $("[name=job_name]").addClass("error");
-    }
-    else
-    {
+        $(".ubox-button").prop("disabled", true);
         var fd = new FormData();
-        fd.append("ped_file", document.getElementsByName("ped_file")[0].files[0]);
-        fd.append("job_name", job_name);
+        fd.append("ped_file", dropped_files[0]); //document.getElementsByName("ped_file")[0].files[0]);
+        fd.append("job_name", dropped_files[0].name);
         var xhr = new XMLHttpRequest();
         xhr.upload.addEventListener("progress", uploadProgress, false);
         xhr.addEventListener("load", function (evt)
@@ -122,34 +125,24 @@ function uploadFile()
             /* This event is raised when the server send back a response */
             if (xhr.status >= 200 && xhr.status < 300)
             {
-                try
-                {
-                    var resp = JSON.parse(evt.target.responseText);
-                    if (!resp)
-                    {
-                        alert("A Server Error Occured");
-                    }
-                    else if (resp.error)
-                    {
-                        alert(resp.error);
-                    }
-                    else
-                    {
-                        fetchJobs();
-                        hideUploadOverlay();
-                    }
-                }
-                catch (e)
-                {
-                    alert(e);
-                    setProgressBarValue(0);
-                }
+                fetchJobs();
             }
             else
             {
-                alert(xhr.statusText);
-                setProgressBarValue(0);
+                try
+                {
+                    resp = JSON.parse(xhr.responseText);
+                    alert(resp.error);
+                }
+                catch (ex)
+                {
+                    alert(xhr.statusText);
+                }
             }
+            dropped_files = [];
+            $(".ubox-button").hide();
+            setProgressBarValue(0);
+            $(".ubox-button").prop("disabled", false);
         }, false);
         xhr.addEventListener("error", uploadFailed, false);
         xhr.addEventListener("abort", uploadCanceled, false);
@@ -159,50 +152,50 @@ function uploadFile()
 }
 
 
-var dropped_files = [];
+
 document.onreadystatechange = function()
 {
     if (document.readyState === "complete")
     {
         fetchJobs();
-        document.getElementsByName("ped_upload_form")[0].addEventListener("submit", function(ev)
-        {
-            ev.preventDefault();
-            uploadFile();
-        });
+        // document.getElementsByName("ped_upload_form")[0].addEventListener("submit", function(ev)
+        // {
+        //     ev.preventDefault();
+        //     uploadFile();
+        // });
 
         document.getElementById("create_job_button").addEventListener("click", function(ev)
         {
-            document.getElementById("upload_overlay").style.display = "block";
+            $("form.ubox [name=ped_file]")[0].click();
         });
 
-        document.getElementById("upload_overlay").addEventListener("click", function(ev)
-        {
-            hideUploadOverlay();
-        });
+        // document.getElementById("upload_overlay").addEventListener("click", function(ev)
+        // {
+        //     hideUploadOverlay();
+        // });
 
-        document.getElementsByName("ped_upload_form")[0].addEventListener("click", function(ev)
-        {
-            ev.stopPropagation();
-        });
+        // document.getElementsByName("ped_upload_form")[0].addEventListener("click", function(ev)
+        // {
+        //     ev.stopPropagation();
+        // });
 
-        document.getElementsByName("ped_filename")[0].addEventListener("click", function(ev)
-        {
-            document.getElementsByName("ped_file")[0].click();
-        });
+        // document.getElementsByName("ped_filename")[0].addEventListener("click", function(ev)
+        // {
+        //     document.getElementsByName("ped_file")[0].click();
+        // });
 
-        document.getElementsByName("ped_file")[0].addEventListener("change", function(ev)
-        {
-            fileSelected();
-        });
+        // document.getElementsByName("ped_file")[0].addEventListener("change", function(ev)
+        // {
+        //     fileSelected();
+        // });
 
-        document.addEventListener("keyup", function(e)
-        {
-            if (e.keyCode == 27) // ESC
-            {
-                hideUploadOverlay();
-            }
-        });
+        // document.addEventListener("keyup", function(e)
+        // {
+        //     if (e.keyCode == 27) // ESC
+        //     {
+        //         hideUploadOverlay();
+        //     }
+        // });
 
 
         var has_modern_upload = function() {
@@ -238,7 +231,7 @@ document.onreadystatechange = function()
                     dropped_files = [];
 
                 if (dropped_files.length)
-                    $(".ubox-button").show();
+                    $(".ubox-button").show().text("Create Job (" + dropped_files[0].name + ")");
                 else
                 {
                     $(".ubox-button").hide();
@@ -253,6 +246,11 @@ document.onreadystatechange = function()
                     $(".ubox-button").show();
                 else
                     $(".ubox-button").hide();
+            });
+
+            ubox_form.find("button[name=upload]").on("click", function(e)
+            {
+                uploadFile();
             });
         }
 

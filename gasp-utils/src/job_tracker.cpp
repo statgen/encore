@@ -201,7 +201,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
 
             // TODO: run sbatch batch_script_path
             std::string queue_job_exe = "/bin/bash";
-            const char* queue_job_exe_env = getenv("GASP_QUEUE_JOB_EXECUTABLE");
+            const char* queue_job_exe_env = getenv("GASP_QUEUE_JOB_BINARY");
             if (queue_job_exe_env)
               queue_job_exe = queue_job_exe_env;
             queue_job_exe.append(" ");

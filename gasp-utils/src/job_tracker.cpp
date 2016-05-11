@@ -8,6 +8,7 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 void log(std::ostream& os, const std::string& message)
 {
@@ -77,9 +78,10 @@ bool job_tracker::query_pending_jobs(MYSQL* conn, std::vector<job>& jobs)
     MYSQL_RES* res = mysql_store_result(conn);
 
     jobs.reserve(mysql_num_rows(res));
-
     while (MYSQL_ROW row = mysql_fetch_row(res))
       jobs.emplace_back(row[0], str_to_job_status(row[1]));
+
+    mysql_free_result(res);
 
     ret = true;
   }
@@ -91,9 +93,11 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
 {
   std::string job_directory = base_path + "/" + j.id();
   std::string batch_script_path = job_directory + "/batch_script.sh";
-  std::string stdout_path = job_directory + "/output.epacts";
-  std::string stderr_path = job_directory + "/error.txt";
+  std::string stdout_path = job_directory + "/out.log";
+  std::string stderr_path = job_directory + "/err.log";
   std::string exit_status_path = job_directory + "/exit_status.txt";
+  std::string ped_file = job_directory + "/input.ped";
+  std::string epacts_file = job_directory + "/output.epacts";
 
   std::ofstream log_ofs(job_directory + "/log.txt", std::ios::app);
   if (!log_ofs.good())
@@ -124,31 +128,100 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
       }
       else
       {
-        ofs
-        << "#!/bin/bash\n"
-        << "#SBATCH --job-name=gasp_" << j.id() << "\n"
-        //<< "#SBATCH --output=" << stdout_path << "\n"
-        //<< "#SBATCH --error=" << stderr_path << "\n"
-        //<< "#SBATCH --time=10:00\n"
-        //<< "#SBATCH --mem-per-cpu=100\n"
-        << "\n"
-        << "hostname 2> " << stderr_path << " 1> " << stdout_path << "\n"
-        << "echo $? > " << exit_status_path << "\n";
-
-        ofs.close();
-
-        // TODO: run sbatch batch_script_path
-        std::string bash_command = "/bin/bash " + batch_script_path;
-        std::system(bash_command.c_str());
-
-        std::string sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name='queued' LIMIT 1) WHERE id = uuid_to_bin('" + escape_string(conn, j.id()) + "')";
-        if (mysql_query(conn, sql.c_str()) != 0)
+        std::string ped_header_line;
+        std::ifstream ped_fs(ped_file.c_str());
+        if (!ped_fs || !std::getline(ped_fs, ped_header_line, '\n'))
         {
-          log(log_ofs, mysql_error(conn));
+          log(log_ofs, "Failed to read header from ped file.");
         }
         else
         {
-          log(log_ofs, "Updated status to 'queued'.");
+          std::vector<std::string> ped_column_names;
+
+          std::istringstream is(ped_header_line);
+          while(is.good())
+          {
+            std::string tmp_column_name;
+            is >> tmp_column_name;
+            ped_column_names.push_back(std::move(tmp_column_name));
+          }
+
+          std::stringstream analysis_cmd;
+          std::string analysis_exe;
+          const char* analysis_exe_env = getenv("GASP_ANALYSIS_BINARY");
+          if (!analysis_exe_env)
+          {
+            analysis_cmd << "ls";
+            log(log_ofs, "GASP_ANALYSIS_BINARY not set.");
+          }
+          else
+          {
+            analysis_cmd << analysis_exe_env;
+          }
+
+          std::string vcf_file;
+          const char* vcf_file_env = getenv("GASP_VCF_FILE");
+          if (vcf_file_env)
+            vcf_file = vcf_file_env;
+          analysis_cmd << " single"
+          << " --vcf " << vcf_file
+          << " --ped " << ped_file
+          << " --min-maf 0.001 --field DS"
+          << " --chr 22"
+          << " --unit 500000 --test q.linear"
+          << " --out " << epacts_file
+          << " --run 4";
+
+          if (!ped_column_names.size())
+          {
+            log(log_ofs, "Failed to parse header from ped file.");
+          }
+          else
+          {
+            for (std::size_t i = 4; i < ped_column_names.size() - 1; ++i)
+              analysis_cmd << " --cov " << ped_column_names[i];
+
+            analysis_cmd << " --pheno " << ped_column_names.back();
+
+            ofs
+            << "#!/bin/bash\n"
+            << "#SBATCH --job-name=gasp_" << j.id() << "\n"
+            << "#SBATCH --ntasks-per-node=4\n"
+            << "#SBATCH --workdir=" << job_directory << "\n"
+            << "#SBATCH --mem-per-cpu=4000\n"
+            //<< "#SBATCH --output=" << stdout_path << "\n"
+            //<< "#SBATCH --error=" << stderr_path << "\n"
+            //<< "#SBATCH --time=10:00\n"
+            //<< "#SBATCH --mem-per-cpu=100\n"
+            << "\n"
+            << analysis_cmd.str() << " 2> " << stderr_path << " 1> " << stdout_path << "\n"
+            << "echo $? > " << exit_status_path << "\n";
+
+            ofs.close();
+
+            // TODO: run sbatch batch_script_path
+            std::string queue_job_exe = "/bin/bash";
+            const char* queue_job_exe_env = getenv("GASP_QUEUE_JOB_EXECUTABLE");
+            if (queue_job_exe_env)
+              queue_job_exe = queue_job_exe_env;
+            queue_job_exe.append(" ");
+
+            std::string bash_command = queue_job_exe + batch_script_path;
+#ifdef NDEBUG
+            std::system(bash_command.c_str());
+#endif
+
+            std::string sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name='queued' LIMIT 1) WHERE id = uuid_to_bin('" + escape_string(conn, j.id()) + "')";
+            if (mysql_query(conn, sql.c_str()) != 0)
+            {
+              log(log_ofs, mysql_error(conn));
+            }
+            else
+            {
+              log(log_ofs, "Updated status to 'queued'.");
+            }
+          }
+
         }
       }
     }

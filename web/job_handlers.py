@@ -104,7 +104,13 @@ def get_job_details_view(job_id):
     else:
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
-            SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
+            SELECT
+              bin_to_uuid(jobs.id) AS id,
+              jobs.name AS name,
+              statuses.name AS status,
+              jobs.error_message AS error_message,
+              DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
+              DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
             FROM jobs
             LEFT JOIN statuses ON jobs.status_id = statuses.id
             WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
@@ -118,7 +124,7 @@ def get_job_details_view(job_id):
 
             return render_template("job_details.html", job=job_data)
 
-def get_job_output(job_id):
+def get_job_output(job_id, filename):
     db = sql_pool.get_conn()
     user = User.from_session_key("user_email", db)
     if not user:
@@ -126,7 +132,7 @@ def get_job_output(job_id):
     else:
         try:
             job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-            output_file_path = os.path.join(job_directory, "output.epacts.gz")
+            output_file_path = os.path.join(job_directory, filename)
             return send_file(output_file_path, as_attachment=True)
 
         except:

@@ -42,7 +42,7 @@ def get_job_output(job_id):
     if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
         return "Not Found", 404
     else:
-        return job_handlers.get_job_output(job_id)
+        return job_handlers.get_job_output(job_id, "output.epacts.gz")
 
 
 @app.route("/api/jobs", methods=["POST"])
@@ -58,6 +58,14 @@ def get_api_jobs():
 @app.route("/api/jobs/<job_id>", methods=["GET"])
 def get_api_job(job_id):
     return job_handlers.get_job(job_id)
+
+@app.route("/api/jobs/<job_id>/plots/qq", methods=["GET"])
+def get_api_job_qq(job_id):
+    return job_handlers.get_job_output(job_id, "qq.json")
+
+@app.route("/api/jobs/<job_id>/plots/manhattan", methods=["GET"])
+def get_api_job_manhattan(job_id):
+    return job_handlers.get_job_output(job_id, "manhattan.json")
 
 
 # @app.errorhandler(500)

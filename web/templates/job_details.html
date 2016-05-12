@@ -47,9 +47,11 @@
             </table>
         </div>
 
+        {% if job.status == "succeeded" %}
         <form class="section" action="/jobs/{{ job.id }}/output">
             <button type="submit">Download Output</button>
         </form>
+        {% endif %}
 
         <div class="section">
 

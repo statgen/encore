@@ -97,7 +97,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
   std::string stderr_path = job_directory + "/err.log";
   std::string exit_status_path = job_directory + "/exit_status.txt";
   std::string ped_file = job_directory + "/input.ped";
-  std::string epacts_file = job_directory + "/output.epacts";
+  std::string epacts_file = job_directory + "/output"; //output.epacts.gz
 
   std::ofstream log_ofs(job_directory + "/log.txt", std::ios::app);
   if (!log_ofs.good())

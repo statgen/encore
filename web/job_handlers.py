@@ -126,7 +126,7 @@ def get_job_output(job_id):
     else:
         try:
             job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-            output_file_path = os.path.join(job_directory, "output.epacts")
+            output_file_path = os.path.join(job_directory, "output.epacts.gz")
             return send_file(output_file_path, as_attachment=True)
 
         except:

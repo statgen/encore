@@ -10,12 +10,13 @@ It creates a json file which can be used to render a Manhattan plot.
 
 from __future__ import print_function, division, absolute_import
 
+import os.path
+import sys
+import gzip
 import re
 import json
 import math
 import collections
-import sys
-import os.path
 
 BIN_LENGTH = int(3e6)
 NEGLOG10_PVAL_BIN_SIZE = 0.05 # Use 0.05, 0.1, 0.15, etc
@@ -125,7 +126,7 @@ assert os.path.exists(epacts_filename)
 out_filename = sys.argv[2]
 assert os.path.exists(os.path.dirname(out_filename))
 
-with open(epacts_filename) as f:
+with gzip.open(epacts_filename) as f:
     header = f.readline().rstrip('\n').split('\t')
     assert header == ['#CHROM', 'BEGIN', 'END', 'MARKER_ID', 'NS', 'AC', 'CALLRATE', 'MAF', 'PVALUE', 'BETA', 'SEBETA', 'TSTAT', 'R2']
 

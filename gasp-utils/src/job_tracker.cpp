@@ -249,7 +249,27 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
         int exit_status = 0;
         ifs >> exit_status;
         std::string new_job_status = exit_status ? "failed" : "succeeded";
-        std::string sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name='" + new_job_status + "' LIMIT 1) WHERE id = uuid_to_bin('" + escape_string(conn, j.id()) + "')";
+        std::string error_message_sql = "NULL";
+        if (exit_status)
+        {
+          std::ifstream error_log_ifs(stderr_path);
+          if (error_log_ifs.good())
+          {
+            error_log_ifs.seekg(0, std::ios::end);
+            std::size_t sz = error_log_ifs.tellg();
+            error_log_ifs.seekg(0, std::ios::beg);
+
+            if (sz > 0)
+            {
+              if (sz > 512)
+                sz = 512;
+              std::string tmp_error_msg(sz, '\0');
+              error_log_ifs.read(&tmp_error_msg[0], sz);
+              error_message_sql = "'" + escape_string(conn, tmp_error_msg) + "'";
+            }
+          }
+        }
+        std::string sql = "UPDATE jobs SET error_message=" + error_message_sql +", status_id = (SELECT id FROM statuses WHERE name='" + new_job_status + "' LIMIT 1) WHERE id = uuid_to_bin('" + escape_string(conn, j.id()) + "')";
         if (mysql_query(conn, sql.c_str()) != 0)
         {
           log(log_ofs, mysql_error(conn));

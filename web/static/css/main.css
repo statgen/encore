@@ -145,7 +145,7 @@ button[disabled]
 
 #header
 {
-    background: #4169E1;
+    background: rgb(0, 39, 76);
     color: #EEEEEE;
 }
 
@@ -181,6 +181,6 @@ button[disabled]
     bottom:0;
     width: 100%;
     height: 15px;
-    background: #4169E1;
+    background: rgb(0, 39, 76);
     color: #EEEEEE;
 }

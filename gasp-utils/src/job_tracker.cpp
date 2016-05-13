@@ -151,13 +151,13 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
           std::string manhattan_script;
           std::string qqplot_script;
           const char* analysis_exe_env = getenv("GASP_ANALYSIS_BINARY");
-          if (!analysis_exe_env)
+          if (analysis_exe_env)
             analysis_exe = analysis_exe_env;
           const char* manhattan_script_env = getenv("GASP_MANHATTAN_BINARY");
-          if (!manhattan_script_env)
+          if (manhattan_script_env)
             manhattan_script = manhattan_script_env;
           const char* qqplot_script_env = getenv("GASP_QQPLOT_BINARY");
-          if (!qqplot_script_env)
+          if (qqplot_script_env)
             qqplot_script = qqplot_script_env;
 
           std::string vcf_file;

@@ -124,12 +124,14 @@ def get_job_details_view(job_id):
 
             return render_template("job_details.html", job=job_data)
 
+
 def get_job_output(job_id, filename):
     db = sql_pool.get_conn()
     user = User.from_session_key("user_email", db)
     if not user:
         return redirect("/sign-in")
     else:
+        #TODO: Check that user owns job id.
         try:
             job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
             output_file_path = os.path.join(job_directory, filename)

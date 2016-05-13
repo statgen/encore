@@ -146,24 +146,27 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
             ped_column_names.push_back(std::move(tmp_column_name));
           }
 
-          std::stringstream analysis_cmd;
+
           std::string analysis_exe;
+          std::string manhattan_script;
+          std::string qqplot_script;
           const char* analysis_exe_env = getenv("GASP_ANALYSIS_BINARY");
           if (!analysis_exe_env)
-          {
-            analysis_cmd << "ls";
-            log(log_ofs, "GASP_ANALYSIS_BINARY not set.");
-          }
-          else
-          {
-            analysis_cmd << analysis_exe_env;
-          }
+            analysis_exe = analysis_exe_env;
+          const char* manhattan_script_env = getenv("GASP_MANHATTAN_BINARY");
+          if (!manhattan_script_env)
+            manhattan_script = manhattan_script_env;
+          const char* qqplot_script_env = getenv("GASP_QQPLOT_BINARY");
+          if (!qqplot_script_env)
+            qqplot_script = qqplot_script_env;
 
           std::string vcf_file;
           const char* vcf_file_env = getenv("GASP_VCF_FILE");
           if (vcf_file_env)
             vcf_file = vcf_file_env;
-          analysis_cmd << " single"
+
+          std::stringstream analysis_cmd;
+          analysis_cmd << analysis_exe << " single"
           << " --vcf " << vcf_file
           << " --ped " << ped_file
           << " --min-maf 0.001 --field DS"
@@ -197,8 +200,8 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
             << analysis_cmd.str() << " 2> " << stderr_path << " 1> " << stdout_path << "\n"
             << "EXIT_STATUS=$?\n"
             << "if [ $EXIT_STATUS == 0 ]; then\n"
-            << "  plot-epacts-output/make_manhattan_json.py " << epacts_output << ".epacts.gz " << job_directory << "/manhattan.json\n"
-            << "  plot-epacts-output/make_qq_json.py " << epacts_output << ".epacts.gz " << job_directory << "/qq.json\n"
+            << "  " << manhattan_script << " " << epacts_output << ".epacts.gz " << job_directory << "/manhattan.json\n"
+            << "  " << qqplot_script << " " << epacts_output << ".epacts.gz " << job_directory << "/qq.json\n"
             << "fi\n"
             << "echo $EXIT_STATUS > " << exit_status_path << "\n";
 

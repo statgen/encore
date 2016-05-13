@@ -97,7 +97,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
   std::string stderr_path = job_directory + "/err.log";
   std::string exit_status_path = job_directory + "/exit_status.txt";
   std::string ped_file = job_directory + "/input.ped";
-  std::string epacts_file = job_directory + "/output"; //output.epacts.gz
+  std::string epacts_output = job_directory + "/output"; //output.epacts.gz
 
   std::ofstream log_ofs(job_directory + "/log.txt", std::ios::app);
   if (!log_ofs.good())
@@ -169,7 +169,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
           << " --min-maf 0.001 --field DS"
           << " --chr 22"
           << " --unit 500000 --test q.linear"
-          << " --out " << epacts_file
+          << " --out " << epacts_output
           << " --run 4";
 
           if (!ped_column_names.size())
@@ -195,7 +195,13 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
             //<< "#SBATCH --mem-per-cpu=100\n"
             << "\n"
             << analysis_cmd.str() << " 2> " << stderr_path << " 1> " << stdout_path << "\n"
-            << "echo $? > " << exit_status_path << "\n";
+            << "EXIT_STATUS=$?\n"
+            << "if [ $EXIT_STATUS == 0 ]; then\n"
+            << "  plot-epacts-output/make_manhattan_json.py " << epacts_output << ".epacts.gz " << job_directory << "/manhattan.json\n"
+            << "  plot-epacts-output/make_qq_json.py " << epacts_output << ".epacts.gz " << job_directory << "/qq.json\n"
+            << "fi\n"
+            << "echo $EXIT_STATUS > " << exit_status_path << "\n";
+
 
             ofs.close();
 

@@ -17,4 +17,9 @@ $(document).ready(function()
     {
         window.location = history.go(-1);
     });
+
+    $("button[name=cancel_job]").click(function()
+    {
+        alert("Not yet implemented");
+    });
 });

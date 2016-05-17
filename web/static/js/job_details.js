@@ -12,4 +12,9 @@ $(document).ready(function()
         var activeTab = $(this).attr("rel");
         $("#"+activeTab).fadeIn();
     });
+
+    $("#back_arrow").click(function()
+    {
+        window.location = history.go(-1);
+    });
 });

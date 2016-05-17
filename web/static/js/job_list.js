@@ -114,6 +114,7 @@ function uploadFile()
     //}
     //else
     {
+        $("body").addClass("wait");
         $(".ubox-button").prop("disabled", true);
         var fd = new FormData();
         fd.append("ped_file", dropped_files[0]); //document.getElementsByName("ped_file")[0].files[0]);
@@ -143,6 +144,7 @@ function uploadFile()
             $(".ubox-button").hide();
             setProgressBarValue(0);
             $(".ubox-button").prop("disabled", false);
+            $("body").removeClass("wait");
         }, false);
         xhr.addEventListener("error", uploadFailed, false);
         xhr.addEventListener("abort", uploadCanceled, false);
@@ -151,108 +153,102 @@ function uploadFile()
     }
 }
 
-
-
-document.onreadystatechange = function()
+$(function()
 {
-    if (document.readyState === "complete")
-    {
-        fetchJobs();
-        // document.getElementsByName("ped_upload_form")[0].addEventListener("submit", function(ev)
-        // {
-        //     ev.preventDefault();
-        //     uploadFile();
-        // });
+    fetchJobs();
+    // document.getElementsByName("ped_upload_form")[0].addEventListener("submit", function(ev)
+    // {
+    //     ev.preventDefault();
+    //     uploadFile();
+    // });
 
-        document.getElementById("create_job_button").addEventListener("click", function(ev)
+    document.getElementById("create_job_button").addEventListener("click", function(ev)
+    {
+        $("form.ubox [name=ped_file]")[0].click();
+    });
+
+    // document.getElementById("upload_overlay").addEventListener("click", function(ev)
+    // {
+    //     hideUploadOverlay();
+    // });
+
+    // document.getElementsByName("ped_upload_form")[0].addEventListener("click", function(ev)
+    // {
+    //     ev.stopPropagation();
+    // });
+
+    // document.getElementsByName("ped_filename")[0].addEventListener("click", function(ev)
+    // {
+    //     document.getElementsByName("ped_file")[0].click();
+    // });
+
+    // document.getElementsByName("ped_file")[0].addEventListener("change", function(ev)
+    // {
+    //     fileSelected();
+    // });
+
+    // document.addEventListener("keyup", function(e)
+    // {
+    //     if (e.keyCode == 27) // ESC
+    //     {
+    //         hideUploadOverlay();
+    //     }
+    // });
+
+
+    var has_modern_upload = function() {
+        var div = document.createElement('div');
+        return (('draggable' in div) || ('ondragstart' in div && 'ondrop' in div)) && 'FormData' in window && 'FileReader' in window;
+    }();
+
+    if (!has_modern_upload)
+    {
+        alert("Browser not supported");
+    }
+    else
+    {
+        var ubox_form = $('form.ubox');
+        ubox_form.on('drag dragstart dragend dragover dragenter dragleave drop', function(e)
         {
-            $("form.ubox [name=ped_file]")[0].click();
+            e.preventDefault();
+            e.stopPropagation();
+        })
+        .on('dragover dragenter', function()
+        {
+            ubox_form.addClass('is-dragged-over');
+        })
+        .on('dragleave dragend drop', function()
+        {
+            ubox_form.removeClass('is-dragged-over');
+        })
+        .on('drop', function(e)
+        {
+            if (e.originalEvent.dataTransfer.items.length) // TODO: Filter directory.
+                dropped_files = e.originalEvent.dataTransfer.files;
+            else
+                dropped_files = [];
+
+            if (dropped_files.length)
+                $(".ubox-button").show().text("Create Job (" + dropped_files[0].name + ")");
+            else
+            {
+                $(".ubox-button").hide();
+            }
         });
 
-        // document.getElementById("upload_overlay").addEventListener("click", function(ev)
-        // {
-        //     hideUploadOverlay();
-        // });
-
-        // document.getElementsByName("ped_upload_form")[0].addEventListener("click", function(ev)
-        // {
-        //     ev.stopPropagation();
-        // });
-
-        // document.getElementsByName("ped_filename")[0].addEventListener("click", function(ev)
-        // {
-        //     document.getElementsByName("ped_file")[0].click();
-        // });
-
-        // document.getElementsByName("ped_file")[0].addEventListener("change", function(ev)
-        // {
-        //     fileSelected();
-        // });
-
-        // document.addEventListener("keyup", function(e)
-        // {
-        //     if (e.keyCode == 27) // ESC
-        //     {
-        //         hideUploadOverlay();
-        //     }
-        // });
-
-
-        var has_modern_upload = function() {
-            var div = document.createElement('div');
-            return (('draggable' in div) || ('ondragstart' in div && 'ondrop' in div)) && 'FormData' in window && 'FileReader' in window;
-        }();
-
-        if (!has_modern_upload)
+        var file_input = $("form.ubox [name=ped_file]")[0];
+        $(file_input).on("change", function()
         {
-            alert("Browser not supported");
-        }
-        else
+            dropped_files = file_input.files || [];
+            if (dropped_files.length)
+                $(".ubox-button").show();
+            else
+                $(".ubox-button").hide();
+        });
+
+        ubox_form.find("button[name=upload]").on("click", function(e)
         {
-            var ubox_form = $('form.ubox');
-            ubox_form.on('drag dragstart dragend dragover dragenter dragleave drop', function(e)
-            {
-                e.preventDefault();
-                e.stopPropagation();
-            })
-            .on('dragover dragenter', function()
-            {
-                ubox_form.addClass('is-dragged-over');
-            })
-            .on('dragleave dragend drop', function()
-            {
-                ubox_form.removeClass('is-dragged-over');
-            })
-            .on('drop', function(e)
-            {
-                if (e.originalEvent.dataTransfer.items.length) // TODO: Filter directory.
-                    dropped_files = e.originalEvent.dataTransfer.files;
-                else
-                    dropped_files = [];
-
-                if (dropped_files.length)
-                    $(".ubox-button").show().text("Create Job (" + dropped_files[0].name + ")");
-                else
-                {
-                    $(".ubox-button").hide();
-                }
-            });
-
-            var file_input = $("form.ubox [name=ped_file]")[0];
-            $(file_input).on("change", function()
-            {
-                dropped_files = file_input.files || [];
-                if (dropped_files.length)
-                    $(".ubox-button").show();
-                else
-                    $(".ubox-button").hide();
-            });
-
-            ubox_form.find("button[name=upload]").on("click", function(e)
-            {
-                uploadFile();
-            });
-        }
-
+            uploadFile();
+        });
     }
-};
+});

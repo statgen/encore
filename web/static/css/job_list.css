@@ -17,7 +17,7 @@
     height:200px;
     background: #EEEEEE;
     border: 1px solid #333333;
-    position:fixed;
+    position: fixed;
     top:40%;
     left:50%;
     margin-top:-100px; /* negative half the size of height */

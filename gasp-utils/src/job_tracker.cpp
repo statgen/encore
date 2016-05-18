@@ -169,7 +169,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
           analysis_cmd << analysis_exe << " single"
           << " --vcf " << vcf_file
           << " --ped " << ped_file
-          << " --min-maf 0.001 --field DS"
+          << " --min-maf 0.001 --field DS no-plot"
           << " --chr 22"
           << " --unit 500000 --test q.linear"
           << " --out " << epacts_output
@@ -215,7 +215,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
               queue_job_exe = queue_job_exe_env;
             queue_job_exe.append(" ");
 
-            std::string bash_command = queue_job_exe + batch_script_path;
+            std::string bash_command = queue_job_exe + batch_script_path + " > " + job_directory + "/batch_script_output.txt";
 #ifdef NDEBUG
             std::system(bash_command.c_str());
 #endif
@@ -293,7 +293,19 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
     }
     else if (j.status() == job_status::cancel_requested)
     {
-      //TODO: scancel
+      std::ifstream job_id_ifs(job_directory + "/batch_script_output.txt");
+      //Submitted batch job xxxxxxxx
+
+      int job_id = 0;
+      while (job_id_ifs.good() && job_id == 0)
+      {
+        job_id_ifs >> job_id;
+      }
+
+      if (job_id)
+        std::system("scancel " + job_id);
+
+
     }
   }
 }

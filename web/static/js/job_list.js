@@ -162,10 +162,10 @@ $(function()
     //     uploadFile();
     // });
 
-    document.getElementById("create_job_button").addEventListener("click", function(ev)
-    {
-        $("form.ubox [name=ped_file]")[0].click();
-    });
+    // document.getElementById("create_job_button").addEventListener("click", function(ev)
+    // {
+    //     $("form.ubox [name=ped_file]")[0].click();
+    // });
 
     // document.getElementById("upload_overlay").addEventListener("click", function(ev)
     // {

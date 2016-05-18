@@ -42,7 +42,7 @@ def get_job_output(job_id):
     if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
         return "Not Found", 404
     else:
-        return job_handlers.get_job_output(job_id, "output.epacts.gz")
+        return job_handlers.get_job_output(job_id, "output.epacts.gz", True)
 
 
 @app.route("/api/jobs", methods=["POST"])
@@ -65,7 +65,7 @@ def get_api_job_qq(job_id):
     if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
         return "Not Found", 404
     else:
-        return job_handlers.get_job_output(job_id, "qq.json")
+        return job_handlers.get_job_output(job_id, "qq.json", False)
 
 
 @app.route("/api/jobs/<job_id>/plots/manhattan", methods=["GET"])
@@ -73,7 +73,23 @@ def get_api_job_manhattan(job_id):
     if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
         return "Not Found", 404
     else:
-        return job_handlers.get_job_output(job_id, "manhattan.json")
+        return job_handlers.get_job_output(job_id, "manhattan.json", False)
+
+
+@app.route("/jobs/<job_id>/plots/tmp-qq", methods=["GET"])
+def get_job_tmp_qq(job_id):
+    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
+        return "Not Found", 404
+    else:
+        return job_handlers.get_job_output(job_id, "output.epacts.qq.pdf", False)
+
+
+@app.route("/jobs/<job_id>/plots/tmp-manhattan", methods=["GET"])
+def get_job_tmp_manhattan(job_id):
+    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
+        return "Not Found", 404
+    else:
+        return job_handlers.get_job_output(job_id, "output.epacts.mh.pdf", False)
 
 
 # @app.errorhandler(500)

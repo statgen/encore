@@ -68,10 +68,14 @@
             <div class="tab-container">
 
                 <div id="tab1" class="tab-content">
-                    T1
+                    <object data="/jobs/{{ job.id }}/plots/tmp-manhattan" type="application/pdf" height="600px" width="100%">
+                        alt : <a href="/jobs/{{ job.id }}/plots/tmp-manhattan">manhattan.pdf</a>
+                    </object>
                 </div>
                 <div id="tab2" class="tab-content">
-                    T2
+                    <object data="/jobs/{{ job.id }}/plots/tmp-qq" type="application/pdf" height="600px" width="100%">
+                        alt : <a href="/jobs/{{ job.id }}/plots/tmp-manhattan">qq.pdf</a>
+                    </object>
                 </div>
 
             </div>

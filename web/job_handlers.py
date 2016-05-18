@@ -1,6 +1,6 @@
 import os
 import shutil
-from flask import render_template, request, json, Response, current_app, redirect, send_file
+from flask import render_template, request, json, Response, current_app, redirect, send_file, make_response
 from user import User
 import sql_pool
 import MySQLdb
@@ -125,7 +125,7 @@ def get_job_details_view(job_id):
             return render_template("job_details.html", job=job_data)
 
 
-def get_job_output(job_id, filename):
+def get_job_output(job_id, filename, as_attach):
     db = sql_pool.get_conn()
     user = User.from_session_key("user_email", db)
     if not user:
@@ -135,7 +135,6 @@ def get_job_output(job_id, filename):
         try:
             job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
             output_file_path = os.path.join(job_directory, filename)
-            return send_file(output_file_path, as_attachment=True)
-
+            return send_file(output_file_path, as_attachment=as_attach)
         except:
             return "File Not Found", 404

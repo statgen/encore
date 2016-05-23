@@ -169,7 +169,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
           analysis_cmd << analysis_exe << " single"
           << " --vcf " << vcf_file
           << " --ped " << ped_file
-          << " --min-maf 0.001 --field DS no-plot"
+          << " --min-maf 0.001 --field DS"
           << " --chr 22"
           << " --unit 500000 --test q.linear"
           << " --out " << epacts_output

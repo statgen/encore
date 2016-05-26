@@ -8,6 +8,47 @@ var dropped_files = [];
 //     document.getElementsByName("ped_file_upload_progress")[0].value = 0;
 // }
 
+
+function parse_csv(file)
+{
+    // Check for the various File API support.
+    if (window.FileReader)
+    {
+        // FileReader are supported.
+        var reader = new FileReader();
+        // Handle errors load
+        reader.onload = function(evt)
+        {
+            var csv = evt.target.result;
+            var allTextLines = csv.split(/\r\n|\n/);
+            var lines = [];
+            for (var i=0; i < allTextLines.length; i++)
+            {
+                var data = allTextLines[i].split("\t");
+                var tarr = [];
+                for (var j=0; j < data.length; j++)
+                {
+                    tarr.push(data[j]);
+                }
+                lines.push(tarr);
+            }
+            $("#new_job_table_scroll_box").html(ejs.render(document.getElementById("new_job_table_tmpl").innerText, {"rows" : lines }));
+            console.log(lines[0]);
+        };
+        reader.onerror = function(evt)
+        {
+            alert(evt.target.error.message);
+        };
+
+        // Read file into memory as UTF-8
+        reader.readAsText(file);
+    }
+    else
+    {
+        alert('FileReader are not supported in this browser.');
+    }
+}
+
 function fileSelected()
 {
     var file = document.getElementsByName("ped_file")[0].files[0];
@@ -141,9 +182,10 @@ function uploadFile()
                 }
             }
             dropped_files = [];
-            $(".ubox-button").hide();
+            $("button[name=upload]").hide();
             setProgressBarValue(0);
-            $(".ubox-button").prop("disabled", false);
+            $("button[name=upload]").prop("disabled", false);
+            $("#new_job_table_scroll_box").html("");
             $("body").removeClass("wait");
         }, false);
         xhr.addEventListener("error", uploadFailed, false);
@@ -207,19 +249,19 @@ $(function()
     }
     else
     {
-        var ubox_form = $('form.ubox');
-        ubox_form.on('drag dragstart dragend dragover dragenter dragleave drop', function(e)
+        var ubox = $('.ubox');
+        ubox.on('drag dragstart dragend dragover dragenter dragleave drop', function(e)
         {
             e.preventDefault();
             e.stopPropagation();
         })
         .on('dragover dragenter', function()
         {
-            ubox_form.addClass('is-dragged-over');
+            ubox.addClass('is-dragged-over');
         })
         .on('dragleave dragend drop', function()
         {
-            ubox_form.removeClass('is-dragged-over');
+            ubox.removeClass('is-dragged-over');
         })
         .on('drop', function(e)
         {
@@ -229,24 +271,27 @@ $(function()
                 dropped_files = [];
 
             if (dropped_files.length)
+            {
                 $(".ubox-button").show().text("Create Job (" + dropped_files[0].name + ")");
+                parse_csv(dropped_files[0]);
+            }
             else
             {
                 $(".ubox-button").hide();
             }
         });
 
-        var file_input = $("form.ubox [name=ped_file]")[0];
+        var file_input = $(".ubox [name=ped_file]")[0];
         $(file_input).on("change", function()
         {
             dropped_files = file_input.files || [];
             if (dropped_files.length)
-                $(".ubox-button").show();
+                $("button[name=upload]").show();
             else
-                $(".ubox-button").hide();
+                $("button[name=upload]").hide();
         });
 
-        ubox_form.find("button[name=upload]").on("click", function(e)
+        ubox.find("button[name=upload]").on("click", function(e)
         {
             uploadFile();
         });

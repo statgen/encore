@@ -85,7 +85,10 @@
     color: #4169E1;
 }
 
-#jobs_table th:nth-child(2),td:nth-child(2),th:nth-child(3),td:nth-child(3)
+#jobs_table th:nth-child(2),
+#jobs_table td:nth-child(2),
+#jobs_table th:nth-child(3),
+#jobs_table td:nth-child(3)
 {
     width: 20%;
 }

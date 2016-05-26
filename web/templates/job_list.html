@@ -8,6 +8,28 @@
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/job_list.css">
 
+    <script id="new_job_table_tmpl" type="x-tmpl">
+        <table>
+            <tr>
+                <% for (var j = 0; j < rows[0].length; j++) { %>
+                <th><%= rows[0][j]; %></th>
+                <% } %>
+            </tr>
+            <% for (var i = 1; i < rows.length && i < 4; i++) { %>
+            <tr>
+                <% for (var j = 0; j < rows[i].length; j++) { %>
+                <td><%= rows[i][j]; %></td>
+                <% } %>
+            </tr>
+            <% } %>
+            <tr>
+                <td colspan="4" align="center">REQUIRED</td>
+                <td colspan="<%= (rows[0].length - 5); %>" align="center">COV</td>
+                <td colspan="1" align="center">PHENO</td>
+            </tr>
+        </table>
+    </script>
+
     <script id="table_row_tmpl" type="x-tmpl">
         <tr>
             <th>Job Name</th>
@@ -40,8 +62,10 @@
 </head>
 <body>
     <div id="header">
-        <h1>TOPMed Cloud Analysis Pilot </h1>
-        <h2>&nbsp;Powered By GASP</h2>
+        <div>
+            <h1>TOPMed Cloud Analysis Pilot </h1>
+            <h2>Powered By GASP</h2>
+        </div>
     </div>
     <div id="content">
         <div class="section">
@@ -72,7 +96,7 @@
                         </td>
                     </tr>
                 </table>
-                <b style="color: #333333;">Ready For Analysis!</b>
+                <b style="color: rgb(1, 45, 107);">Ready For Analysis!</b>
             </div>
         </div>
 
@@ -116,7 +140,12 @@
                     display: inline;
                 }
 
-                .ubox button
+                .ubox label
+                {
+                    cursor: pointer;
+                }
+
+                button[name=upload]
                 {
                     font-size: 14px;
                 }
@@ -139,8 +168,16 @@
                 <!--<div class="ubox-uploading">Uploading&hellip;</div>
                 <div class="ubox-success">Done!</div>
                 <div class="ubox-error">Error! <span></span>.</div>-->
+
             </form>
         </div>
+
+        <div id="new_job_table_scroll_box" class="scroll-box">
+
+        </div>
+
+        <br/>
+
 
         <div class="section">
             <div class="section-title">
@@ -195,7 +232,8 @@
     -->
 
     <div id="footer">
-
+        <div class="csg-logo">
+        </div>
     </div>
 </body>
 </html>

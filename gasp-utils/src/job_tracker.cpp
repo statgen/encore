@@ -136,6 +136,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
         }
         else
         {
+          ped_header_line.erase(ped_header_line.find_last_not_of("\r\n") + 1);
           std::vector<std::string> ped_column_names;
 
           std::istringstream is(ped_header_line);

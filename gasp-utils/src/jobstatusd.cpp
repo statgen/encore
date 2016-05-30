@@ -15,9 +15,9 @@ int main(int argc, char *argv[])
     base_path.erase(base_path.find_last_not_of(" /") + 1);
 
 
-    const char* pass = getenv("GASP_MYSQL_DB");
+    const char* db = getenv("GASP_MYSQL_DB");
     const char* user = getenv("GASP_MYSQL_USER");
-    const char* db = getenv("GASP_MYSQL_PASS");
+    const char* pass = getenv("GASP_MYSQL_PASS");
     job_tracker tracker(base_path, db ? db : "", user ? user : "", pass ? pass : "" );
     tracker();
   }

@@ -26,13 +26,13 @@ public:
   }
 };
 
-std::unique_ptr<MYSQL, close_mysql_conn> get_mysql_conn(const std::string& password)
+std::unique_ptr<MYSQL, close_mysql_conn> get_mysql_conn(const std::string& db, const std::string& user, const std::string& password)
 {
   MYSQL* ret = nullptr;
   MYSQL* my = mysql_init(NULL);
   if (my)
   {
-    ret = mysql_real_connect(my, "localhost", "gasp_user", password.c_str(), "gasp", 0, NULL, 0);
+    ret = mysql_real_connect(my, "localhost", user.c_str(), password.c_str(), db.c_str(), 0, NULL, 0);
 
     if (!ret)
       mysql_close(my);
@@ -170,7 +170,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
           analysis_cmd << analysis_exe << " single"
           << " --vcf " << vcf_file
           << " --ped " << ped_file
-          << " --min-maf 0.001 --field DS"
+          << " --min-maf 0.001 --field GT"
           << " --sepchr"
           << " --unit 500000 --test q.linear"
           << " --out " << epacts_output
@@ -325,8 +325,10 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
   }
 }
 
-job_tracker::job_tracker(const std::string& base_path_for_job_folders, const std::string& mysql_pass)
+job_tracker::job_tracker(const std::string& base_path_for_job_folders, const std::string& mysql_db, const std::string& mysql_user, const std::string& mysql_pass)
   : base_path_(base_path_for_job_folders),
+    mysql_db_(mysql_db),
+    mysql_user_(mysql_user),
     mysql_pass_(mysql_pass),
     stopped_(false)
 {
@@ -336,7 +338,7 @@ void job_tracker::operator()()
 {
   while (!stopped_)
   {
-    auto conn = get_mysql_conn(mysql_pass_);
+    auto conn = get_mysql_conn(mysql_db_, mysql_user_, mysql_pass_);
 
     if (!conn)
     {

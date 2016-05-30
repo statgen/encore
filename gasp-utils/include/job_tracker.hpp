@@ -34,7 +34,7 @@ private:
 class job_tracker
 {
 public:
-  job_tracker(const std::string& base_path_for_job_folders, const std::string& mysql_pass);
+  job_tracker(const std::string& base_path_for_job_folders, const std::string& mysql_db, const std::string& mysql_user, const std::string& mysql_pass);
 
   void operator()();
   void stop();
@@ -42,6 +42,8 @@ private:
   bool query_pending_jobs(MYSQL* conn, std::vector<job>& jobs);
 
   const std::string base_path_;
+  const std::string mysql_db_;
+  const std::string mysql_user_;
   const std::string mysql_pass_;
   std::atomic_bool stopped_;
 };

@@ -1,6 +1,8 @@
 JOB_DATA_FOLDER = "./"
 
-MYSQL_DATABASE_PASSWORD = "my_pass"
+MYSQL_DB = "my_db"
+MYSQL_USER = "my_user"
+MYSQL_PASSWORD = "my_pass"
 
 SECRET_KEY = None
 

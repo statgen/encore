@@ -190,9 +190,10 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
             ofs
             << "#!/bin/bash\n"
             << "#SBATCH --job-name=gasp_" << j.id() << "\n"
-            << "#SBATCH --cpus-per-task=24\n"
+            << "#SBATCH --cpus-per-task=48\n"
             << "#SBATCH --workdir=" << job_directory << "\n"
-            << "#SBATCH --exclusive\n"
+            << "#SBATCH --mem=64000\n"
+            << "#SBATCH --nodes=1\n"
             //<< "#SBATCH --output=" << stdout_path << "\n"
             //<< "#SBATCH --error=" << stderr_path << "\n"
             //<< "#SBATCH --time=10:00\n"

@@ -28,7 +28,7 @@
         <div class="section">
             <div class="section-title">
                 <h2>Job Details</h2>
-                {% if job.status != "succeeded" and job.status != "failed" and job.status != "cancelled" and job.status != "cancel_requested" %}
+                {% if job.status == "queued" or job.status == "started" %}
                 <button name="cancel_job">Cancel Job</button>
                 {% endif %}
             </div>

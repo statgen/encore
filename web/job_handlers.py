@@ -96,6 +96,23 @@ def get_job(job_id):
     return resp
 
 
+def cancel_job(job_id):
+    db = sql_pool.get_conn()
+    user = User.from_session_key("user_email", db)
+    if not user:
+        return redirect("/sign-in")
+    else:
+        resp = Response(mimetype='application/json')
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name='cancel_requested' LIMIT 1) WHERE id = uuid_to_bin(%s) AND user_id = %s"
+        cur.execute(sql, (job_id, user.rid))
+        db.commit()
+        if cur.rowcount == 0:
+            resp.status_code = 404
+            resp.status = "JOB NOT FOUND"
+        return resp
+
+
 def get_job_details_view(job_id):
     db = sql_pool.get_conn()
     user = User.from_session_key("user_email", db)

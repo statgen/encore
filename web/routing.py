@@ -60,6 +60,11 @@ def get_api_job(job_id):
     return job_handlers.get_job(job_id)
 
 
+@app.route("/api/jobs/<job_id>/cancel_request", methods=["POST"])
+def post_api_job_cancel_request(job_id):
+    return job_handlers.cancel_job(job_id)
+
+
 @app.route("/api/jobs/<job_id>/plots/qq", methods=["GET"])
 def get_api_job_qq(job_id):
     if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):

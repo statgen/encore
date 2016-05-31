@@ -20,6 +20,19 @@ $(document).ready(function()
 
     $("button[name=cancel_job]").click(function()
     {
-        alert("Not yet implemented");
+        var res = /^\/jobs\/(.*)$/.exec(window.location.pathname);
+        if (res.length === 2)
+        {
+            var job_id = res[1];
+            var xhr = new XMLHttpRequest();
+            xhr.addEventListener("load", function(ev)
+            {
+               location.reload();
+            }, false);
+
+            xhr.addEventListener("error", function() { alert("Request Failed"); }, false);
+            xhr.open("POST", "/api/jobs/" + job_id + "/cancel_request");
+            xhr.send();
+        }
     });
 });

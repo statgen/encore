@@ -29,11 +29,17 @@ find_library(MYSQL_LIBRARY
 message(WARNING ${MYSQL_INCLUDE_DIR})
 message(WARNING ${MYSQL_LIBRARY})
 
-include_directories("gasp-utils/include")
+include_directories("gasp-utils/include" "../htslib-1.3.1/htslib")
+
+
+
+add_executable(vcf-stat
+               gasp-utils/src/vcf_stat.cpp)
+target_link_libraries(vcf-stat ${CMAKE_SOURCE_DIR}/../htslib-1.3.1/libhts.a)
+target_link_libraries(vcf-stat z)
 
 add_executable(validate-ped
                gasp-utils/src/validate_ped.cpp)
-
 
 
 add_executable(jobstatusd

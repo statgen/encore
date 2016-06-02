@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, session, send_from_directory, redirect
+from flask import Flask, render_template, session, send_from_directory, redirect, send_file
 import job_handlers
 import sign_in_handler
 import re
@@ -22,6 +22,16 @@ def index():
 @app.route("/sign-in", methods=["GET"])
 def get_sign_in():
     return sign_in_handler.get_sign_in_view()
+
+
+@app.route("/api/vcf/statistics", methods=["GET"])
+def get_api_vcf_statistics():
+    # API endpoint not protected.
+    try:
+        output_file_path = os.path.join(app.config.get("JOB_DATA_FOLDER", "./"), "vcf_stats.json")
+        return send_file(output_file_path, as_attachment=False)
+    except:
+        return "File Not Found", 404
 
 
 @app.route("/jobs", methods=["GET"])

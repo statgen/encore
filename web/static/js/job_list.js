@@ -110,6 +110,24 @@ function fetchJobs()
     xhr.send();
 }
 
+function fetchVCFStats()
+{
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", function(ev)
+    {
+        if (xhr.status >= 200 && xhr.status < 300)
+        {
+            var stats = JSON.parse(xhr.responseText);
+
+            $("#carousel tr.genotype-stats td:nth-child(1)").text(stats.genotype_count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+            $("#carousel tr.marker-stats td:nth-child(1)").text(stats.record_count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+            $("#carousel tr.sample-stats td:nth-child(1)").text(stats.sample_count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+        }
+    }, false);
+    xhr.open("GET", "/api/vcf/statistics");
+    xhr.send();
+}
+
 
 function setProgressBarValue(progress)
 {
@@ -198,6 +216,8 @@ function uploadFile()
 $(function()
 {
     fetchJobs();
+    fetchVCFStats();
+
     // document.getElementsByName("ped_upload_form")[0].addEventListener("submit", function(ev)
     // {
     //     ev.preventDefault();

@@ -107,3 +107,22 @@
     font-size: 24px;
     color: #666666;
 }
+
+#carousel tr td
+{
+    padding: 0px;
+    border: none;
+    width: 50%;
+}
+
+
+#carousel tr td:nth-child(1)
+{
+    text-align: right;
+    font-weight: bold;
+}
+
+#carousel tr td:nth-child(2)
+{
+    text-align: left;
+}

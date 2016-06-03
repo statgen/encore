@@ -2,6 +2,7 @@
 #include "vcf.h"
 #include <iostream>
 #include <cstdint>
+#include <vcf.h>
 
 int main(int argc, char* argv[])
 {
@@ -28,17 +29,22 @@ int main(int argc, char* argv[])
       else
       {
         std::int32_t sample_count = bcf_hdr_nsamples(hdr);
-        std::uint64_t record_cnt = 0;
+        std::uint64_t record_count = 0;
+        std::uint64_t genotype_count = 0;
 
         bcf1_t* rec = bcf_init1();
         while (vcf_read(hts_fp, hdr, rec) >= 0)
         {
-          ++record_cnt;
+          ++record_count;
+          bcf_info_t* ns_info = bcf_get_info(hdr, rec, "NS");
+          if (ns_info)
+            genotype_count += ns_info->v1.i;
         }
 
         std::cout << "{";
-        std::cout << "\"sample_count\":" << bcf_hdr_nsamples(hdr) << ",";
-        std::cout << "\"record_count\":" << record_cnt;
+        std::cout << "\"genotype_count\":" << genotype_count << ",";
+        std::cout << "\"sample_count\":" << sample_count << ",";
+        std::cout << "\"record_count\":" << record_count;
         std::cout << "}";
 
         bcf_destroy1(rec);

@@ -36,13 +36,13 @@ int main(int argc, char* argv[])
         while (vcf_read(hts_fp, hdr, rec) >= 0)
         {
           ++record_count;
-          bcf_info_t* ns_info = bcf_get_info(hdr, rec, "NS");
-          if (ns_info)
-            genotype_count += ns_info->v1.i;
+//          bcf_info_t* ns_info = bcf_get_info(hdr, rec, "NS");
+//          if (ns_info)
+//            genotype_count += ns_info->v1.i;
         }
 
         std::cout << "{";
-        std::cout << "\"genotype_count\":" << genotype_count << ",";
+        std::cout << "\"genotype_count\":" << (genotype_count ? genotype_count : sample_count * record_count) << ",";
         std::cout << "\"sample_count\":" << sample_count << ",";
         std::cout << "\"record_count\":" << record_count;
         std::cout << "}";

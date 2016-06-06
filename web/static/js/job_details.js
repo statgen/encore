@@ -1,17 +1,15 @@
 
 $(document).ready(function()
 {
-    $(".tab-content").hide();
-    $(".tab-content:first").show();
-
     $("ul.tabs li").click(function()
     {
         $("ul.tabs li").removeClass("active");
         $(this).addClass("active");
-        $(".tab-content").hide();
+        $(".tab-content").css("z-index", "-1");
         var activeTab = $(this).attr("rel");
-        $("#"+activeTab).fadeIn();
+        $("#"+activeTab).css("z-index", "0");
     });
+    $("ul.tabs li:first").click();
 
     $("#back_arrow").click(function()
     {

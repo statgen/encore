@@ -136,6 +136,11 @@ function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_
             .html(function(d) {
                 return tooltip_template({d: d});
             })
+            .style("background", "rgba(0, 0, 0, 0.7)")
+            .style("color", "#FFFFFF")
+            .style("padding", "5px")
+            .style("border", "1px solid #000000")
+            .style("border-radius", "3px")
             .offset([-6,0]);
         gwas_svg.call(point_tooltip);
 

@@ -35,9 +35,9 @@ assert round_sig(1.59e-10, 2) == 1.6e-10
 
 def parse_marker_id(marker_id):
     try:
-        chr1, pos1, ref, alt, chr2, pos2 = re.match(r'([^:]+):([0-9]+)_([-ATCG]+)/([-ATCG]+)_([^:]+):([0-9]+)', marker_id).groups()
-        assert chr1 == chr2
-        assert pos1 == pos2
+        chr1, pos1, ref, alt, opt_info= re.match(r'([^:]+):([0-9]+)_([-ATCG]+)/([-ATCG]+)(?:_(.+))?', marker_id).groups()
+        #assert chr1 == chr2
+        #assert pos1 == pos2
     except:
         print(marker_id)
         raise
@@ -62,7 +62,7 @@ assert not approx_equal(42, 42.01)
 Variant = collections.namedtuple('Variant', ['neglog10_pval', 'maf'])
 def parse_variant_line(variant_line):
     v = variant_line.split('\t')
-    assert v[1] == v[2]
+    #assert v[1] == v[2]
     if v[8] == 'NA' or v[9] == 'NA':
         assert v[8] == 'NA' and v[9] == 'NA'
     else:

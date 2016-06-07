@@ -345,7 +345,7 @@ function create_qq_plot(selector, maf_ranges) {
         // Constrain obs_max in [exp_max, 9.01]. `9.01` preserves the tick `9`.
         obs_max = Math.max(exp_max, Math.min(9.01, obs_max));
 
-        var svg_width = 550; //$(selector).width();
+        var svg_width = 600; //$(selector).width();
         var plot_margin = {
             'left': 70,
             'right': 30,
@@ -421,11 +421,12 @@ function create_qq_plot(selector, maf_ranges) {
                 return i + 'em';
             })
             .text(function(d) {
-                return fmt('{0} â‰¤ MAF < {1} ({2})',
+                return fmt('{0} \u2264 MAF < {1} ({2})',
                     d.maf_range[0].toFixed(2),
                     d.maf_range[1].toFixed(2),
                     d.count);
             })
+            .style("font-size","14px")
             .attr('fill', function(d) {
                 return d.color;
             });

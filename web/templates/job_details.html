@@ -99,11 +99,11 @@
                 });
                 $.getJSON("/api/jobs/{{ job.id }}/plots/qq").done(function(data)
                 {
-                    _.sortBy(_.pairs(data.overall.gc_lambda)).forEach(function(d)
+                    /*_.sortBy(_.pairs(data.overall.gc_lambda)).forEach(function(d)
                     {
                         $('.gc-control').append('<br>GC Lambda ' + d[0] + ': ' + d[1].toFixed(3));
-                    });
-                    create_qq_plot("#tab2", data.by_maf);
+                    });*/
+                    create_qq_plot("#tab2", data);
                 });
             </script>
 

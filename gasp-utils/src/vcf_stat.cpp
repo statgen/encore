@@ -77,18 +77,28 @@ int main(int argc, char* argv[])
   {
     vcf_stats stats;
 
-    glob_t glob_buf;
-    if(glob(argv[1], 0, NULL, &glob_buf) != 0)
+    int arg_itr = 1;
+    while (arg_itr < argc)
     {
-      std::cerr << "Invalid file path expression." << std::endl;
+      if (argv[arg_itr][0] != '-')
+        break;
+
+      ++arg_itr;
+    }
+
+    if (arg_itr == argc)
+    {
+      std::cerr << "You must specify a file path." << std::endl;
     }
     else
     {
+      const std::size_t path_count = (std::size_t)(argc - arg_itr);
+      std::vector<vcf_stats> stat_array(path_count);
+
       stat_errc res = stat_errc::no_error;
-      std::vector<vcf_stats> stat_array(glob_buf.gl_pathc);
-      for (std::size_t i = 0; i < glob_buf.gl_pathc && res == stat_errc::no_error; ++i) // TODO: parallelize
+      for (std::size_t i = 0; i < path_count && res == stat_errc::no_error; ++i) // TODO: parallelize
       {
-        res = stat_vcf_file(glob_buf.gl_pathv[i], stat_array[i]);
+        res = stat_vcf_file(argv[arg_itr], stat_array[i]);
       }
 
       if (res == stat_errc::file_open_failed)
@@ -117,8 +127,6 @@ int main(int argc, char* argv[])
 
         ret = 0;
       }
-
-      globfree(&glob_buf);
     }
   }
 

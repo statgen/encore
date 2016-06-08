@@ -37,18 +37,19 @@ ExternalProject_Add(htslib
         #GIT_REPOSITORY "https://github.com/samtools/htslib"
         #GIT_TAG "1.3.1"
         UPDATE_COMMAND ""
-        CONFIGURE_COMMAND autoconf && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/htslib
+        CONFIGURE_COMMAND autoconf && ./configure --prefix=<INSTALL_DIR>
         BUILD_COMMAND make
-        INSTALL_COMMAND make install)
+        INSTALL_COMMAND "")
+ExternalProject_Get_Property(htslib SOURCE_DIR)
+set(HTSLIB_SRC_DIR ${SOURCE_DIR})
 
-
-include_directories("gasp-utils/include" "${CMAKE_CURRENT_BINARY_DIR}/htslib/include/htslib")
+include_directories("gasp-utils/include" "${HTSLIB_SRC_DIR}/htslib")
 
 
 add_executable(vcf-stat gasp-utils/src/vcf_stat.cpp)
 add_dependencies(vcf-stat htslib)
 set_target_properties(vcf-stat PROPERTIES COMPILE_FLAGS -pthread LINK_FLAGS -pthread)
-target_link_libraries(vcf-stat ${CMAKE_CURRENT_BINARY_DIR}/htslib/lib/libhts.a)
+target_link_libraries(vcf-stat ${HTSLIB_SRC_DIR}/libhts.a)
 target_link_libraries(vcf-stat z)
 
 

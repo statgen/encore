@@ -48,7 +48,7 @@ include_directories("gasp-utils/include" "${HTSLIB_SRC_DIR}/htslib")
 
 add_executable(vcf-stat gasp-utils/src/vcf_stat.cpp)
 add_dependencies(vcf-stat htslib)
-set_target_properties(vcf-stat PROPERTIES COMPILE_FLAGS -pthread LINK_FLAGS -pthread)
+set_target_properties(vcf-stat PROPERTIES COMPILE_FLAGS "-pthread -fopenmp" LINK_FLAGS "-pthread -fopenmp")
 target_link_libraries(vcf-stat ${HTSLIB_SRC_DIR}/libhts.a)
 target_link_libraries(vcf-stat z)
 

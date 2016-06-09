@@ -3,7 +3,6 @@
 #include <iostream>
 #include <cstdint>
 #include <vector>
-#include <glob.h>
 
 struct vcf_stats
 {
@@ -45,7 +44,7 @@ stat_errc stat_vcf_file(const std::string& file_path, vcf_stats& output)
       output.genotype_count = 0;
 
       bcf1_t* rec = bcf_init1();
-      while (vcf_read(hts_fp, hdr, rec) >= 0)
+      while (bcf_read(hts_fp, hdr, rec) >= 0)
       {
         ++(output.record_count);
         bcf_info_t* ns_info = bcf_get_info(hdr, rec, "NS");
@@ -77,11 +76,18 @@ int main(int argc, char* argv[])
   {
     vcf_stats stats;
 
+    int nthreads = 1;
+
     int arg_itr = 1;
     while (arg_itr < argc)
     {
       if (argv[arg_itr][0] != '-')
         break;
+
+      if (strcmp(argv[arg_itr], "-t") == 0 && ++arg_itr < argc)
+      {
+        nthreads = atoi(argv[arg_itr]);
+      }
 
       ++arg_itr;
     }
@@ -90,26 +96,41 @@ int main(int argc, char* argv[])
     {
       std::cerr << "You must specify a file path." << std::endl;
     }
+    else if (nthreads < 1)
+    {
+      std::cerr << "Invalid number of threads specified." << std::endl;
+    }
     else
     {
-      const std::size_t path_count = (std::size_t)(argc - arg_itr);
+      const int path_offset = arg_itr;
+      const std::size_t path_count = (std::size_t)(argc - path_offset);
+
       std::vector<vcf_stats> stat_array(path_count);
+      std::vector<stat_errc> stat_res_array(path_count, stat_errc::no_error);
 
-      stat_errc res = stat_errc::no_error;
-      for (std::size_t i = 0; i < path_count && res == stat_errc::no_error; ++i) // TODO: parallelize
+      #pragma omp parallel for num_threads(nthreads)
+      for (std::size_t i = 0; i < path_count; ++i)
       {
-        res = stat_vcf_file(argv[arg_itr], stat_array[i]);
+        stat_res_array[i] = stat_vcf_file(argv[path_offset + i], stat_array[i]);
       }
 
-      if (res == stat_errc::file_open_failed)
+      bool all_jobs_succeeded = true;
+      for (std::size_t i = 0; i < path_count; ++i)
       {
-        std::cerr << "Could not open file." << std::endl;
+        if (stat_res_array[i] == stat_errc::file_open_failed)
+        {
+          std::cerr << "Could not open file (" << argv[path_offset + i] << ")." << std::endl;
+          all_jobs_succeeded = false;
+        }
+        else if (stat_res_array[i] == stat_errc::header_read_failed)
+        {
+          std::cerr << "Failed to read header (" << argv[path_offset + i] << ")." << std::endl;
+          all_jobs_succeeded = false;
+        }
       }
-      else if (res == stat_errc::header_read_failed)
-      {
-        std::cerr << "Failed to read header." << std::endl;
-      }
-      else
+
+
+      if (all_jobs_succeeded)
       {
         // merge
         for (auto it = stat_array.begin(); it != stat_array.end(); ++it)

@@ -1,5 +1,6 @@
 
 #include "vcf.h"
+#include "synced_bcf_reader.h"
 #include <iostream>
 #include <cstdint>
 #include <vector>
@@ -17,6 +18,7 @@ enum class stat_errc
 {
   no_error = 0,
   file_open_failed,
+  invalid_file_type,
   header_read_failed
 };
 
@@ -43,18 +45,33 @@ stat_errc stat_vcf_file(const std::string& file_path, vcf_stats& output)
       output.record_count = 0;
       output.genotype_count = 0;
 
-      bcf1_t* rec = bcf_init1();
-      while (bcf_read(hts_fp, hdr, rec) >= 0)
+//        bcf1_t* rec = bcf_init1();
+//        while (bcf_read(hts_fp, hdr, rec) >= 0)
+//        {
+//          ++(output.record_count);
+//          bcf_info_t* ns_info = bcf_get_info(hdr, rec, "NS");
+//          if (ns_info)
+//            output.genotype_count += ns_info->v1.i;
+//        }
+//        bcf_destroy1(rec);
+
+      bcf_srs_t *sr = bcf_sr_init();
+      if (!bcf_sr_add_reader(sr, file_path.c_str()))
       {
-        ++(output.record_count);
-        bcf_info_t* ns_info = bcf_get_info(hdr, rec, "NS");
-        if (ns_info)
-          output.genotype_count += ns_info->v1.i;
+        ret = stat_errc::file_open_failed;
       }
-
-
-
-      bcf_destroy1(rec);
+      else
+      {
+        while ( bcf_sr_next_line(sr) )
+        {
+          bcf1_t* rec = bcf_sr_get_line(sr,0);
+          ++(output.record_count);
+          bcf_info_t* ns_info = bcf_get_info(hdr, rec, "NS");
+          if (ns_info)
+            output.genotype_count += ns_info->v1.i;
+        }
+      }
+      bcf_sr_destroy(sr);
 
       bcf_hdr_destroy(hdr);
     }

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdint>
 #include <vector>
+#include <algorithm>
 
 struct vcf_stats
 {
@@ -52,7 +53,8 @@ stat_errc stat_vcf_file(const std::string& file_path, vcf_stats& output)
           output.genotype_count += ns_info->v1.i;
       }
 
-
+      if (!output.genotype_count)
+        output.genotype_count = output.record_count * output.sample_count;
 
       bcf_destroy1(rec);
 
@@ -136,12 +138,12 @@ int main(int argc, char* argv[])
         for (auto it = stat_array.begin(); it != stat_array.end(); ++it)
         {
           stats.genotype_count += it->genotype_count;
-          stats.sample_count += it->sample_count;
+          stats.sample_count = std::max(stats.sample_count, it->sample_count);
           stats.record_count += it->record_count;
         }
 
         std::cout << "{";
-        std::cout << "\"genotype_count\":" << (stats.genotype_count ? stats.genotype_count : stats.sample_count * stats.record_count) << ",";
+        std::cout << "\"genotype_count\":" << stats.genotype_count  << ",";
         std::cout << "\"sample_count\":" << stats.sample_count << ",";
         std::cout << "\"record_count\":" << stats.record_count;
         std::cout << "}";

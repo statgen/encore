@@ -94,13 +94,10 @@ def make_qq_stratified(variant_lines):
 
     qqs = [dict() for i in range(NUM_MAF_RANGES)]
     for qq_i in range(NUM_MAF_RANGES):
-        slice_indices = (len(variants) * qq_i//4,
-                         len(variants) * (qq_i+1)//NUM_MAF_RANGES - 1)
-        qqs[qq_i]['maf_range'] = (variants[slice_indices[0]].maf,
-                               variants[slice_indices[1]].maf)
-
-        neglog10_pvals = sorted((v.neglog10_pval for v in variants[slice(*slice_indices)]),
-                                reverse=True)
+        slice_indices = (len(variants) * qq_i//4, len(variants) * (qq_i+1)//NUM_MAF_RANGES - 1)
+        qqs[qq_i]['maf_range'] = (variants[slice_indices[0]].maf, variants[slice_indices[1]].maf)
+        neglog10_pvals = sorted((v.neglog10_pval for v in variants[slice(*slice_indices)]), reverse=True)
+        qqs[qq_i]['count'] = len(neglog10_pvals)
 
         occupied_bins = set()
         for i, obs_neglog10_pval in enumerate(neglog10_pvals):

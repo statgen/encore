@@ -6,6 +6,7 @@ import sql_pool
 import MySQLdb
 import uuid
 import subprocess
+import tabix
 #from werkzeug import secure_filename
 
 
@@ -155,3 +156,41 @@ def get_job_output(job_id, filename, as_attach):
             return send_file(output_file_path, as_attachment=as_attach)
         except:
             return "File Not Found", 404
+
+
+def get_job_zoom(job_id):
+    resp = Response(mimetype='application/json')
+    db = sql_pool.get_conn()
+    user = User.from_session_key("user_email", db)
+    if not True: #user:
+        resp.status_code = 401;
+        resp.status = "SESSION EXPIRED"
+    else:
+        tb = tabix.open(os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id, "output.epacts.gz"))
+        chrom = request.args.get("chrom", "")
+        start_pos = int(request.args.get("start_pos", "0"))
+        end_pos = int(request.args.get("end_pos", "0"))
+        results = tb.query(chrom, start_pos, end_pos)
+        json_response_data = dict()
+
+        json_response_data["CHROM"] = []
+        json_response_data["BEGIN"] = []
+        json_response_data["END"] = []
+        json_response_data["MARKER_ID"] = []
+        #json_response_data["NS"] = []
+        #json_response_data["AC"] = []
+        #json_response_data["CALLRATE"] = []
+        json_response_data["MAF"] = []
+        json_response_data["PVALUE"] = []
+        for r in results:
+            json_response_data["CHROM"].append(r[0])
+            json_response_data["BEGIN"].append(r[1])
+            json_response_data["END"].append(r[2])
+            json_response_data["MARKER_ID"].append(r[3])
+            #json_response_data["NS"].append(r[4])
+            #json_response_data["AC"].append(r[5])
+            #json_response_data["CALLRATE"].append(r[6])
+            json_response_data["MAF"].append(r[7])
+            json_response_data["PVALUE"].append(r[8])
+        resp.set_data(json.dumps(json_response_data))
+    return resp

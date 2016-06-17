@@ -55,6 +55,14 @@ def get_job_output(job_id):
         return job_handlers.get_job_output(job_id, "output.epacts.gz", True)
 
 
+@app.route("/jobs/<job_id>/locuszoom/<region>", methods=["GET"])
+def get_job_locuszoom_plot(job_id, region):
+    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
+        return "Not Found", 404
+    else:
+        return job_handlers.get_job_locuszoom_plot(job_id, region)
+
+
 @app.route("/api/jobs", methods=["POST"])
 def post_api_jobs():
     return job_handlers.post_to_jobs()

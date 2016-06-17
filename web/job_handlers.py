@@ -142,6 +142,33 @@ def get_job_details_view(job_id):
 
             return render_template("job_details.html", job=job_data)
 
+def get_job_locuszoom_plot(job_id, region):
+    db = sql_pool.get_conn()
+    user = User.from_session_key("user_email", db)
+    if not user:
+        return redirect("/sign-in")
+    else:
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = """
+            SELECT
+              bin_to_uuid(jobs.id) AS id,
+              jobs.name AS name,
+              statuses.name AS status,
+              jobs.error_message AS error_message,
+              DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
+              DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
+            FROM jobs
+            LEFT JOIN statuses ON jobs.status_id = statuses.id
+            WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
+            """
+        cur.execute(sql, (user.rid, job_id))
+
+        if cur.rowcount == 0:
+            return "Job does not exist.", 404
+        else:
+            job_data = cur.fetchone()
+
+        return render_template("job_locuszoom.html", job=job_data, region=region)
 
 def get_job_output(job_id, filename, as_attach):
     db = sql_pool.get_conn()

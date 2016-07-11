@@ -422,8 +422,8 @@ function create_qq_plot(selector, maf_ranges) {
             })
             .text(function(d) {
                 return fmt('{0} \u2264 MAF < {1} ({2})',
-                    d.maf_range[0].toFixed(2),
-                    d.maf_range[1].toFixed(2),
+                    d.maf_range[0].toFixed(3),
+                    d.maf_range[1].toFixed(3),
                     d.count);
             })
             .style("font-size","14px")

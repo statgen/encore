@@ -51,6 +51,19 @@ stat_errc stat_vcf_file(const std::string& file_path, vcf_stats& output)
         bcf_info_t* ns_info = bcf_get_info(hdr, rec, "NS");
         if (ns_info)
           output.genotype_count += ns_info->v1.i;
+
+        /*int* gt_arr = NULL;
+        int ngt_arr = 0;
+        int ngt = bcf_get_genotypes(hdr, rec, &gt_arr, &ngt_arr);
+        for (int j = 0; j < output.sample_count; ++j)
+        {
+          int* igt = (gt_arr + j * 2);
+          bool missing = (bool)bcf_gt_is_missing(gt_arr[j * 2]);
+          int a = bcf_gt_allele(gt_arr[j * 2]);
+          int b = bcf_gt_allele(gt_arr[j * 2 + 1]);
+          bool phased = (bool)bcf_gt_is_phased(gt_arr[j * 2 + 1]);
+          int foo = a + b;
+        }*/
       }
 
       if (!output.genotype_count)
@@ -152,9 +165,6 @@ int main(int argc, char* argv[])
       }
     }
   }
-
-
-
 
   return ret;
 }

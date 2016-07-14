@@ -91,6 +91,7 @@ bool job_tracker::query_pending_jobs(MYSQL* conn, std::vector<job>& jobs)
 
 void check_for_job_status_update(MYSQL* conn, const std::string& base_path, const job& j)
 {
+  std::string kin_file = base_path + "/vcf_kinship.kin";
   std::string job_directory = base_path + "/" + j.id();
   std::string batch_script_path = job_directory + "/batch_script.sh";
   std::string stdout_path = job_directory + "/out.log";
@@ -172,9 +173,10 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
           << " --ped " << ped_file
           << " --min-maf 0.001 --field GT"
           << " --sepchr"
-          << " --unit 500000 --test q.linear"
+          << " --unit 500000 --test q.emmax"
+          << " --kin " << kin_file
           << " --out " << epacts_output
-          << " --run 24";
+          << " --run 48";
 
           if (!ped_column_names.size())
           {

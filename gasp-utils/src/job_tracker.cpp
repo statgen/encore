@@ -195,7 +195,7 @@ void check_for_job_status_update(MYSQL* conn, const std::string& base_path, cons
             << "#SBATCH --cpus-per-task=48\n"
             << "#SBATCH --workdir=" << job_directory << "\n"
             << "#SBATCH --mem-per-cpu=4000\n"
-            << "#SBATCH --time=2-0\n"
+            << "#SBATCH --time=7-0\n"
             << "#SBATCH --nodes=1\n"
             //<< "#SBATCH --output=" << stdout_path << "\n"
             //<< "#SBATCH --error=" << stderr_path << "\n"

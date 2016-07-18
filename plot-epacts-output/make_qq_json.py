@@ -60,14 +60,14 @@ assert not approx_equal(42, 42.01)
 
 
 Variant = collections.namedtuple('Variant', ['neglog10_pval', 'maf'])
-def parse_variant_line(variant_line):
+def parse_variant_line(variant_line, column_names):
     v = variant_line.split('\t')
     #assert v[1] == v[2]
-    if v[8] == 'NA' or v[9] == 'NA':
-        assert v[8] == 'NA' and v[9] == 'NA'
+    if v[column_names.index("PVALUE")] == 'NA' or v[column_names.index("BETA")] == 'NA':
+        assert v[column_names.index("PVALUE")] == 'NA' and v[column_names.index("BETA")] == 'NA'
     else:
-        chrom, pos, maf, pval, beta, sebeta = v[0], int(v[1]), float(v[7]), float(v[8]), float(v[9]), float(v[10])
-        chrom2, pos2, ref, alt = parse_marker_id(v[3])
+        chrom, pos, maf, pval, beta, sebeta = v[column_names.index("#CHROM")], int(v[column_names.index("BEGIN")]), float(v[column_names.index("MAF")]), float(v[column_names.index("PVALUE")]), float(v[column_names.index("BETA")]), float(v[column_names.index("SEBETA")])
+        chrom2, pos2, ref, alt = parse_marker_id(v[column_names.index("MARKER_ID")])
         assert chrom == chrom2
         assert pos == pos2
         return Variant(-math.log10(pval), maf)
@@ -77,10 +77,10 @@ def rounded(x):
     return round(x // NEGLOG10_PVAL_BIN_SIZE * NEGLOG10_PVAL_BIN_SIZE, NEGLOG10_PVAL_BIN_DIGITS)
 
 Variant = collections.namedtuple('Variant', ['neglog10_pval', 'maf'])
-def make_qq_stratified(variant_lines):
+def make_qq_stratified(variant_lines, column_names):
     variants = []
     for variant_line in variant_lines:
-        variant = parse_variant_line(variant_line)
+        variant = parse_variant_line(variant_line, column_names)
         if variant is not None:
             variants.append(variant)
     variants = sorted(variants, key=lambda v: v.maf)
@@ -174,10 +174,12 @@ assert os.path.exists(os.path.dirname(out_filename))
 
 with gzip.open(epacts_filename) as f:
     header = f.readline().rstrip('\n').split('\t')
-    assert header == ['#CHROM', 'BEGIN', 'END', 'MARKER_ID', 'NS', 'AC', 'CALLRATE', 'MAF', 'PVALUE', 'BETA', 'SEBETA', 'TSTAT', 'R2']
+    if header[1] == "BEG":
+        header[1] = "BEGIN"
+    #assert header == ['#CHROM', 'BEGIN', 'END', 'MARKER_ID', 'NS', 'AC', 'CALLRATE', 'MAF', 'PVALUE', 'BETA', 'SEBETA', 'TSTAT', 'R2']
 
     variant_lines = (line.rstrip('\n') for line in f)
-    rv = make_qq_stratified(variant_lines)
+    rv = make_qq_stratified(variant_lines, header)
 
 with open(out_filename, 'w') as f:
     json.dump(rv, f, sort_keys=True, indent=0)

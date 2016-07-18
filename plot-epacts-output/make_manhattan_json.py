@@ -40,14 +40,14 @@ def parse_marker_id(marker_id):
     return chr1, int(pos1), ref, alt
 
 Variant = collections.namedtuple('Variant', 'chrom pos ref alt maf pval beta sebeta'.split())
-def parse_variant_line(variant_line):
+def parse_variant_line(variant_line, column_names):
     v = variant_line.split('\t')
     #assert v[1] == v[2]
-    if v[8] == 'NA' or v[9] == 'NA':
-        assert v[8] == 'NA' and v[9] == 'NA'
+    if v[column_names.index("PVALUE")] == 'NA' or v[column_names.index("BETA")] == 'NA':
+        assert v[column_names.index("PVALUE")] == 'NA' and v[column_names.index("BETA")] == 'NA'
     else:
-        chrom, pos, maf, pval, beta, sebeta = v[0], int(v[1]), float(v[7]), float(v[8]), float(v[9]), float(v[10])
-        chrom2, pos2, ref, alt = parse_marker_id(v[3])
+        chrom, pos, maf, pval, beta, sebeta = v[column_names.index("#CHROM")], int(v[column_names.index("BEGIN")]), float(v[column_names.index("MAF")]), float(v[column_names.index("PVALUE")]), float(v[column_names.index("BETA")]), float(v[column_names.index("SEBETA")])
+        chrom2, pos2, ref, alt = parse_marker_id(v[column_names.index("MARKER_ID")])
         assert chrom == chrom2
         assert pos == pos2
         return Variant(chrom, pos, ref, alt, maf, pval, beta, sebeta)
@@ -72,13 +72,13 @@ def get_pvals_and_pval_extents(pvals):
             rv_pval_extents.append([start,end])
     return (rv_pvals, rv_pval_extents)
 
-def bin_variants(variant_lines):
+def bin_variants(variant_lines, column_names):
     bins = []
     unbinned_variants = []
 
     prev_chrom, prev_pos = -1, -1
     for variant_line in variant_lines:
-        variant = parse_variant_line(variant_line)
+        variant = parse_variant_line(variant_line, column_names)
         if variant is None: continue
         #assert variant.pos >= prev_pos or int(variant.chrom) > int(prev_chrom), (variant.chrom, variant.pos, prev_chrom, prev_pos) # variant.chrom is not always an integer (eg, X).
         prev_chrom, prev_pos = variant.chrom, variant.pos
@@ -128,10 +128,12 @@ assert os.path.exists(os.path.dirname(out_filename))
 
 with gzip.open(epacts_filename) as f:
     header = f.readline().rstrip('\n').split('\t')
-    assert header == ['#CHROM', 'BEGIN', 'END', 'MARKER_ID', 'NS', 'AC', 'CALLRATE', 'MAF', 'PVALUE', 'BETA', 'SEBETA', 'TSTAT', 'R2']
+    if header[1] == "BEG":
+        header[1] = "BEGIN"
+    #assert header == ['#CHROM', 'BEGIN', 'END', 'MARKER_ID', 'NS', 'AC', 'CALLRATE', 'MAF', 'PVALUE', 'BETA', 'SEBETA', 'TSTAT', 'R2']
 
     variant_lines = (line.rstrip('\n') for line in f)
-    variant_bins, unbinned_variants = bin_variants(variant_lines)
+    variant_bins, unbinned_variants = bin_variants(variant_lines, header)
 
 rv = {
     'variant_bins': variant_bins,

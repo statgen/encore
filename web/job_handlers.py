@@ -7,6 +7,7 @@ import MySQLdb
 import uuid
 import subprocess
 import tabix
+import gzip
 #from werkzeug import secure_filename
 
 
@@ -193,7 +194,14 @@ def get_job_zoom(job_id):
         resp.status_code = 401;
         resp.status = "SESSION EXPIRED"
     else:
-        tb = tabix.open(os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id, "output.epacts.gz"))
+        header = []
+        epacts_filename = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id, "output.epacts.gz")
+        with gzip.open(epacts_filename) as f:
+            header = f.readline().rstrip('\n').split('\t')
+            if header[1] == "BEG":
+                header[1] = "BEGIN"
+        assert len(header) > 0
+        tb = tabix.open(epacts_filename)
         chrom = request.args.get("chrom", "")
         start_pos = int(request.args.get("start_pos", "0"))
         end_pos = int(request.args.get("end_pos", "0"))
@@ -210,14 +218,14 @@ def get_job_zoom(job_id):
         json_response_data["MAF"] = []
         json_response_data["PVALUE"] = []
         for r in results:
-            json_response_data["CHROM"].append(r[0])
-            json_response_data["BEGIN"].append(r[1])
-            json_response_data["END"].append(r[2])
-            json_response_data["MARKER_ID"].append(r[3])
+            json_response_data["CHROM"].append(r[header.index("#CHROM")])
+            json_response_data["BEGIN"].append(r[header.index("BEGIN")])
+            json_response_data["END"].append(r[header.index("END")])
+            json_response_data["MARKER_ID"].append(r[header.index("MARKER_ID")])
             #json_response_data["NS"].append(r[4])
             #json_response_data["AC"].append(r[5])
             #json_response_data["CALLRATE"].append(r[6])
-            json_response_data["MAF"].append(r[7])
-            json_response_data["PVALUE"].append(r[8])
+            json_response_data["MAF"].append(r[header.index("MAF")])
+            json_response_data["PVALUE"].append(r[header.index("PVALUE")])
         resp.set_data(json.dumps(json_response_data))
     return resp

@@ -57,4 +57,5 @@ class Tracker(object):
 
     def start(self):
         self.timer = Timer(self.interval, self.timer_callback)
+        self.timer.daemon = True
         self.timer.start()

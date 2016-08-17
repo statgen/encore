@@ -4,7 +4,6 @@ import job_handlers
 import sign_in_handler
 import re
 import job_tracking
-import signal
 
 APP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC_PATH = os.path.join(APP_ROOT_PATH, 'static')
@@ -130,12 +129,6 @@ def get_job_tmp_manhattan(job_id):
 
 job_tracker = job_tracking.Tracker(30.0, job_tracking.DatabaseCredentials("localhost", app.config.get("MYSQL_USER"), app.config.get("MYSQL_PASSWORD"), app.config.get("MYSQL_DB")))
 job_tracker.start()
-
-def sig_handler(signum, frame):
-    job_tracker.cancel()
-    exit(0)
-signal.signal(signal.SIGTERM, sig_handler)
-signal.signal(signal.SIGINT, sig_handler)
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False, port=8080, host="0.0.0.0");

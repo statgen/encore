@@ -13,11 +13,6 @@ $(document).ready(function()
     });
     $("ul.tabs li:first").click();
 
-    $("#back_arrow").click(function()
-    {
-        window.location = history.go(-1);
-    });
-
     $("button[name=cancel_job]").click(function()
     {
         var xhr = new XMLHttpRequest();

@@ -14,6 +14,10 @@ app = Flask(__name__)
 app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
+@app.route('/favicon.ico')
+def favicon():
+    return app.send_static_file('favicon.ico')
+
 @app.route("/")
 def index():
     return redirect("/jobs")

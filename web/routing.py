@@ -3,6 +3,7 @@ from flask import Flask, render_template, session, send_from_directory, redirect
 import job_handlers
 import sign_in_handler
 import re
+import job_tracking
 
 APP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC_PATH = os.path.join(APP_ROOT_PATH, 'static')
@@ -12,7 +13,6 @@ app = Flask(__name__)
 
 app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
 app.config["PROPAGATE_EXCEPTIONS"] = True
-
 
 @app.route("/")
 def index():
@@ -127,6 +127,8 @@ def get_job_tmp_manhattan(job_id):
 # def internal_error(exception):
 #     return render_template('500.html'), 500
 
+job_tracker = job_tracking.Tracker(30.0, job_tracking.DatabaseCredentials("localhost", app.config.get("MYSQL_USER"), app.config.get("MYSQL_PASSWORD"), app.config.get("MYSQL_DB")))
+job_tracker.start()
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8080, host="0.0.0.0");
+    app.run(debug=True, use_reloader=False, port=8080, host="0.0.0.0");

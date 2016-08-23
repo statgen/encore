@@ -33,9 +33,9 @@ message(WARNING ${MYSQL_LIBRARY})
 
 ExternalProject_Add(htslib
         BUILD_IN_SOURCE 1
-        URL https://github.com/samtools/htslib/releases/download/1.3.1/htslib-1.3.1.tar.bz2
-        #GIT_REPOSITORY "https://github.com/samtools/htslib"
-        #GIT_TAG "1.3.1"
+        #URL https://github.com/samtools/htslib/releases/download/1.3.1/htslib-1.3.1.tar.bz2
+        GIT_REPOSITORY "https://github.com/samtools/htslib"
+        GIT_TAG "1.3.1"
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND autoconf && ./configure --prefix=<INSTALL_DIR>
         BUILD_COMMAND make

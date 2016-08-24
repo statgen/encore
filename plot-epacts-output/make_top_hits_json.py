@@ -10,6 +10,11 @@ import json
 import collections
 from bisect import bisect_right
 
+class NotSortedError(Exception):
+    def __init___(self,dErrorArguments):
+        Exception.__init__(self,"File Not Sorted By Values: {0}".format(dErrArguments))
+        self.dErrorArguments = dErrorArguements
+
 BEDCols = collections.namedtuple('BEDCols', 'start stop name'.split())
 class BEDReader:
     def __init__(self, path):
@@ -70,6 +75,8 @@ class AssocResultReader:
         marker_id = cols[self.filecols["MARKER_ID"]]
         chrom, pos, ref, alt, name = re.match(r'([^:]+):([0-9]+)_([-ATCG]+)/([-ATCG]+)(?:_(.+))?', marker_id).groups()
         pval = cols[self.filecols["PVALUE"]]
+        if pval=="NA":
+            pval="nan"
         return AssocResult(chrom, int(pos), ref, alt, float(pval), name)
 
     def __iter__(self):
@@ -108,9 +115,14 @@ def is_in_bin(rbin, result, window=3e6):
             return True
     return False
 
-def process_file(results, output, window=5e5, sig_pvalue=5e-8, max_bins=500, nearest_gene=None):
+def process_file(results, window=5e5, sig_pvalue=5e-8, max_sites = 5000, max_bins=500, nearest_gene=None):
     bins=[]
+    last_pval = None
     for result in results:
+        if last_pval is not None:
+            if result.pval < last_pval:
+                raise NotSortedError("input must be sorted by p-value")
+        last_pval = result.pval
         for rbin in bins:
             if is_in_bin(rbin, result, window=window):
                 rbin['assoc'].append(result)
@@ -119,7 +131,7 @@ def process_file(results, output, window=5e5, sig_pvalue=5e-8, max_bins=500, nea
             if len(bins) >= max_bins:
                 break
             newbin = dict(chrom = result.chrom,
-                peak = result.pos,
+                pos = result.pos,
                 pval = result.pval,
                 start = int(result.pos-window), 
                 stop = int(result.pos+window),
@@ -134,14 +146,17 @@ def process_file(results, output, window=5e5, sig_pvalue=5e-8, max_bins=500, nea
             bins.append(newbin)
     for rbin in bins:
         rbin['sig_count'] = sum(x.pval < sig_pvalue for x in rbin['assoc'])
+        rbin['snp_count'] = len(rbin['assoc'])
         del rbin['assoc']
-    output.write(bins)
+    return bins
 
 if __name__ == "__main__":
     import argparse
     argp = argparse.ArgumentParser(description='Create JSON file of top hits.')
     argp.add_argument('--bins','-b', help="Maximum number of bins to return", 
-        type=int, default=500)
+        type=int, default=250)
+    argp.add_argument('--sites','-s', help="Maximum number of sites to scan", 
+        type=int, default=5000)
     argp.add_argument('--sig-pvalue','-p', help="P-value significance threshold", 
         type=float, default = 5e-8)
     argp.add_argument('--window', '-w', help="Window size (in bases) to collapse peaks",
@@ -157,4 +172,5 @@ if __name__ == "__main__":
         nearest_gene = None
 
     with AssocResultReader(args.infile) as inf, JSONOutFile(args.outfile) as outf:
-        process_file(inf, outf, args.window, args.sig_pvalue, args.bins, nearest_gene)
+        bins = process_file(inf, args.window, args.sig_pvalue, args.sites, args.bins, nearest_gene)
+        outf.write(dict(data=bins))

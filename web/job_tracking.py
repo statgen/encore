@@ -2,6 +2,7 @@ import MySQLdb
 from threading import Timer
 from datetime import datetime
 import sys
+import subprocess
 
 class Job(object):
     def __init__(self, rid, status):
@@ -27,28 +28,61 @@ class Tracker(object):
 
         sql = ("SELECT bin_to_uuid(jobs.id) AS id, statuses.name AS status FROM jobs "
                "LEFT JOIN statuses ON statuses.id = jobs.status_id "
-               "WHERE (statuses.name='created' OR statuses.name='queued' OR statuses.name='started' OR statuses.name='cancel_requested')")
+               "WHERE (statuses.name='created' OR statuses.name='queued' OR statuses.name='started')")
 
         cur = db.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute(sql)
         jobs = []
         for x in xrange(0, cur.rowcount):
             row = cur.fetchone()
             jobs.append(Job(row["id"], row["status"]))
-
         return jobs
 
     @staticmethod
-    def check_for_job_status_update(db, job):
-        return True
+    def update_job_status(db, job, slurm_status, exit_code):
+        status = ""
+        if slurm_status == "RUNNING":
+            status = "started"
+        elif slurm_status == "CANCELLED":
+            status = "canceled"
+        elif slurm_status == "PENDING" or slurm_status == "QUEUED":
+            status = "queued"
+        elif slurm_status == "PREEMPTED" or slurm_status == "FAILED" or slurm_status == "TIMEOUT" or slurm_status == "NODE_FAIL":
+            status = "failed"
+        elif slurm_status == "COMPLETED":
+            status = "succeeded"
+
+        if status:
+            cur = db.cursor(MySQLdb.cursors.DictCursor)
+            sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1), modified_date = NOW() WHERE id = uuid_to_bin(%s)"
+            cur.execute(sql, (status, job.id))
+            db.commit()
+
+    @staticmethod
+    def update_job_statuses(db, jobs):
+        job_ids_param = ",".join(str(x.id) for x in jobs)
+        p = subprocess.Popen(["/usr/cluster/squeue", "-j", job_ids_param, "-O", "jobid,state,exit_code", "--noheader"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        squeue_out, squeue_err = p.communicate()
+
+        fake_data = """29646434            PENDING             0
+29646435            COMPLETED             0
+"""
+
+        for line in squeue_out.split("\n"):
+            slurm_job = line.strip().split()
+            for j in jobs:
+                if slurm_job[0] == j.id:
+                    Tracker.update_job_status(db, j, slurm_job[1], slurm_job[2])
+                    break
 
     def routine(self):
         db = MySQLdb.connect(host=self.credentials.host, user=self.credentials.user, passwd=self.credentials.pw, db=self.credentials.db)
         jobs = Tracker.query_pending_jobs(db)
-        for j in jobs:
-            Tracker.check_for_job_status_update(db, j)
+        if len(jobs) == 0:
+            Tracker.update_job_statuses(db, jobs)
+
 
     def timer_callback(self):
-        sys.stderr.write(str(datetime.now()) + "\n")
         self.routine()
         self.start()
 

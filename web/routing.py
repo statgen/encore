@@ -4,6 +4,7 @@ import job_handlers
 import sign_in_handler
 import re
 import job_tracking
+import atexit
 
 APP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC_PATH = os.path.join(APP_ROOT_PATH, 'static')
@@ -129,6 +130,11 @@ def get_job_tmp_manhattan(job_id):
 
 job_tracker = job_tracking.Tracker(30.0, job_tracking.DatabaseCredentials("localhost", app.config.get("MYSQL_USER"), app.config.get("MYSQL_PASSWORD"), app.config.get("MYSQL_DB")))
 job_tracker.start()
+
+def on_exit():
+    job_tracker.cancel()
+
+atexit.register(on_exit)
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False, port=8080, host="0.0.0.0");

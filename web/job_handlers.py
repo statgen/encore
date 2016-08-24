@@ -70,6 +70,7 @@ def post_to_jobs():
                         resp.set_data(json.dumps({"id": job_id}))
     return resp
 
+
 def get_jobs():
     resp = Response(mimetype='application/json')
     db = sql_pool.get_conn()
@@ -105,13 +106,24 @@ def cancel_job(job_id):
         return redirect("/sign-in")
     else:
         resp = Response(mimetype='application/json')
+
         cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name='cancel_requested' LIMIT 1) WHERE id = uuid_to_bin(%s) AND user_id = %s"
+        sql = "SELECT id FROM jobs WHERE id = uuid_to_bin(%s) AND user_id = %s"
         cur.execute(sql, (job_id, user.rid))
         db.commit()
         if cur.rowcount == 0:
             resp.status_code = 404
             resp.status = "JOB NOT FOUND"
+        else:
+            job_id_path = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id, "/batch_script_output.txt")
+
+            with open(job_id_path, 'r') as f:
+                slurm_job_id = f.readline()
+
+            if subprocess.call("scancel " + slurm_job_id):
+                resp.status_code = 500
+                resp.status = "JOB CANCELLATION FAILED"
+
         return resp
 
 
@@ -143,6 +155,7 @@ def get_job_details_view(job_id):
 
             return render_template("job_details.html", job=job_data)
 
+
 def get_job_locuszoom_plot(job_id, region):
     db = sql_pool.get_conn()
     user = User.from_session_key("user_email", db)
@@ -170,6 +183,7 @@ def get_job_locuszoom_plot(job_id, region):
             job_data = cur.fetchone()
 
         return render_template("job_locuszoom.html", job=job_data, region=region)
+
 
 def get_job_output(job_id, filename, as_attach):
     db = sql_pool.get_conn()

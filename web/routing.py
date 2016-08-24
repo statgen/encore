@@ -15,6 +15,10 @@ app = Flask(__name__)
 app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
+@app.route('/favicon.ico')
+def favicon():
+    return app.send_static_file('favicon.ico')
+
 @app.route("/")
 def index():
     return redirect("/jobs")
@@ -107,6 +111,12 @@ def get_api_job_zoom(job_id):
     else:
         return job_handlers.get_job_zoom(job_id)
 
+@app.route("/api/jobs/<job_id>/tables/top", methods=["GET"])
+def get_api_job_tophits(job_id):
+    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
+        return "Not Found", 404
+    else:
+        return job_handlers.get_job_output(job_id, "tophits.json", False)
 
 @app.route("/jobs/<job_id>/plots/tmp-qq", methods=["GET"])
 def get_job_tmp_qq(job_id):

@@ -13,11 +13,6 @@ $(document).ready(function()
     });
     $("ul.tabs li:first").click();
 
-    $("#back_arrow").click(function()
-    {
-        window.location = history.go(-1);
-    });
-
     $("button[name=cancel_job]").click(function()
     {
         var xhr = new XMLHttpRequest();
@@ -49,6 +44,26 @@ $(document).ready(function()
          });*/
         create_qq_plot("#tab2", data);
     });
+	$.getJSON("/api/jobs/" + job_id + "/tables/top").done(function(data) {
+		var table = $("#tophits").DataTable( {
+			data: data,
+			columns: [
+				{data: "chrom", title:"Chrom"},
+				{data: "peak", title:"Position"},
+				{data: "name", title:"Variant"},
+				{data: "pval", title:"Most Significant P-Value", render:function(data) {return data.toExponential(2)}},
+				{data: "sig_count", title:"# Significant Hits"},
+				{data: "gene", title:"Nearest gene"}
+			],
+			order: [[3, "asc"]]
+		})
+		$("#tophits").on("click","tr",function(event) {
+			var data = table.row(this).data()
+			jumpToLocusZoom(data.chrom, data.peak);
+		})
+	}).fail(function() {
+		$("ul.tabs li[rel='tab3'").remove()
+	});
 });
 
 jumpToLocusZoom = function(chr, pos) {

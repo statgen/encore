@@ -3,3 +3,6 @@
 venv/
 *.wsgi
 flask_config.py
+*.pyc
+bin/
+build/

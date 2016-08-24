@@ -28,7 +28,7 @@ class Tracker(object):
 
         sql = ("SELECT bin_to_uuid(jobs.id) AS id, statuses.name AS status FROM jobs "
                "LEFT JOIN statuses ON statuses.id = jobs.status_id "
-               "WHERE (statuses.name='created' OR statuses.name='queued' OR statuses.name='started')")
+               "WHERE (statuses.name='queued' OR statuses.name='started')")
 
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         cur.execute(sql)

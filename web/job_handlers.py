@@ -60,14 +60,56 @@ def post_to_jobs():
                         resp.status_code = 400
                         resp.set_data(json.dumps({"error": err.upper()}))
                     else:
-                        cur = db.cursor()
-                        cur.execute("""
-                            INSERT INTO jobs (id, name, user_id, status_id)
-                            VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'created'))
-                            """, (job_id, request.form["job_name"], user.rid))
-                        db.commit()
 
-                        resp.set_data(json.dumps({"id": job_id}))
+                        with open(ped_file_path) as f:
+                            ped_header_line = f.readline()
+
+                        ped_column_names = ped_header_line.strip().split()
+
+                        kin_file = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), "vcf_kinship.kin")
+
+
+
+                        analysis_cmd = current_app.config.get("ANALYSIS_BINARY", "epacts") + " single"
+                        analysis_cmd += " --vcf " + current_app.config.get("VCF_FILE")
+                        analysis_cmd += " --ped " + ped_file_path
+                        analysis_cmd += " --min-maf 0.001 --field GT"
+                        analysis_cmd += " --sepchr"
+                        analysis_cmd += " --unit 500000 --test q.emmax"
+                        analysis_cmd += " --kin " + kin_file
+                        analysis_cmd += " --out ./output"
+                        analysis_cmd += " --run 48"
+
+                        batch_script_path = os.path.join(job_directory, "batch_script.sh")
+
+                        with open(batch_script_path, "w+") as f:
+                            f.write("#!/bin/bash\n")
+                            f.write("#SBATCH --job-name=gasp_" + job_id + "\n")
+                            f.write("#SBATCH --cpus-per-task=48\n")
+                            f.write("#SBATCH --workdir=" + job_directory + "\n")
+                            f.write("#SBATCH --mem-per-cpu=4000\n")
+                            f.write("#SBATCH --time=14-0\n")
+                            f.write("#SBATCH --nodes=1\n")
+                            f.write("\n")
+                            f.write(analysis_cmd + " 2> ./err.log 1> ./out.log\n")
+                            f.write("EXIT_STATUS=$?\n")
+                            f.write("if [ $EXIT_STATUS == 0 ]; then\n")
+                            f.write("  " + current_app.config.get("MANHATTAN_BINARY") + " ./output.epacts.gz ./manhattan.json\n")
+                            f.write("  " + current_app.config.get("QQPLOT_BINARY") + " ./output.epacts.gz ./qq.json\n")
+                            f.write("fi\n")
+                            f.write("echo $EXIT_STATUS > ./exit_status.txt\n")
+
+                        if subprocess.call(current_app.config.get("QUEUE_JOB_BINARY", "sbatch") + " " + batch_script_path + " > " + os.path.join(job_directory + "batch_script_output.txt")):
+                            resp.status_code = 500
+                            resp.set_data(json.dumps({"error": "An error occurred while scheduling job."}))
+                        else:
+                            cur = db.cursor()
+                            cur.execute("""
+                                INSERT INTO jobs (id, name, user_id, status_id)
+                                VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'queued'))
+                                """, (job_id, request.form["job_name"], user.rid))
+                            db.commit()
+                            resp.set_data(json.dumps({"id": job_id}))
     return resp
 
 
@@ -205,7 +247,7 @@ def get_job_zoom(job_id):
     db = sql_pool.get_conn()
     user = User.from_session_key("user_email", db)
     if not True: #user:
-        resp.status_code = 401;
+        resp.status_code = 401
         resp.status = "SESSION EXPIRED"
     else:
         header = []

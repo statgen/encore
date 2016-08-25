@@ -98,6 +98,7 @@ def post_to_jobs():
                             f.write("  " + current_app.config.get("QQPLOT_BINARY") + " ./output.epacts.gz ./qq.json\n")
                             f.write("fi\n")
                             f.write("echo $EXIT_STATUS > ./exit_status.txt\n")
+                            f.write("exit $EXIT_STATUS\n")
 
                         if subprocess.call(current_app.config.get("QUEUE_JOB_BINARY", "sbatch") + " " + batch_script_path + " > " + os.path.join(job_directory, "batch_script_output.txt"), shell=True):
                             resp.status_code = 500

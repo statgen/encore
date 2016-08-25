@@ -62,7 +62,7 @@ class Tracker(object):
     @staticmethod
     def update_job_statuses(db, jobs):
         # job_names_param = ",".join("gasp_" + x.id for x in jobs)
-        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", os.environ["USER"], "-O", "jobid,state,exitcode,jobname", "--noheader", "-P"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", os.environ["USER"], "--format", "jobid,state,exitcode,jobname", "--noheader", "-P"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         squeue_out, squeue_err = p.communicate()
 
         fake_data = """29646434            PENDING             0
@@ -70,16 +70,17 @@ class Tracker(object):
 """
 
         for line in squeue_out.split("\n"):
-            slurm_job = line.strip().split("|")
-            for j in jobs:
-                if slurm_job[3][5:] == j.id:
-                    Tracker.update_job_status(db, j, slurm_job[1], slurm_job[2])
-                    break
+            if line:
+                slurm_job = line.strip().split("|")
+                for j in jobs:
+                    if slurm_job[3][5:] == j.id:
+                        Tracker.update_job_status(db, j, slurm_job[1], slurm_job[2])
+                        break
 
     def routine(self):
         db = MySQLdb.connect(host=self.credentials.host, user=self.credentials.user, passwd=self.credentials.pw, db=self.credentials.db)
         jobs = Tracker.query_pending_jobs(db)
-        if len(jobs) == 0:
+        if len(jobs) != 0:
             Tracker.update_job_statuses(db, jobs)
 
 

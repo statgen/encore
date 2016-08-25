@@ -99,7 +99,7 @@ def post_to_jobs():
                             f.write("fi\n")
                             f.write("echo $EXIT_STATUS > ./exit_status.txt\n")
 
-                        if subprocess.call(current_app.config.get("QUEUE_JOB_BINARY", "sbatch") + " " + batch_script_path + " > " + os.path.join(job_directory + "batch_script_output.txt")):
+                        if subprocess.call(current_app.config.get("QUEUE_JOB_BINARY", "sbatch") + " " + batch_script_path + " > " + os.path.join(job_directory, "batch_script_output.txt"), shell=True):
                             resp.status_code = 500
                             resp.set_data(json.dumps({"error": "An error occurred while scheduling job."}))
                         else:

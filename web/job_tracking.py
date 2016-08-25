@@ -3,6 +3,7 @@ from threading import Timer
 from datetime import datetime
 import sys
 import subprocess
+import os
 
 class Job(object):
     def __init__(self, rid, status):
@@ -60,8 +61,8 @@ class Tracker(object):
 
     @staticmethod
     def update_job_statuses(db, jobs):
-        job_ids_param = ",".join(str(x.id) for x in jobs)
-        p = subprocess.Popen(["/usr/cluster/squeue", "-j", job_ids_param, "-O", "jobid,state,exit_code", "--noheader"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # job_names_param = ",".join("gasp_" + x.id for x in jobs)
+        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", os.environ["USER"], "-O", "jobid,state,exitcode,jobname", "--noheader", "-P"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         squeue_out, squeue_err = p.communicate()
 
         fake_data = """29646434            PENDING             0
@@ -69,9 +70,9 @@ class Tracker(object):
 """
 
         for line in squeue_out.split("\n"):
-            slurm_job = line.strip().split()
+            slurm_job = line.strip().split("|")
             for j in jobs:
-                if slurm_job[0] == j.id:
+                if slurm_job[3][5:] == j.id:
                     Tracker.update_job_status(db, j, slurm_job[1], slurm_job[2])
                     break
 

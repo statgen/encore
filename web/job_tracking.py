@@ -61,7 +61,7 @@ class Tracker(object):
     @staticmethod
     def update_job_statuses(db, jobs):
         job_ids_param = ",".join(str(x.id) for x in jobs)
-        p = subprocess.Popen(["/usr/cluster/squeue", "-j", job_ids_param, "-O", "jobid,state,exit_code", "--noheader"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(["/usr/cluster/bin/squeue", "-j", job_ids_param, "-O", "jobid,state,exit_code", "--noheader"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         squeue_out, squeue_err = p.communicate()
 
         fake_data = """29646434            PENDING             0

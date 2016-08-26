@@ -12,6 +12,14 @@ downloaded.  By optimizing the most common analyses and providing rich ways to
 interact with results, Encore offers an exciting platform to investigate
 genetic hypotheses.
 
+# Installing python modules
+
+To install all the required python modules use
+
+     # If using a virtual environment, activate it first
+	 # source venv/bin/activate
+     pip install -r requirements.txt
+
 # Building Executable tools
 
      mkdir build

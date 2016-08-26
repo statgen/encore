@@ -103,7 +103,7 @@ $(document).ready(function()
 				{data: "gene", title:"Nearest gene",
 					className: "dt-body-center"
 				},
-				{data: "peak", title:"Plot",
+				{data: "pos", title:"Plot",
 					render:function(data, type, row) {
 						var fn = "event.preventDefault();" + 
 							"jumpToLocusZoom(\"" + row.chrom + "\"," + data + ")";

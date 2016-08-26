@@ -1,12 +1,16 @@
 import MySQLdb
 from flask import session
+from flask_login import UserMixin
 
 
-class User(object):
-    def __init__(self, email, rid=None):
+class User(UserMixin):
+
+    def __init__(self, email, rid):
         self.email = email
         self.rid = rid
 
+    def get_id(self):
+        return self.email
 
     @staticmethod
     def from_email(email, db):

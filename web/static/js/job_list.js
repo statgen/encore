@@ -82,7 +82,7 @@ function bind_table_rows() {
 }
 
 function init_job_list(data_url) {
-	data_url = "/api/jobs";
+	data_url = data_url || "/api/jobs";
     var xhr = new XMLHttpRequest();
     xhr.addEventListener("load", function(ev)
     {

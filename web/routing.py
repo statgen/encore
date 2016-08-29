@@ -103,6 +103,12 @@ def get_api_jobs():
     return job_handlers.get_jobs()
 
 
+@app.route("/api/jobs-all", methods=["GET"])
+@login_required
+@admin_required
+def get_api_jobs_all():
+    return job_handlers.get_all_jobs()
+
 @app.route("/api/jobs/<job_id>", methods=["GET"])
 @login_required
 def get_api_job(job_id):

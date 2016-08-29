@@ -115,6 +115,24 @@ def get_jobs():
     resp.set_data(json.dumps(results))
     return resp
 
+def get_all_jobs():
+    resp = Response(mimetype='application/json')
+    db = sql_pool.get_conn()
+    cur = db.cursor(MySQLdb.cursors.DictCursor)
+    sql = """
+        SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%Y-%m-%d %H:%i:%s') AS modified_date,
+        users.email as user_email
+        FROM jobs
+        LEFT JOIN statuses ON jobs.status_id = statuses.id
+        LEFT JOIN users ON jobs.user_id = users.id
+        ORDER BY jobs.creation_date DESC
+        """
+    cur.execute(sql)
+    results = cur.fetchall()
+    resp.set_data(json.dumps(results))
+    return resp
+
+
 
 def get_job(job_id):
     resp = Response(mimetype='application/json')

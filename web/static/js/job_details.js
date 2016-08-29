@@ -1,8 +1,5 @@
 
-$(document).ready(function()
-{
-    var job_id = /^\/jobs\/(.*)$/.exec(window.location.pathname)[1];
-
+function init_job_tabs() {
     $("ul.tabs li").click(function()
     {
         $("ul.tabs li").removeClass("active");
@@ -12,8 +9,11 @@ $(document).ready(function()
         $("#"+activeTab).css("z-index", "0");
     });
     $("ul.tabs li:first").click();
+}
 
-    $("button[name=cancel_job]").click(function()
+function init_job_cancel_button(job_id, selector) {
+	selector = selector || "button[name=cancel_job]";
+    $(selector).click(function()
     {
         var xhr = new XMLHttpRequest();
         xhr.addEventListener("load", function(ev)
@@ -25,18 +25,25 @@ $(document).ready(function()
         xhr.open("POST", "/api/jobs/" + job_id + "/cancel_request");
         xhr.send();
     });
+}
 
-
+function init_manhattan(job_id, selector) {
+	selector = selector || "#tab1";
     $.getJSON("/api/jobs/" + job_id + "/plots/manhattan").done(function(variants)
     {
-        create_gwas_plot("#tab1", variants.variant_bins, variants.unbinned_variants, function(chrom, pos, ref, alt)
+        create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, function(chrom, pos, ref, alt)
         {
             console.log(chrom, pos, ref, alt);
-			jumpToLocusZoom(chrom, pos);
+			jumpToLocusZoom(job_id, chrom, pos);
         });
 
     });
-    $.getJSON("/api/jobs/" + job_id + "/plots/qq").done(function(data)
+}
+
+function init_qqplot(job_id, selector, data_url) {
+	selector = selector || "#tab2";
+	data_url = data_url || "/api/jobs/" + job_id + "/plots/qq"; 
+    $.getJSON(data_url).done(function(data)
     {
         /*_.sortBy(_.pairs(data.overall.gc_lambda)).forEach(function(d)
          {
@@ -44,7 +51,12 @@ $(document).ready(function()
          });*/
         create_qq_plot("#tab2", data);
     });
-	$.getJSON("/api/jobs/" + job_id + "/tables/top").done(function(data) {
+}
+
+function init_tophits(job_id, selector, data_url) {
+	selector = selector || "#tophits";
+	data_url = data_url|| "/api/jobs/" + job_id + "/tables/top"
+	$.getJSON(data_url).done(function(data) {
 		data = data.data || data
 		chrpos = {};
 		var i=0;
@@ -63,7 +75,7 @@ $(document).ready(function()
 				data[j].chrom_sort = chrpos[chr] = i++
 			}
 		}
-		var table = $("#tophits").DataTable( {
+		var table = $(selector).DataTable( {
 			data: data,
 			columns: [
 				{data: null, title:"Chrom",
@@ -106,7 +118,7 @@ $(document).ready(function()
 				{data: "pos", title:"Plot",
 					render:function(data, type, row) {
 						var fn = "event.preventDefault();" + 
-							"jumpToLocusZoom(\"" + row.chrom + "\"," + data + ")";
+							"jumpToLocusZoom(\"" + job_id + "\",\"" + row.chrom + "\"," + data + ")";
 						return "<a href='#' onclick='" + fn + "'>View</a>"
 					},
 					orderable: false,
@@ -125,11 +137,13 @@ $(document).ready(function()
 	}).fail(function() {
 		$("ul.tabs li[rel='tab3'").remove()
 	});
-});
+};
 
-jumpToLocusZoom = function(chr, pos) {
+jumpToLocusZoom = function(job_id, chr, pos) {
 	if (job_id && chr && pos) {
 		var region = chr + ":" + (pos-100000) + "-" + (pos+100000);
 		document.location.href = "/jobs/" + job_id + "/locuszoom/" + region;
 	}
 }
+
+

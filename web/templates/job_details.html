@@ -16,7 +16,14 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/plot.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/job_details.js') }}"></script>
 	<script type="text/javascript">
-		job_id = "{{ job.id }}";
+		job_id = "{{ job.id }}"
+		$(document).ready(function() {
+			init_job_tabs();
+			init_job_cancel_button(job_id);
+			init_manhattan(job_id);
+			init_qqplot(job_id);
+			init_tophits(job_id);
+		});
 	</script>
 	<style>
 		svg .variant_points a {cursor: pointer}

@@ -4,6 +4,7 @@ from datetime import datetime
 import sys
 import subprocess
 import os
+import datetime
 
 class Job(object):
     def __init__(self, rid, status):
@@ -62,7 +63,7 @@ class Tracker(object):
     @staticmethod
     def update_job_statuses(db, jobs):
         # job_names_param = ",".join("gasp_" + x.id for x in jobs)
-        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", os.environ["USER"], "--format", "jobid,state,exitcode,jobname", "--noheader", "-P"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", os.environ["USER"], "--format", "jobid,state,exitcode,jobname", "--noheader", "-P", "-S", (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         squeue_out, squeue_err = p.communicate()
 
         fake_data = """29646434            PENDING             0

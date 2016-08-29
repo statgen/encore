@@ -1,10 +1,11 @@
 import os
 from flask import Flask, render_template, session, send_from_directory, redirect, send_file, url_for
-from flask_login import LoginManager, login_required
+from flask_login import LoginManager, login_required, current_user
 import job_handlers
 import sign_in_handler
 import re
 import job_tracking
+from functools import wraps
 import atexit
 
 APP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -18,6 +19,15 @@ app.config["PROPAGATE_EXCEPTIONS"] = True
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_admin():
+            return "You do not have access", 403 
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 @login_manager.user_loader
 def user_loader(email):
@@ -156,6 +166,11 @@ def get_job_tmp_manhattan(job_id):
     else:
         return job_handlers.get_job_output(job_id, "output.epacts.mh.pdf", False)
 
+@app.route("/admin", methods=["GET"])
+@login_required
+@admin_required
+def get_admin_page():
+    return job_handlers.get_admin_main_page()
 
 # @app.errorhandler(500)
 # def internal_error(exception):

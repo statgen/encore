@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+{% block header %}
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
+
+    <script id="table_row_tmpl" type="x-tmpl">
+        <tr>
+            <th>Job Name</th>
+            <th>Date Created</th>
+            <th>Status</th>
+        </tr>
+        <% jobs.forEach(function(j) { %>
+        <tr data-id="<%= j.id; %>">
+            <td><%= j.name; %></td>
+            <td><%= j.creation_date; %></td>
+            <td><%= j.status; %></td>
+        </tr>
+        <% }); %>
+        <% if (jobs.length === 0) { %>
+        <tr>
+            <td colspan="4" align="center">No jobs were found.</td>
+        </tr>
+        <% } %>
+    </script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/ejs.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/job_list.js') }}"></script>
+{% endblock %}
+{% block content %}
+
+        <div class="section">
+            <div class="section-title">
+                <h2>Jobs</h2>
+            </div>
+            <table id="jobs_table">
+                <tr>
+                    <th>Job Name</th>
+                    <th>Date Created</th>
+                    <th>Status</th>
+                </tr>
+                <!--<tr>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                </tr>
+                <tr>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                </tr>-->
+                <tr>
+                    <td colspan="3" align="center">Loading ...</td>
+                </tr>
+            </table>
+        </div>
+{% endblock %}

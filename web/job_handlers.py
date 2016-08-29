@@ -242,3 +242,8 @@ def get_job_zoom(job_id):
         json_response_data["PVALUE"].append(r[header.index("PVALUE")])
     resp.set_data(json.dumps(json_response_data))
     return resp
+
+def get_admin_main_page():
+    return render_template("admin_main.html")
+
+

@@ -178,6 +178,16 @@ def get_job_tmp_manhattan(job_id):
 def get_admin_page():
     return job_handlers.get_admin_main_page()
 
+@app.route("/admin/log/<job_id>/<log_name>", methods=["GET"])
+@login_required
+@admin_required
+def get_job_log(job_id, log_name):
+    if log_name in ["err.log","out.log"]:
+        return job_handlers.get_job_output(job_id, log_name, mimetype="text/plain")
+    else:
+        return "Not Found", 404
+
+
 # @app.errorhandler(500)
 # def internal_error(exception):
 #     return render_template('500.html'), 500

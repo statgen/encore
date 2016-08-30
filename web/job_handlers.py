@@ -213,11 +213,11 @@ def get_job_locuszoom_plot(job_id, region):
     return render_template("job_locuszoom.html", job=job_data, region=region)
 
 
-def get_job_output(job_id, filename, as_attach):
+def get_job_output(job_id, filename, as_attach=False, mimetype=None):
     try:
         job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
         output_file_path = os.path.join(job_directory, filename)
-        return send_file(output_file_path, as_attachment=as_attach)
+        return send_file(output_file_path, as_attachment=as_attach, mimetype=mimetype)
     except:
         return "File Not Found", 404
 

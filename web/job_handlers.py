@@ -8,6 +8,9 @@ import uuid
 import subprocess
 import tabix
 import gzip
+import glob
+import re
+import time
 #from werkzeug import secure_filename
 
 def get_job_list_view():
@@ -133,11 +136,22 @@ def get_all_jobs():
     return resp
 
 
-
-def get_job(job_id):
-    resp = Response(mimetype='application/json')
-    return resp
-
+def get_job_chunks(job_id):
+    job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
+    output_file_glob = os.path.join(job_directory, "output.*.epacts")
+    files = glob.glob(output_file_glob)
+    if len(files):
+        chunks = []
+        p = re.compile(r'output.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.epacts$')
+        print files
+        for file in files:
+            m = p.search(file)
+            chunk = dict(m.groupdict())
+            chunk['modified'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file)))
+            chunks.append(chunk)
+        return chunks
+    else:
+        return []
 
 def cancel_job(job_id):
     db = sql_pool.get_conn()
@@ -264,4 +278,7 @@ def get_job_zoom(job_id):
 def get_admin_main_page():
     return render_template("admin_main.html")
 
-
+def send_as_json(data):
+    resp = Response(mimetype='application/json')
+    resp.set_data(json.dumps(data))
+    return resp

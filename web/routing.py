@@ -127,7 +127,7 @@ def get_api_job_qq(job_id):
     if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
         return "Not Found", 404
     else:
-        return job_handlers.get_job_output(job_id, "qq.json", False)
+        return job_handlers.get_job_output(job_id, "qq.json")
 
 
 @app.route("/api/jobs/<job_id>/plots/manhattan", methods=["GET"])
@@ -136,7 +136,7 @@ def get_api_job_manhattan(job_id):
     if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
         return "Not Found", 404
     else:
-        return job_handlers.get_job_output(job_id, "manhattan.json", False)
+        return job_handlers.get_job_output(job_id, "manhattan.json")
 
 
 @app.route("/api/jobs/<job_id>/plots/zoom", methods=["GET"])
@@ -154,6 +154,11 @@ def get_api_job_tophits(job_id):
         return "Not Found", 404
     else:
         return job_handlers.get_job_output(job_id, "tophits.json", False)
+
+@app.route("/api/jobs/<job_id>/chunks", methods=["GET"])
+@login_required
+def get_api_job_chuncks(job_id):
+   return job_handlers.send_as_json(job_handlers.get_job_chunks(job_id))
 
 @app.route("/jobs/<job_id>/plots/tmp-qq", methods=["GET"])
 @login_required

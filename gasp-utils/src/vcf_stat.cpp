@@ -25,14 +25,14 @@ stat_errc stat_vcf_file(const std::string& file_path, vcf_stats& output)
 {
   stat_errc ret = stat_errc::no_error;
 
-  htsFile* hts_fp = vcf_open(file_path.c_str(), "r");
+  htsFile* hts_fp = bcf_open(file_path.c_str(), "r");
   if (!hts_fp)
   {
     ret = stat_errc::file_open_failed;
   }
   else
   {
-    bcf_hdr_t* hdr = vcf_hdr_read(hts_fp);
+    bcf_hdr_t* hdr = bcf_hdr_read(hts_fp);
 
     if (!hdr)
     {
@@ -74,7 +74,7 @@ stat_errc stat_vcf_file(const std::string& file_path, vcf_stats& output)
       bcf_hdr_destroy(hdr);
     }
 
-    vcf_close(hts_fp);
+    bcf_close(hts_fp);
   }
 
   return ret;

@@ -1,5 +1,5 @@
 import MySQLdb
-from flask import session
+from flask import session, current_app
 from flask_login import UserMixin
 
 
@@ -11,6 +11,18 @@ class User(UserMixin):
 
     def get_id(self):
         return self.email
+
+    def can_view_job(self, job_id, db):
+        if self.is_admin():
+            return True
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute("SELECT user_id FROM jobs WHERE user_id=%s and job_id=%s", (self.rid, job_id,))
+        if cur.rowcount > 0:
+            return True
+        return False
+
+    def is_admin(self):
+        return self.email in current_app.config.get("ADMIN_USERS",[]) 
 
     @staticmethod
     def from_email(email, db):

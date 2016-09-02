@@ -191,7 +191,7 @@ def get_job_details_view(job_id):
           DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
         FROM jobs
         LEFT JOIN statuses ON jobs.status_id = statuses.id
-        WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
+        WHERE jobs.id = uuid_to_bin(%s)
         """
     cur.execute(sql, (current_user.rid, job_id))
 

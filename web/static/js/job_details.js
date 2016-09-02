@@ -139,6 +139,25 @@ function init_tophits(job_id, selector, data_url) {
 	});
 };
 
+
+function init_chunk_progress(job_id, selector) {
+	selector = selector || "#progress";
+    $.getJSON("/api/jobs/" + job_id + "/chunks").done(function(chunks) {
+        if (chunks.length<1) {
+            return;
+        }
+        var ideo = new Ideogram(selector);
+        $(selector).append("<h3>Progress</h3>")
+        chunks = chunks.map(function(x) {
+            x.chrom = "chr" + x.chr;
+            x.fill = "#3CA661";
+            return x;
+        });
+        ideo.setRegions(chunks);
+        ideo.draw();
+    });
+};
+
 jumpToLocusZoom = function(job_id, chr, pos) {
 	if (job_id && chr && pos) {
 		var region = chr + ":" + (pos-100000) + "-" + (pos+100000);

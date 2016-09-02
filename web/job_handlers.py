@@ -147,6 +147,8 @@ def get_job_chunks(job_id):
         for file in files:
             m = p.search(file)
             chunk = dict(m.groupdict())
+            chunk['start'] = int(chunk['start'])
+            chunk['stop'] = int(chunk['stop'])
             chunk['modified'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file)))
             chunks.append(chunk)
         return chunks

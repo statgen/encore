@@ -6,7 +6,7 @@
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 
-	<script type="text/javascript">
+<script type="text/javascript">
 		$(document).ready(function() {
 			$("#jobs-table").DataTable({
 				ajax: {url: "/api/jobs-all", dataSrc: ""},
@@ -17,8 +17,11 @@
 					{data: "modified_date", title: "Late Updated"},
 					{title: "Logs", data: null, render: function(data) {
 						return "<a href='/admin/log/" + data.id + "/out.log'>output</a>" + 
-						"- " + 
+						" - " + 
 						"<a href='/admin/log/" + data.id + "/err.log'>error</a>"	
+					}, orderable: false},
+					{title: "Job", data: "id", render: function(data) {
+						return "<a href='/jobs/" + data + "'>View</a>" 
 					}, orderable: false}
 				]
 			})
@@ -33,4 +36,6 @@
             </div>
             <table id="jobs-table"></table>
         </div>
+
+		<div id="prog"></div>
 {% endblock %}

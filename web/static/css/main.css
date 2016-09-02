@@ -192,6 +192,9 @@ button[disabled]
     font-size: 16px;
     font-style: italic;
 }
+#header a {
+	color: #CCCCCC;
+}
 
 .section
 {

@@ -47,7 +47,7 @@ class Tracker(object):
         if slurm_status == "RUNNING":
             status = "started"
         elif slurm_status.startswith("CANCELLED"):
-            status = "canceled"
+            status = "cancelled"
         elif slurm_status == "PENDING" or slurm_status == "QUEUED":
             status = "queued"
         elif slurm_status == "PREEMPTED" or slurm_status == "FAILED" or slurm_status == "TIMEOUT" or slurm_status == "NODE_FAIL":

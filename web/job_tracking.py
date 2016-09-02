@@ -46,7 +46,7 @@ class Tracker(object):
         status = ""
         if slurm_status == "RUNNING":
             status = "started"
-        elif slurm_status == "CANCELLED":
+        elif slurm_status.startswith("CANCELLED"):
             status = "canceled"
         elif slurm_status == "PENDING" or slurm_status == "QUEUED":
             status = "queued"

@@ -193,7 +193,7 @@ def get_job_details_view(job_id):
         LEFT JOIN statuses ON jobs.status_id = statuses.id
         WHERE jobs.id = uuid_to_bin(%s)
         """
-    cur.execute(sql, (current_user.rid, job_id))
+    cur.execute(sql, (job_id,))
 
     if cur.rowcount == 0:
         return "Job does not exist.", 404

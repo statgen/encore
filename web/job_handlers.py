@@ -139,10 +139,10 @@ def get_job_chunks(job_id):
     job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
     output_file_glob = os.path.join(job_directory, "output.*.epacts")
     files = glob.glob(output_file_glob)
+    now = time.strftime('%Y-%m-%d %H:%M:%S')
     if len(files):
         chunks = []
         p = re.compile(r'output.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.epacts$')
-        print files
         for file in files:
             m = p.search(file)
             chunk = dict(m.groupdict())
@@ -150,9 +150,9 @@ def get_job_chunks(job_id):
             chunk['stop'] = int(chunk['stop'])
             chunk['modified'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file)))
             chunks.append(chunk)
-        return chunks
+        return {"data": chunks, "now": now}
     else:
-        return []
+        return {"data":[], "now": now} 
 
 def cancel_job(job_id):
     db = sql_pool.get_conn()

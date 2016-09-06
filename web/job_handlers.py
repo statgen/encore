@@ -83,6 +83,11 @@ def post_to_jobs():
                         f.write("if [ $EXIT_STATUS == 0 ]; then\n")
                         f.write("  " + current_app.config.get("MANHATTAN_BINARY") + " ./output.epacts.gz ./manhattan.json\n")
                         f.write("  " + current_app.config.get("QQPLOT_BINARY") + " ./output.epacts.gz ./qq.json\n")
+                        if current_app.config.get("TOPHITS_BINARY"):
+                            f.write("  " + current_app.config.get("TOPHITS_BINARY") + " ./output.epacts.top5000 ./tophits.json")
+                            if current_app.config.get("NEAREST_GENE_BED"):
+                                f.write(" --gene " + current_app.config.get("NEAREST_GENE_BED") )
+                            f.write("\n")
                         f.write("fi\n")
                         f.write("echo $EXIT_STATUS > ./exit_status.txt\n")
                         f.write("exit $EXIT_STATUS\n")

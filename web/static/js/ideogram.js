@@ -18,8 +18,6 @@ var Ideogram = function(selector) {
                 return d.tooltip;
             });
         this.svg.call(this.tooltip);
-    } else {
-        console.log("no tooltips available");
     }
 
     this.regions = [
@@ -101,13 +99,17 @@ Ideogram.prototype.drawRegions = function(layout, regions, opts) {
     r.exit().remove();
     r.attr("points", this.toPointsString);
     r.attr("fill", function(d) {return d.fill || opts.fill;});
-    if (this.tooltip && hasToolTips) {
-        r.on("mouseover", function(d) {
-            if (d.tooltip) {
-                this.tooltip.show(d);
-            }
-        }.bind(this))
-        r.on("mouseout", this.tooltip.hide);
+    if (hasToolTips) {
+        if (this.tooltip) {
+            r.on("mouseover", function(d) {
+                if (d.tooltip) {
+                    this.tooltip.show(d);
+                }
+            }.bind(this))
+            r.on("mouseout", this.tooltip.hide);
+        } else {
+            console.warning("Tooltips not available (include d3.tip)")
+        }
     }
 };
 
@@ -262,30 +264,5 @@ Ideogram.prototype.getRegionPath = function(layout, chr, start, stop) {
     }
     points.push([landmarks[0]+diff[0], y0+diff[1]]);
     return points;
-};
-
-var ToolTip = function() {
-    this.ele = d3.select("body").append("div")
-        .attr("class", "tooltip")               
-        .style("opacity", 0);
-};
-ToolTip.prototype.getShow = function() {
-    var ele = this.ele
-    return function(d) {
-        ele.transition()
-            .duration(200)
-            .style("opacity", .9);
-        ele.html(d.tooltip)
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-    };
-};
-ToolTip.prototype.getHide = function() {
-    var ele = this.ele
-    return function() {
-        ele.transition()
-            .duration(500)
-            .style("opacity",0);
-    };
 };
 

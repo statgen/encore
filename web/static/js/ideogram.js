@@ -1,7 +1,11 @@
-/ global d3 */
+/* global d3 */
+/* eslint no-console: "off" */
 
 var Ideogram = function(selector) {
     this.selector = selector;
+    if (!selector) {
+        throw("Must supply a selector to initialize ideogram");
+    }
     this.svg = d3.select(selector).append("svg")
         .attr("width",800)
         .attr("height", 500);
@@ -9,6 +13,9 @@ var Ideogram = function(selector) {
         .attr("class", "chromosome");
     this.svg.append("g")
         .attr("class", "outline");
+    if (this.svg.empty()) {
+        throw("Could not find '" + selector + "', unable to initialize ideogram");
+    }
 
     if (d3.tip) {
         this.tooltip = d3.tip()
@@ -20,71 +27,68 @@ var Ideogram = function(selector) {
         this.svg.call(this.tooltip);
     }
 
-    this.regions = [
-        {chrom:"chr1", start:115000000, stop:135000000},
-        {chrom:"chr4", start:11500000, stop:53500000, fill:"#66F297"},
-        {chrom:"chr14", start:0, stop:2e7, fill:"#1D5932"},
-        {chrom:"chr14", start:2e7, stop:4e7, fill:"#3CA661"},
-        {chrom:"chr14", start:4e7, stop:5e7, fill:"#66F297", tooltip:"new"}
-    ];
+    this.regions = [];
 };
 
 Ideogram.prototype.draw = function() {
     var layout = this.getLayout(this.chrs_hg19);
-    this.drawOutlines(layout);
-    this.drawRegions(layout, this.regions);
+    var positions = this.calculatePositions(layout);
+    this.drawOutlines(positions);
+    this.drawRegions(positions, this.regions);
+    this.drawLabels(positions);
 };
 
 Ideogram.prototype.setRegions = function(regions) {
     this.regions = regions;
 };
 
-Ideogram.prototype.findElement = function(obj, type) {
-    var ele = [];
-    if (Array.isArray(obj)) {
-        obj.forEach(function(x) {
-            if (x.type && x.type==type) {
-                ele.push(x);
-            }
-            ele = ele.concat(Ideogram.prototype.findElement(x, type));
-        });
-    } else if (obj !==null && typeof obj === "object") {
-        Object.keys(obj).forEach(function(k) {
-            var x = obj[k];
-            if (x.type && x.type==type) {
-                ele.push(x);
-            }
-            ele = ele.concat(Ideogram.prototype.findElement(x, type));
-        });
-    }
-    return ele;
-};
-
 Ideogram.prototype.toPointsString = function(d) {
     return d.points.map(function(d) {return [d[0].toFixed(2), d[1].toFixed(2)].join(",");}).join(" ");
 };
 
-Ideogram.prototype.drawOutlines = function(layout, opts) {
+Ideogram.prototype.drawLabels = function(positions, opts) {
+    opts = opts || {};
+    var labels = [];
+    positions.positions.forEach(function(ele) {
+        if (ele.type && ele.type=="label") {
+            labels.push({
+                text: ele.text,
+                x: (ele.x0 + ele.x1)/2,
+                y: (ele.y0 + ele.y1)/2
+            });
+        }
+    }.bind(this));
+    this.svg.select("g.outline").selectAll("text.label")
+        .data(labels)
+        .enter().append("text")
+        .attr("x", function(d) {return d.x;})
+        .attr("y", function(d) {return d.y+5;})
+        .attr("text-anchor", "middle")
+        .text(function(d) {return d.text;});
+};
+
+Ideogram.prototype.drawOutlines = function(positions, opts) {
     opts = opts || {fill: "none", stroke: "black", "stroke-width": 1.5};
     var regions = []; 
-    var chrs = this.findElement(layout, "chr");
-    chrs.forEach(function(x) {
-        regions.push({points: this.getRegionPath(layout, x.name)});
+    positions.positions.forEach(function(ele) {
+        if (ele.type && ele.type=="chr") {
+            regions.push({points: this.getRegionPath(positions, ele.name)});
+        }
     }.bind(this));
     this.svg.select("g.outline").selectAll("polygon.chroutline")
         .data(regions)
         .enter().append("polygon")
         .attr("class"," chroutline")
         .attr("points", this.toPointsString)
-        .attr(opts)
+        .attr(opts);
 };
 
-Ideogram.prototype.drawRegions = function(layout, regions, opts) {
+Ideogram.prototype.drawRegions = function(positions, regions, opts) {
     opts = opts || {fill: "#c8c8c8"};
     var polys = []; 
     var hasToolTips = false;
     for(var i=0; i<regions.length; i++) {
-        polys.push({points: this.getRegionPath(layout,
+        polys.push({points: this.getRegionPath(positions,
             regions[i].chrom, 
             regions[i].start,
             regions[i].stop),
@@ -105,10 +109,10 @@ Ideogram.prototype.drawRegions = function(layout, regions, opts) {
                 if (d.tooltip) {
                     this.tooltip.show(d);
                 }
-            }.bind(this))
+            }.bind(this));
             r.on("mouseout", this.tooltip.hide);
         } else {
-            console.warning("Tooltips not available (include d3.tip)")
+            console.warning("Tooltips not available (include d3.tip)");
         }
     }
 };
@@ -151,11 +155,11 @@ Ideogram.prototype.getLayout = function(chrs, options) {
         var cols = [];
         var rowextent = a.end + b.end;
         if (rowextent > maxextent) {maxextent = rowextent;}
-        cols.push({type: "label", width: "40px", text: a.chr});
+        cols.push({type: "label", width: "45px", text: a.chr});
         cols.push({type: "chr", name: a.chr, center: a.center, end: a.end});
         cols.push({type: "gap", min_width: "25px"});
         cols.push({type: "chr", name: b.chr, center: b.center, end: b.end});
-        cols.push({type: "label", width: "40px", text: b.chr});
+        cols.push({type: "label", width: "45px", text: b.chr});
         rows.push({cols: cols});
         lookup[a.chr] = [i, 1];
         lookup[b.chr] = [i, 3];
@@ -231,28 +235,21 @@ Ideogram.prototype.getContour = function(start, stop, landmarks, ease) {
     return contour;
 };
 
-Ideogram.prototype.getRegionPath = function(layout, chr, start, stop) {
-    var height = layout.height || 400;
-    var width = layout.width || 800;
-    var paddingY = (layout.padding && layout.padding.y) || layout.padding || 3;
-    var cellPos = layout.chr[chr];
-    var row = layout.rows[cellPos[0]];
-    var cell = row.cols[cellPos[1]];
-    var rowHeight = Math.floor((height - 2*paddingY*layout.rows.length)/layout.rows.length);
-    var y0 = (rowHeight + 2*paddingY) * cellPos[0] + paddingY;
-    var y1 = y0 + rowHeight - paddingY;
-    var widths = this.getRowWidths(row, width, layout.max_row_extent); 
-    var cellWidth = widths[cellPos[1]];
+Ideogram.prototype.getRegionPath = function(positions, chr, start, stop) {
+    var cell = positions.positions[positions.names[chr]];
+    var y0 = cell.y0;
+    var y1 = cell.y1;
+    var cellWidth = cell.x1 - cell.x0;
     start = start || 0;
     stop = stop || cell.end;
-    var landmarks = [ widths.slice(0, cellPos[1]).reduce(function(a,b) {return a+b;}) ];
-    landmarks[1] = landmarks[0] + cellWidth * (cell.center/cell.end); 
-    landmarks[2] = landmarks[0] + cellWidth;
+    var landmarks = [ cell.x0,
+        cell.x0 + cellWidth * (cell.center/cell.end), 
+        cell.x1];
 
-    var x0 = landmarks[0] + cellWidth * (start/cell.end); 
-    var x1 = landmarks[0] + cellWidth * (stop/cell.end);
+    var r0 = landmarks[0] + cellWidth * (start/cell.end); 
+    var r1 = landmarks[0] + cellWidth * (stop/cell.end);
 
-    var contour = this.getContour(x0, x1, landmarks, 5);
+    var contour = this.getContour(r0, r1, landmarks, 5);
     var points = [];
     for(var i =0; i<contour.length; i++) {
         var diff = contour[i];
@@ -266,3 +263,32 @@ Ideogram.prototype.getRegionPath = function(layout, chr, start, stop) {
     return points;
 };
 
+Ideogram.prototype.calculatePositions = function(layout) {
+    layout = layout || this.layout;
+    if (!layout) {throw("No layout supplied");}
+    var height = layout.height || 400;
+    var width = layout.width || 800;
+    var paddingY = (layout.padding && layout.padding.y) || layout.padding || 3;
+    var rowHeight = Math.floor((height - 2*paddingY*layout.rows.length)/layout.rows.length);
+    var positions = [];
+    var names = {};
+    for(var i=0; i<layout.rows.length; i++) {
+        var row = layout.rows[i];
+        var y0 = (rowHeight + 2*paddingY) * i + paddingY;
+        var y1 = y0 + rowHeight - paddingY;
+        var widths = this.getRowWidths(row, width, layout.max_row_extent); 
+        var x0 = 0, x1 = 0;
+        for(var j=0; j<row.cols.length; j++) {
+            var col = JSON.parse(JSON.stringify(row.cols[j]));
+            col.y0 = y0;
+            col.y1 = y1;
+            col.x0 = (x0 = x1);
+            col.x1 = (x1 = x0 + widths[j]);
+            positions.push(col);
+            if (col.name) {
+                names[col.name] = positions.length-1;
+            }
+        }
+    }
+    return {positions: positions, names: names};
+};

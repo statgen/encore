@@ -1,0 +1,42 @@
+{% set backlink = "/" %}
+{% extends "layout.html" %}
+{% block header%}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/file_upload.js') }}"></script>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/file_upload.css') }}">
+
+	<script type="text/javascript">
+		$(function() {
+			var um = new UploadManager("form.ubox");
+		})
+	</script>
+{% endblock %}
+{% block content %}
+	<h1>Upload phenotype file...</h1>
+        <div class="section">
+            <form class="ubox vflex" method="post" action="/api/pheno" enctype="multipart/form-data">
+                <div class="ubox-progress">&nbsp;</div>
+                <br/>
+				<svg class="ubox-icon" xmlns="http://www.w3.org/2000/svg" width="50" height="43" viewBox="0 0 50 43"><path d="M48.4 26.5c-.9 0-1.7.7-1.7 1.7v11.6h-43.3v-11.6c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v13.2c0 .9.7 1.7 1.7 1.7h46.7c.9 0 1.7-.7 1.7-1.7v-13.2c0-1-.7-1.7-1.7-1.7zm-24.5 6.1c.3.3.8.5 1.2.5.4 0 .9-.2 1.2-.5l10-11.6c.7-.7.7-1.7 0-2.4s-1.7-.7-2.4 0l-7.1 8.3v-25.3c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v25.3l-7.1-8.3c-.7-.7-1.7-.7-2.4 0s-.7 1.7 0 2.4l10 11.6z"></path></svg>
+                <input style="display: none" type="file" name="pheno_file" id="ubox_file_input" />
+                <label for="ubox_file_input"><strong>Choose phenotype file</strong><span class="ubox-dragndrop"> or drag it here</span>.</label>
+                <button class="ubox-button" type="button" name="upload" style="display: none;">Create New Job</button>
+                <br/>
+                <!--<div class="ubox-uploading">Uploading&hellip;</div>
+                <div class="ubox-success">Done!</div>
+                <div class="ubox-error">Error! <span></span>.</div>-->
+
+            </form>
+        </div>
+		<div class="section" style="margin:auto; max-width:400px;">
+			<p>Your phenotype file most satisfy the following criteria</p>
+			<ul>
+				<li>It must be a CSV file or a tab-delimited plain text file</li>
+				<li>Each row must contain the same number of fields
+				(the data must be rectangular)</li>
+				<li>Column headers should be included on the first row</li>
+				<li>It must have at least two columns: one containg the 
+				sample ID used for sequencing, and a column of phenotype
+				values.</li>
+			</ul>
+		</div>
+{% endblock %}

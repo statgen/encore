@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, session, send_from_directory, redirect, send_file, url_for
+from flask import request,Response,Flask, render_template, session, send_from_directory, redirect, send_file, url_for
 from flask_login import LoginManager, login_required, current_user
 import job_handlers
 import sign_in_handler
@@ -176,6 +176,19 @@ def get_job_tmp_manhattan(job_id):
         return "Not Found", 404
     else:
         return job_handlers.get_job_output(job_id, "output.epacts.mh.pdf", False)
+
+@app.route("/pheno-upload", methods=["GET"])
+@login_required
+def get_pheno_upload():
+    return job_handlers.get_pheno_upload_view()
+
+@app.route("/api/pheno", methods=["GET","POST"])
+@login_required
+def post_api_pheno():
+    count = len(request.files)
+    return "Not implemented", 501 
+    #return job_handlers.post_to_pheno()
+
 
 @app.route("/admin", methods=["GET"])
 @login_required

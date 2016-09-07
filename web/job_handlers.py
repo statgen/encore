@@ -281,6 +281,9 @@ def get_job_zoom(job_id):
     resp.set_data(json.dumps(json_response_data))
     return resp
 
+def get_pheno_upload_view():
+    return render_template("pheno_upload.html")
+
 def get_admin_main_page():
     return render_template("admin_main.html")
 

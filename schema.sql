@@ -65,6 +65,25 @@ CREATE TABLE IF NOT EXISTS `gasp`.`jobs` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
+
+-- -----------------------------------------------------
+-- Table `gasp`.`phenotypes`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gasp`.`phenotypes` (
+  `id` BINARY(16) NOT NULL,
+  `user_id` INT UNSIGNED NOT NULL,
+  `name` VARCHAR(512) NOT NULL,
+  `orig_file_name` VARCHAR(512) NOT NULL,
+  `md5sum` VARCHAR(32) NULL,
+  `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `fk_phenotypes_users_idx` (`user_id` ASC),
+  CONSTRAINT `fk_phenotypes_users`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `gasp`.`users` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+
 USE `gasp` ;
 
 -- -----------------------------------------------------

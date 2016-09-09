@@ -286,6 +286,46 @@ def get_job_zoom(job_id):
 def get_pheno_upload_view():
     return render_template("pheno_upload.html")
 
+def get_model_build_view():
+    return render_template("model_build.html")
+
+def get_phenos(): 
+    db = sql_pool.get_conn()
+    cur = db.cursor(MySQLdb.cursors.DictCursor)
+    sql = """
+        SELECT bin_to_uuid(id) AS id, user_id, name, orig_file_name, md5sum, DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
+        FROM phenotypes 
+        WHERE user_id = %s
+        ORDER BY creation_date DESC
+        """
+    cur.execute(sql, (current_user.rid,))
+    results = cur.fetchall()
+    return json_resp(results)
+
+def get_pheno(pheno_id):
+    db = sql_pool.get_conn()
+    cur = db.cursor(MySQLdb.cursors.DictCursor)
+    sql = """
+        SELECT bin_to_uuid(id) AS id, user_id, name, orig_file_name, md5sum, DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
+        FROM phenotypes 
+        WHERE bin_to_uuid(id) = %s
+        ORDER BY creation_date DESC
+        """
+    cur.execute(sql, (pheno_id,))
+    results = cur.fetchone()
+    if results['user_id'] != current_user.rid and not current_user.is_admin():
+        return "NOT AUTHORIZED", 403
+    pheno_directory = os.path.join(current_app.config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
+    pheno_meta_path = os.path.join(pheno_directory, "meta.json")
+    try:
+        with open(pheno_meta_path, 'r') as metafile:
+            meta = json.load(metafile)
+        results['meta'] = meta
+    except Exception as e:
+       print "Meta read error: %s" % e 
+    return json_resp(results)
+
+
 def post_to_pheno():
     user = current_user
     if request.method != 'POST':
@@ -334,7 +374,6 @@ def post_to_pheno():
         json.dump(meta, f)
     return json_resp(meta)
     
-
 def get_admin_main_page():
     return render_template("admin_main.html")
 

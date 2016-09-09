@@ -1,0 +1,89 @@
+{% set backlink = "/" %}
+{% extends "layout.html" %}
+{% block header%}
+	<link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+	<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+	<style>
+		.form-group {width:500px}
+	</style>
+	<script type="text/javascript">
+		var phenoSelect;
+		var responseSelect;
+		var covariateSelect;
+
+		function loadPheno(pheno_id) {
+			$.getJSON("/api/pheno/" + pheno_id).done(function(pheno) {
+				var cols = [];
+				pheno.meta.columns.forEach(function(col, idx) {
+					cols.push({id: idx, text: col.name});	
+				})
+				responseSelect = $("#response").select2({
+					data: cols,
+					minimumResultsForSearch: 3
+				});
+				covariateSelect = $("#covariates").select2({data: cols});
+			})
+		}
+		$(function() {
+			$.getJSON("/api/pheno").done(function(resp) {
+				var phenos = [];
+				resp.forEach(function(p) {
+					phenos.push({id: p.id, text:p.name})
+				});
+				phenoSelect = $("#phenotype").select2({
+					data: phenos,
+					minimumResultsForSearch: 3
+				});
+				console.log(phenos);
+				loadPheno(resp[0].id)
+			});
+		})
+	</script>
+{% endblock %}
+{% block content %}
+	<h1>Build your model...</h1>
+        <div class="section">
+            <form class="form-horizontal vflex" method="post" action="/api/model">
+				<div class="form-group">
+					<label for="phenotype" class="control-label col-xs-2">Phenotypes</label>
+					<div class="col-xs-10">
+						<select id="phenotype"e class="form-control"></select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="response" class="control-label col-xs-2">Response</label>
+					<div class="col-xs-10">
+						<select id="response" class="form-control"></select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="covariates" class="control-label col-xs-2">Covariates</label>
+					<div class="col-xs-10">
+						<select id="covariates" class="form-control" multiple="multiple"></select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="model" class="control-label col-xs-2">Model</label>
+					<div class="col-xs-10">
+						<div class="radio">
+							<label for="model-lm">
+							<input type="radio" name="model" id="model-lm" value="lm">
+							<p><strong>Linear Model</strong></p>
+							<p>A simple linear model</p></label>
+						</div>
+						<div class="radio">
+							<label for="model-burden">
+							<input type="radio" name="model" id="model-burden" value="burden">
+							<p><strong>Burden</strong></p>
+							<p>A simple burden test</p></label>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-xs-offset-2 col-xs-10">
+						<button>Submit</button>
+					</div>
+				</div>
+            </form>
+        </div>
+{% endblock %}

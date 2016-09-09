@@ -182,10 +182,25 @@ def get_job_tmp_manhattan(job_id):
 def get_pheno_upload():
     return job_handlers.get_pheno_upload_view()
 
+@app.route("/api/pheno", methods=["GET"])
+@login_required
+def get_api_pheno_list():
+    return job_handlers.get_phenos()
+
+@app.route("/api/pheno/<pheno_id>", methods=["GET"])
+@login_required
+def get_api_pheno_detail(pheno_id):
+    return job_handlers.get_pheno(pheno_id)
+
 @app.route("/api/pheno", methods=["POST"])
 @login_required
 def post_api_pheno():
     return job_handlers.post_to_pheno()
+
+@app.route("/model-build", methods=["GET"])
+@login_required
+def get_model_build():
+    return job_handlers.get_model_build_view()
 
 @app.route("/admin", methods=["GET"])
 @login_required

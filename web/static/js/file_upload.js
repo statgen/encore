@@ -33,15 +33,15 @@ function UploadManager(selector) {
         alert("The upload has been canceled by the user or the browser dropped the connection.");
     }
 
-    function uploadComplete() {
+    var uploadComplete = function(resp) {
         setProgressBarValue(0);
         $("body").removeClass("wait");
         if (this.onupload) {
-            this.onupload();
+            this.onupload(resp);
         }
-    }
+    }.bind(this);
 
-    function uploadFile() {
+    var uploadFile = function() {
         $("body").addClass("wait");
         submitButton.prop("disabled", true);
         var fd = new FormData();
@@ -53,7 +53,12 @@ function UploadManager(selector) {
         xhr.addEventListener("load", function () {
             /* This event is raised when the server send back a response */
             if (xhr.status >= 200 && xhr.status < 300) {
-                uploadComplete();
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    uploadComplete(resp);
+                } catch (ex) {
+                    uploadComplete(xhr.responseText);
+                }
             } else {
                 try {
                     var resp = JSON.parse(xhr.responseText);
@@ -70,7 +75,7 @@ function UploadManager(selector) {
         xhr.addEventListener("abort", uploadCanceled, false);
         xhr.open("POST", ubox.attr("action"));
         xhr.send(fd);
-    }
+    }.bind(this);
 
     var checkReadyToUpload = function () {
         if (dropped_files.length) {

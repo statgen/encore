@@ -182,13 +182,10 @@ def get_job_tmp_manhattan(job_id):
 def get_pheno_upload():
     return job_handlers.get_pheno_upload_view()
 
-@app.route("/api/pheno", methods=["GET","POST"])
+@app.route("/api/pheno", methods=["POST"])
 @login_required
 def post_api_pheno():
-    count = len(request.files)
-    return "Not implemented", 501 
-    #return job_handlers.post_to_pheno()
-
+    return job_handlers.post_to_pheno()
 
 @app.route("/admin", methods=["GET"])
 @login_required

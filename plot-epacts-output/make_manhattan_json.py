@@ -1,5 +1,13 @@
 #!/usr/bin/env python2
 
+# TODO: try csv.reader instead of .split('\t')
+# TODO: use a single-pass instead of two passes.
+#    - iterate through all variants, building the heap and putting all variants into bins
+#    - at the end, remove the worst pval from the heap and save its pval as THRESHOLD
+#    - then remove all pvals smaller than THRESHOLD from the bins.
+#        - delete points
+#        - shorten intervals
+
 '''
 This script takes two arguments:
 - an input filename (the output of epacts with a single phenotype)
@@ -33,16 +41,16 @@ assert round_sig(1.59e-10, 2) == 1.6e-10
 
 def get_binning_pval_threshold(variants):
     # If too many variants have p-values smaller than the BIN_THRESHOLD, we want to make the BIN_THRESHOLD stricter (lower).
-    if len(variants) < MAX_NUM_UNBINNED:
-        return BIN_THRESHOLD
     pvals = (v.pval for v in variants)
-    # similar to: sorted(pvals)[MAX_NUM_UNBINNED]
-    largest_of_MAX_NUM_UNBINNED_smallest_pvals = heapq.nsmallest(MAX_NUM_UNBINNED, pvals, key=key)[-1]
-    return min(BIN_THRESHOLD, largest_pval_among_MAX_NUM_UNBINNED_smallest)
+    # similar to: sorted(pvals)[MAX_NUM_UNBINNED+1]
+    # Use +1 because the largest pval in this heap will get binned.
+    largest_of_MAX_NUM_UNBINNED_smallest_pvals = heapq.nsmallest(MAX_NUM_UNBINNED+1, pvals)[-1]
+    return min(BIN_THRESHOLD, largest_of_MAX_NUM_UNBINNED_smallest_pvals)
 
+_marker_id_regex = re.compile(r'([^:]+):([0-9]+)_([-ATCG]+)/([-ATCG]+)(?:_(.+))?')
 def parse_marker_id(marker_id):
     try:
-        chr1, pos1, ref, alt, opt_info = re.match(r'([^:]+):([0-9]+)_([-ATCG]+)/([-ATCG]+)(?:_(.+))?', marker_id).groups()
+        chr1, pos1, ref, alt, opt_info = _marker_id_regex.match(marker_id).groups()
         #assert chr1 == chr2
         #assert pos1 == pos2
     except:
@@ -64,21 +72,21 @@ def parse_variant_line(variant_line, column_indices):
         return Variant(chrom, pos, ref, alt, maf, pval, beta, sebeta)
 
 def get_variants(f):
-    header = f.readline().rstrip('\n').split('\t')
+    header = f.readline().rstrip('\r\n').split('\t')
     if header[1] == "BEG":
         header[1] = "BEGIN"
     column_indices = {col_name: index for index, col_name in enumerate(header)}
 
     previously_seen_chroms, prev_chrom, prev_pos = set(), None, -1
-    for variant_line in variant_lines:
+    for variant_line in f:
         v = parse_variant_line(variant_line.rstrip('\r\n'), column_indices)
         if v is not None:
             if v.chrom == prev_chrom:
-                assert v.pos >= prev_pos, (variant.chrom, variant.pos, prev_chrom, prev_pos)
+                assert v.pos >= prev_pos, (v.chrom, v.pos, prev_chrom, prev_pos)
             else:
-                assert v.chrom not in previously_seen_chroms, (variant.chrom, variant.pos, prev_chrom, prev_pos)
+                assert v.chrom not in previously_seen_chroms, (v.chrom, v.pos, prev_chrom, prev_pos)
                 previously_seen_chroms.add(v.chrom)
-            prev_chrom, prev_pos = variant.chrom, variant.pos
+            prev_chrom, prev_pos = v.chrom, v.pos
             yield v
 
 def rounded_neglog10(pval):
@@ -147,7 +155,7 @@ def bin_variants(variants, binning_pval_threshold):
 epacts_filename = sys.argv[1]
 assert os.path.exists(epacts_filename)
 out_filename = sys.argv[2]
-assert os.path.exists(os.path.dirname(out_filename))
+assert os.path.exists(os.path.dirname(os.path.abspath(out_filename)))
 
 with gzip.open(epacts_filename) as f:
     variants = get_variants(f)
@@ -155,7 +163,7 @@ with gzip.open(epacts_filename) as f:
 
 with gzip.open(epacts_filename) as f:
     variants = get_variants(f)
-    variant_bins, unbinned_variants = bin_variants(variant_lines, binning_pval_threshold)
+    variant_bins, unbinned_variants = bin_variants(variants, binning_pval_threshold)
 
 rv = {
     'variant_bins': variant_bins,

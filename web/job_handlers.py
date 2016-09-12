@@ -63,6 +63,9 @@ def post_to_jobs():
                     analysis_cmd += " --kin " + kin_file
                     analysis_cmd += " --out ./output"
                     analysis_cmd += " --run 48"
+                    for col in ped_column_names[4:-1]:
+                        analysis_cmd += " --cov " + col
+                    analysis_cmd += " --pheno " + ped_column_names[-1]
 
                     batch_script_path = os.path.join(job_directory, "batch_script.sh")
 

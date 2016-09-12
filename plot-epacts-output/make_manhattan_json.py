@@ -17,17 +17,28 @@ import re
 import json
 import math
 import collections
+import heapq
 
 BIN_LENGTH = int(3e6)
 NEGLOG10_PVAL_BIN_SIZE = 0.05 # Use 0.05, 0.1, 0.15, etc
 NEGLOG10_PVAL_BIN_DIGITS = 2 # Then round to this many digits
 BIN_THRESHOLD = 1e-4 # pvals less than this threshold don't get binned.
+MAX_NUM_UNBINNED = 5000 # if there are too many points with pvals < BIN_THRESHOLD, the browser gets overwhelmed.  This limits the number of unbinned variants.
 
 def round_sig(x, digits):
     return 0 if x==0 else round(x, digits-1-int(math.floor(math.log10(abs(x)))))
 assert round_sig(0.00123, 2) == 0.0012
 assert round_sig(1.59e-10, 2) == 1.6e-10
 
+
+def get_binning_pval_threshold(variants):
+    # If too many variants have p-values smaller than the BIN_THRESHOLD, we want to make the BIN_THRESHOLD stricter (lower).
+    if len(variants) < MAX_NUM_UNBINNED:
+        return BIN_THRESHOLD
+    pvals = (v.pval for v in variants)
+    # similar to: sorted(pvals)[MAX_NUM_UNBINNED]
+    largest_of_MAX_NUM_UNBINNED_smallest_pvals = heapq.nsmallest(MAX_NUM_UNBINNED, pvals, key=key)[-1]
+    return min(BIN_THRESHOLD, largest_pval_among_MAX_NUM_UNBINNED_smallest)
 
 def parse_marker_id(marker_id):
     try:
@@ -90,12 +101,12 @@ def get_pvals_and_pval_extents(pvals):
             rv_pval_extents.append([start,end])
     return (rv_pvals, rv_pval_extents)
 
-def bin_variants(variants):
+def bin_variants(variants, binning_pval_threshold):
     bins = []
     unbinned_variants = []
 
     for variant in variants:
-        if variant.pval < BIN_THRESHOLD:
+        if variant.pval < binning_pval_threshold:
             unbinned_variants.append({
                 'chrom': variant.chrom,
                 'pos': variant.pos,
@@ -140,7 +151,11 @@ assert os.path.exists(os.path.dirname(out_filename))
 
 with gzip.open(epacts_filename) as f:
     variants = get_variants(f)
-    variant_bins, unbinned_variants = bin_variants(variant_lines)
+    binning_pval_threshold = get_binning_pval_threshold(variants)
+
+with gzip.open(epacts_filename) as f:
+    variants = get_variants(f)
+    variant_bins, unbinned_variants = bin_variants(variant_lines, binning_pval_threshold)
 
 rv = {
     'variant_bins': variant_bins,

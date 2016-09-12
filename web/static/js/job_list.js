@@ -173,7 +173,7 @@ function uploadFile()
             /* This event is raised when the server send back a response */
             if (xhr.status >= 200 && xhr.status < 300)
             {
-                fetchJobs();
+                init_job_list();
             }
             else
             {

@@ -52,6 +52,22 @@ def parse_variant_line(variant_line, column_names):
         assert pos == pos2
         return Variant(chrom, pos, ref, alt, maf, pval, beta, sebeta)
 
+def get_variants(f):
+    header = f.readline().rstrip('\n').split('\t')
+    if header[1] == "BEG":
+        header[1] = "BEGIN"
+    previously_seen_chroms, prev_chrom, prev_pos = set(), None, -1
+    for variant_line in variant_lines:
+        v = parse_variant_line(variant_line.rstrip('\r\n'), header)
+        if v is not None:
+            if v.chrom == prev_chrom:
+                assert v.pos >= prev_pos, (variant.chrom, variant.pos, prev_chrom, prev_pos)
+            else:
+                assert v.chrom not in previously_seen_chroms, (variant.chrom, variant.pos, prev_chrom, prev_pos)
+                previously_seen_chroms.add(v.chrom)
+            prev_chrom, prev_pos = variant.chrom, variant.pos
+            yield v
+
 def rounded_neglog10(pval):
     return round(-math.log10(pval) // NEGLOG10_PVAL_BIN_SIZE * NEGLOG10_PVAL_BIN_SIZE, NEGLOG10_PVAL_BIN_DIGITS)
 
@@ -72,17 +88,11 @@ def get_pvals_and_pval_extents(pvals):
             rv_pval_extents.append([start,end])
     return (rv_pvals, rv_pval_extents)
 
-def bin_variants(variant_lines, column_names):
+def bin_variants(variants):
     bins = []
     unbinned_variants = []
 
-    prev_chrom, prev_pos = -1, -1
-    for variant_line in variant_lines:
-        variant = parse_variant_line(variant_line, column_names)
-        if variant is None: continue
-        #assert variant.pos >= prev_pos or int(variant.chrom) > int(prev_chrom), (variant.chrom, variant.pos, prev_chrom, prev_pos) # variant.chrom is not always an integer (eg, X).
-        prev_chrom, prev_pos = variant.chrom, variant.pos
-
+    for variant in variants:
         if variant.pval < BIN_THRESHOLD:
             unbinned_variants.append({
                 'chrom': variant.chrom,
@@ -127,13 +137,8 @@ out_filename = sys.argv[2]
 assert os.path.exists(os.path.dirname(out_filename))
 
 with gzip.open(epacts_filename) as f:
-    header = f.readline().rstrip('\n').split('\t')
-    if header[1] == "BEG":
-        header[1] = "BEGIN"
-    #assert header == ['#CHROM', 'BEGIN', 'END', 'MARKER_ID', 'NS', 'AC', 'CALLRATE', 'MAF', 'PVALUE', 'BETA', 'SEBETA', 'TSTAT', 'R2']
-
-    variant_lines = (line.rstrip('\n') for line in f)
-    variant_bins, unbinned_variants = bin_variants(variant_lines, header)
+    variants = get_variants(f)
+    variant_bins, unbinned_variants = bin_variants(variant_lines)
 
 rv = {
     'variant_bins': variant_bins,

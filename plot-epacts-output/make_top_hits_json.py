@@ -51,7 +51,7 @@ class AssocResultReader:
         self.filecols = dict()
 
     def __enter__(self):
-        if self.path:
+        if self.path and self.path != "-":
             if self.path.endswith(".gz"):
                 self.f = gzip.open(self.path)
             else:
@@ -162,8 +162,8 @@ if __name__ == "__main__":
     argp.add_argument('--window', '-w', help="Window size (in bases) to collapse peaks",
         type=float, default = 5e5)
     argp.add_argument('--gene', '-g', help="BED file for nearest gene")
-    argp.add_argument('--out', '-o', help="Outout file (stdout if not specified)", dest="outfile")
-    argp.add_argument("infile", nargs='?', help="Input file (stdin if not specified)")
+    argp.add_argument('infile', help="Input file (use '-' for stdin)")
+    argp.add_argument('outfile', nargs='?', help="Output file (stdout if not specified)")
     args = argp.parse_args()
 
     if args.gene:

@@ -8,6 +8,9 @@ import uuid
 import subprocess
 import tabix
 import gzip
+import glob
+import re
+import time
 #from werkzeug import secure_filename
 
 def get_job_list_view():
@@ -83,6 +86,11 @@ def post_to_jobs():
                         f.write("if [ $EXIT_STATUS == 0 ]; then\n")
                         f.write("  " + current_app.config.get("MANHATTAN_BINARY") + " ./output.epacts.gz ./manhattan.json\n")
                         f.write("  " + current_app.config.get("QQPLOT_BINARY") + " ./output.epacts.gz ./qq.json\n")
+                        if current_app.config.get("TOPHITS_BINARY"):
+                            f.write("  " + current_app.config.get("TOPHITS_BINARY") + " ./output.epacts.top5000 ./tophits.json")
+                            if current_app.config.get("NEAREST_GENE_BED"):
+                                f.write(" --gene " + current_app.config.get("NEAREST_GENE_BED") )
+                            f.write("\n")
                         f.write("fi\n")
                         f.write("echo $EXIT_STATUS > ./exit_status.txt\n")
                         f.write("exit $EXIT_STATUS\n")
@@ -117,11 +125,42 @@ def get_jobs():
     resp.set_data(json.dumps(results))
     return resp
 
-
-def get_job(job_id):
+def get_all_jobs():
     resp = Response(mimetype='application/json')
+    db = sql_pool.get_conn()
+    cur = db.cursor(MySQLdb.cursors.DictCursor)
+    sql = """
+        SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%Y-%m-%d %H:%i:%s') AS modified_date,
+        users.email as user_email
+        FROM jobs
+        LEFT JOIN statuses ON jobs.status_id = statuses.id
+        LEFT JOIN users ON jobs.user_id = users.id
+        ORDER BY jobs.creation_date DESC
+        """
+    cur.execute(sql)
+    results = cur.fetchall()
+    resp.set_data(json.dumps(results))
     return resp
 
+
+def get_job_chunks(job_id):
+    job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
+    output_file_glob = os.path.join(job_directory, "output.*.epacts")
+    files = glob.glob(output_file_glob)
+    now = time.strftime('%Y-%m-%d %H:%M:%S')
+    if len(files):
+        chunks = []
+        p = re.compile(r'output.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.epacts$')
+        for file in files:
+            m = p.search(file)
+            chunk = dict(m.groupdict())
+            chunk['start'] = int(chunk['start'])
+            chunk['stop'] = int(chunk['stop'])
+            chunk['modified'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file)))
+            chunks.append(chunk)
+        return {"data": chunks, "now": now}
+    else:
+        return {"data":[], "now": now} 
 
 def cancel_job(job_id):
     db = sql_pool.get_conn()
@@ -160,9 +199,9 @@ def get_job_details_view(job_id):
           DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
         FROM jobs
         LEFT JOIN statuses ON jobs.status_id = statuses.id
-        WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
+        WHERE jobs.id = uuid_to_bin(%s)
         """
-    cur.execute(sql, (current_user.rid, job_id))
+    cur.execute(sql, (job_id,))
 
     if cur.rowcount == 0:
         return "Job does not exist.", 404
@@ -197,11 +236,11 @@ def get_job_locuszoom_plot(job_id, region):
     return render_template("job_locuszoom.html", job=job_data, region=region)
 
 
-def get_job_output(job_id, filename, as_attach):
+def get_job_output(job_id, filename, as_attach=False, mimetype=None):
     try:
         job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
         output_file_path = os.path.join(job_directory, filename)
-        return send_file(output_file_path, as_attachment=as_attach)
+        return send_file(output_file_path, as_attachment=as_attach, mimetype=mimetype)
     except:
         return "File Not Found", 404
 
@@ -243,4 +282,12 @@ def get_job_zoom(job_id):
         json_response_data["MAF"].append(r[header.index("MAF")])
         json_response_data["PVALUE"].append(r[header.index("PVALUE")])
     resp.set_data(json.dumps(json_response_data))
+    return resp
+
+def get_admin_main_page():
+    return render_template("admin_main.html")
+
+def send_as_json(data):
+    resp = Response(mimetype='application/json')
+    resp.set_data(json.dumps(data))
     return resp

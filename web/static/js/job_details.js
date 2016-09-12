@@ -1,8 +1,5 @@
 
-$(document).ready(function()
-{
-    var job_id = /^\/jobs\/(.*)$/.exec(window.location.pathname)[1];
-
+function init_job_tabs() {
     $("ul.tabs li").click(function()
     {
         $("ul.tabs li").removeClass("active");
@@ -12,8 +9,11 @@ $(document).ready(function()
         $("#"+activeTab).css("z-index", "0");
     });
     $("ul.tabs li:first").click();
+}
 
-    $("button[name=cancel_job]").click(function()
+function init_job_cancel_button(job_id, selector) {
+	selector = selector || "button[name=cancel_job]";
+    $(selector).click(function()
     {
         var xhr = new XMLHttpRequest();
         xhr.addEventListener("load", function(ev)
@@ -25,18 +25,25 @@ $(document).ready(function()
         xhr.open("POST", "/api/jobs/" + job_id + "/cancel_request");
         xhr.send();
     });
+}
 
-
+function init_manhattan(job_id, selector) {
+	selector = selector || "#tab1";
     $.getJSON("/api/jobs/" + job_id + "/plots/manhattan").done(function(variants)
     {
-        create_gwas_plot("#tab1", variants.variant_bins, variants.unbinned_variants, function(chrom, pos, ref, alt)
+        create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, function(chrom, pos, ref, alt)
         {
             console.log(chrom, pos, ref, alt);
-			jumpToLocusZoom(chrom, pos);
+			jumpToLocusZoom(job_id, chrom, pos);
         });
 
     });
-    $.getJSON("/api/jobs/" + job_id + "/plots/qq").done(function(data)
+}
+
+function init_qqplot(job_id, selector, data_url) {
+	selector = selector || "#tab2";
+	data_url = data_url || "/api/jobs/" + job_id + "/plots/qq"; 
+    $.getJSON(data_url).done(function(data)
     {
         /*_.sortBy(_.pairs(data.overall.gc_lambda)).forEach(function(d)
          {
@@ -44,7 +51,12 @@ $(document).ready(function()
          });*/
         create_qq_plot("#tab2", data);
     });
-	$.getJSON("/api/jobs/" + job_id + "/tables/top").done(function(data) {
+}
+
+function init_tophits(job_id, selector, data_url) {
+	selector = selector || "#tophits";
+	data_url = data_url|| "/api/jobs/" + job_id + "/tables/top"
+	$.getJSON(data_url).done(function(data) {
 		data = data.data || data
 		chrpos = {};
 		var i=0;
@@ -63,7 +75,7 @@ $(document).ready(function()
 				data[j].chrom_sort = chrpos[chr] = i++
 			}
 		}
-		var table = $("#tophits").DataTable( {
+		var table = $(selector).DataTable( {
 			data: data,
 			columns: [
 				{data: null, title:"Chrom",
@@ -106,7 +118,7 @@ $(document).ready(function()
 				{data: "pos", title:"Plot",
 					render:function(data, type, row) {
 						var fn = "event.preventDefault();" + 
-							"jumpToLocusZoom(\"" + row.chrom + "\"," + data + ")";
+							"jumpToLocusZoom(\"" + job_id + "\",\"" + row.chrom + "\"," + data + ")";
 						return "<a href='#' onclick='" + fn + "'>View</a>"
 					},
 					orderable: false,
@@ -125,11 +137,125 @@ $(document).ready(function()
 	}).fail(function() {
 		$("ul.tabs li[rel='tab3'").remove()
 	});
-});
+};
 
-jumpToLocusZoom = function(chr, pos) {
+function bin_chunks_by_chr_and_age(chunks, now) {
+    var getAgeGroup = function(a) {
+        var diffMin = (now-a)/1000/60;
+        if (diffMin < 10) {
+            return 0;
+        } else if (diffMin < 60) {
+            return 1;
+        } else {
+            return 2;
+        }
+    };
+    function startSort(a,b) {
+        return a.start - b.start
+    }
+    //http://machinesaredigging.com/2014/04/27/binary-insert-how-to-keep-an-array-sorted-as-you-insert-data-in-it/
+    function binaryInsert(element, array, comp, start, end) {
+      start = (typeof start != "undefined") ? start : 0;
+      end = (typeof end != "undefined") ? end : array.length-1;
+      var pivot = start + Math.floor((end - start) / 2);
+      if (array.length==0) {array.push(value); return};
+      if (comp(element, array[end])>0) {
+        array.splice(end+1, 0, element); return;
+      }
+      if (comp(element, array[start])<0) {
+        array.splice(start, 0, element); return;
+      }
+      if (start >= end) {return;}
+      var c = comp(array[pivot], element);
+      if (c>0) {
+        binaryInsert(element, array, comp, start, pivot-1);
+      } else {
+        binaryInsert(element, array, comp, pivot+1, end);
+      }
+      return;
+    }
+    var bins = {};
+    var group;
+    chunks.forEach(function(chunk) {
+        modified = new Date(chunk.modified);
+        var age = getAgeGroup(modified);
+        group = "" + chunk.chr + "-" + age;
+        if (!(group in bins)) {
+            bins[group] = {chrom: "chr" + chunk.chr, age: age,
+                vals: [{start: chunk.start, stop: chunk.stop, 
+                modified: chunk.modified}]};
+        } else {
+            var g = bins[group];
+            binaryInsert(chunk, g.vals, startSort);
+        }
+    });
+    return bins;
+};
+
+function collapse_chunk_bins(bins) {
+    var coll = [];
+    function add(chr, age, start, stop, oldest, newest) {
+        coll.push({chrom: chr, age: age, start: start, stop:stop,
+            oldest: oldest, newest: newest})
+    }
+    var start;
+    var stop;
+    var oldest;
+    var newest;
+    function reset(val) {
+        start = val.start;
+        stop = val.stop;
+        oldest = val.modified;
+        newest = val.modified;
+    }
+    function extend(val) {
+        stop = val.stop
+        oldest = (val.modified<oldest) ? val.modified : oldest;
+        newest = (val.modified>newest) ? val.modified : newest;
+    }
+    Object.keys(bins).forEach(function(k) {
+        var bin = bins[k];
+        reset(bin.vals[0]);
+        for(var i=1; i<bin.vals.length; i++) {
+            if (bin.vals[i].start != stop+1) {
+                add(bin.chrom, bin.age, start, stop, oldest, newest)
+                reset(bin.vals[i]);
+            } else {
+                extend(bin.vals[i]);
+            }
+        }
+        add(bin.chrom, bin.age, start, stop, oldest, newest);
+    });
+    return coll;
+}
+
+function init_chunk_progress(job_id, selector) {
+	selector = selector || "#progress";
+    $.getJSON("/api/jobs/" + job_id + "/chunks").done(function(resp) {
+        var now = (resp.now && new Date(resp.now)) || new Date();
+        chunks = resp.data || resp;
+        if (chunks.length<1) {
+            return;
+        };
+        var x = bin_chunks_by_chr_and_age(chunks, now);
+        var chunks = collapse_chunk_bins(x);
+        $(selector).append("<h3>Progress</h3>")
+        var ideo = new Ideogram(selector);
+        chunks = chunks.map(function(x) {
+            //x.fill = ["#3CA661","#66F297","#1D5932"][x.age] ;
+            x.fill = ["#66F297","#3CA661","#3CA661"][x.age] ;
+            return x;
+        });
+        ideo.setRegions(chunks);
+        ideo.draw();
+    });
+};
+
+jumpToLocusZoom = function(job_id, chr, pos) {
 	if (job_id && chr && pos) {
 		var region = chr + ":" + (pos-100000) + "-" + (pos+100000);
 		document.location.href = "/jobs/" + job_id + "/locuszoom/" + region;
 	}
 }
+
+

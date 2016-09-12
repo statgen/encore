@@ -13,10 +13,25 @@
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 
+    <script type="text/javascript" src="{{ url_for('static', filename='js/ideogram.js') }}"></script>
+	
     <script type="text/javascript" src="{{ url_for('static', filename='js/plot.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/job_details.js') }}"></script>
 	<script type="text/javascript">
-		job_id = "{{ job.id }}";
+		job_id = "{{ job.id }}"
+		job_status = "{{ job.status }}"
+		$(document).ready(function() {
+			init_job_tabs();
+			init_job_cancel_button(job_id);
+			if (job_status=="succeeded") {
+				init_manhattan(job_id);
+				init_qqplot(job_id);
+				init_tophits(job_id);
+			}
+			if (job_status=="started") {
+				init_chunk_progress(job_id);
+			}
+		});
 	</script>
 	<style>
 		svg .variant_points a {cursor: pointer}
@@ -89,5 +104,6 @@
             </div>
         </div>
         {% endif %}
+		<div id="progress"></div>
 
 {% endblock %}

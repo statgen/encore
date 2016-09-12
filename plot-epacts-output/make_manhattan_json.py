@@ -1,12 +1,6 @@
 #!/usr/bin/env python2
 
-# TODO: try csv.reader instead of .split('\t')
-# TODO: use a single-pass instead of two passes.
-#    - iterate through all variants, building the heap and putting all variants into bins
-#    - at the end, remove the worst pval from the heap and save its pval as THRESHOLD
-#    - then remove all pvals smaller than THRESHOLD from the bins.
-#        - delete points
-#        - shorten intervals
+# TODO: use a single-pass instead of two passes by getting the pval-threshold while making the QQ plot.
 
 '''
 This script takes two arguments:
@@ -157,18 +151,33 @@ assert os.path.exists(epacts_filename)
 out_filename = sys.argv[2]
 assert os.path.exists(os.path.dirname(os.path.abspath(out_filename)))
 
-with gzip.open(epacts_filename) as f:
-    variants = get_variants(f)
-    binning_pval_threshold = get_binning_pval_threshold(variants)
+import time
+def prog_printer(iterable, stepsize=int(1e6)):
+    t1 = time.time()
+    for i, it in enumerate(iterable):
+        if i % stepsize == 0:
+            t2 = time.time()
+            print('processed {:15,} in {:.2f} seconds'.format(i, t2-t1))
+            t1 = t2
+        yield it
+    print('processed {:15,} in {:.2f} seconds'.format(i, time.time()-t1))
 
 with gzip.open(epacts_filename) as f:
     variants = get_variants(f)
+    variants = prog_printer(variants)
+    binning_pval_threshold = get_binning_pval_threshold(variants)
+    print('binning_pval_threshold:', binning_pval_threshold)
+
+with gzip.open(epacts_filename) as f:
+    variants = get_variants(f)
+    variants = prog_printer(variants)
     variant_bins, unbinned_variants = bin_variants(variants, binning_pval_threshold)
 
 rv = {
     'variant_bins': variant_bins,
     'unbinned_variants': unbinned_variants,
 }
+print('num unbinned:', len(unbinned_variants))
 
 # Avoid getting killed while writing dest_filename, to stay idempotent despite me frequently killing the program
 with open(out_filename, 'w') as f:

@@ -40,14 +40,14 @@ def parse_marker_id(marker_id):
     return chr1, int(pos1), ref, alt
 
 Variant = collections.namedtuple('Variant', 'chrom pos ref alt maf pval beta sebeta'.split())
-def parse_variant_line(variant_line, column_names):
+def parse_variant_line(variant_line, column_indices):
     v = variant_line.split('\t')
     #assert v[1] == v[2]
-    if v[column_names.index("PVALUE")] == 'NA' or v[column_names.index("BETA")] == 'NA':
-        assert v[column_names.index("PVALUE")] == 'NA' and v[column_names.index("BETA")] == 'NA'
+    if v[column_indices["PVALUE"]] == 'NA' or v[column_indices["BETA"]] == 'NA':
+        assert v[column_indices["PVALUE"]] == 'NA' and v[column_indices["BETA"]] == 'NA'
     else:
-        chrom, pos, maf, pval, beta, sebeta = v[column_names.index("#CHROM")], int(v[column_names.index("BEGIN")]), float(v[column_names.index("MAF")]), float(v[column_names.index("PVALUE")]), float(v[column_names.index("BETA")]), float(v[column_names.index("SEBETA")])
-        chrom2, pos2, ref, alt = parse_marker_id(v[column_names.index("MARKER_ID")])
+        chrom, pos, maf, pval, beta, sebeta = v[column_indices["#CHROM"]], int(v[column_indices["BEGIN"]]), float(v[column_indices["MAF"]]), float(v[column_indices["PVALUE"]]), float(v[column_indices["BETA"]]), float(v[column_indices["SEBETA"]])
+        chrom2, pos2, ref, alt = parse_marker_id(v[column_indices["MARKER_ID"]])
         assert chrom == chrom2
         assert pos == pos2
         return Variant(chrom, pos, ref, alt, maf, pval, beta, sebeta)
@@ -56,9 +56,11 @@ def get_variants(f):
     header = f.readline().rstrip('\n').split('\t')
     if header[1] == "BEG":
         header[1] = "BEGIN"
+    column_indices = {col_name: index for index, col_name in enumerate(header)}
+
     previously_seen_chroms, prev_chrom, prev_pos = set(), None, -1
     for variant_line in variant_lines:
-        v = parse_variant_line(variant_line.rstrip('\r\n'), header)
+        v = parse_variant_line(variant_line.rstrip('\r\n'), column_indices)
         if v is not None:
             if v.chrom == prev_chrom:
                 assert v.pos >= prev_pos, (variant.chrom, variant.pos, prev_chrom, prev_pos)

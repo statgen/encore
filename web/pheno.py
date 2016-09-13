@@ -25,17 +25,17 @@ def guess_raw_type(s):
 def guess_atomic_column_class(rawtype, obs):
     n_vals = sum(obs.values())
     n_uniq_vals = len(obs)
-    if rawtype == "str":
-        if n_vals == n_uniq_vals:
-            return {"class": "id", "type": "str"}
-        elif n_uniq_vals == 2:
-            return {"class": "binary", "type": "str"}
-        elif float(n_uniq_vals)/n_vals > .75:
-            return {"class": "descr", "type": "str"}
-        else:
-            return {"class": "categorical", "type":"str"}
     if n_vals == n_uniq_vals and rawtype != "float":
         return {"class": "id", "type": rawtype}
+    if n_uniq_vals == 1:
+        return {"class": "fixed", "type": rawtype, "value": obs.keys()[0]}
+    if n_uniq_vals == 2:
+        return {"class": "binary", "type": rawtype, "levels": obs.keys()}
+    if rawtype == "str":
+        if float(n_uniq_vals)/n_vals > .75:
+            return {"class": "descr", "type": "str"}
+        else:
+            return {"class": "categorical", "type":"str", "levels": obs.keys()}
     if rawtype == "float" or rawtype == "int":
         return {"class": "numeric", "type": rawtype}
     return {"class": rawtype, "type": rawtype}
@@ -48,7 +48,7 @@ def guess_column_class(colinfo):
     n_uniq_vals = Counter({k: len(v) for k, v in col.iteritems()})
     if len(col)==0:
         #all empty
-        return {"class": "skip", "type": "str"}
+        return {"class": "fixed", "type": "str"}
     if len(col)==1:
         # all same type
         best_type = n_vals.most_common(1)[0][0]
@@ -97,6 +97,21 @@ def find_header(firstrow, lastcomment, cols):
     # no header found, return unique names
     return (["COL{0}".format(i) for i in xrange(len(colclasses))], "position")
 
+def check_if_ped(cols, obs):
+    if len(cols)<6:
+        return False, None
+    types = [x["type"] for x in cols]
+    classes = [x["class"] for x in cols]
+    if not (classes[0] == "id" or classes[1]=="id"):
+        return False, None
+    if not (types[2] == types[1] or classes[2]=="fixed"):
+        return False, None
+    if not (types[3] == types[1] or classes[3]=="fixed"):
+        return False, None
+    if not (classes[4]=="binary" or classes[4]=="fixed"):
+        return False, None
+    return True, None 
+
 def infer_meta(csvfile, dialect=None):
     meta = {"layout": {}, "columns": []}
 
@@ -136,6 +151,13 @@ def infer_meta(csvfile, dialect=None):
         coldef = guess_column_class(colval)
         coldef["name"] = headers[col]
         meta["columns"][col] = coldef
+    #check if ped
+    pedlike, ped_columns = check_if_ped(meta["columns"], cols)
+    if pedlike:
+        colclasses = ["family_id","sample_id","father_id","mother_id","sex"]
+        for actas, col in zip(colclasses, meta["columns"][0:3]):
+            if col["class"] != "fixed":
+                col["class"] =  actas
     return meta
 
 class PhenoReader:
@@ -208,7 +230,9 @@ if __name__ == "__main__":
         if len(sys.argv)>=3:
             with open(sys.argv[2]) as f:
                 meta = json.load(f)
-        p = PhenoReader(sys.argv[1], meta)
-        print [x for x in p.data_extractor(["VAL", "COL"])]
-        json.dumps(p.infer_meta())
+            p = PhenoReader(sys.argv[1], meta)
+            print [x for x in p.data_extractor(["VAL", "COL"])]
+        else:
+            p = PhenoReader(sys.argv[1], meta)
+            print json.dumps(p.meta, indent=2)
 

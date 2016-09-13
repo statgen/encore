@@ -9,7 +9,7 @@
 	</style>
 	<script type="text/javascript">
 		var phenoSelect;
-		var phenos;
+		var covars;
 		var genoSelect;
 		var responseSelect;
 		var covariateSelect;
@@ -44,17 +44,20 @@
 
 		function loadPheno(pheno_id) {
 			$.getJSON("/api/pheno/" + pheno_id).done(function(pheno) {
-				phenos = pheno.meta.columns;
-				var cols = [];
+				covars = pheno.meta.columns;
+				var opts  = [];
+				var hideCols = ["family_id","sample_id","mother_id","father_id"];
 				pheno.meta.columns.forEach(function(col, idx) {
-					cols.push({id: idx, text: col.name});	
+					if (hideCols.indexOf(col.class)<0 && col.class != "fixed") {
+						opts.push({id: idx, text: col.name});	
+					}
 				})
 				responseSelect = $("#response").select2({
-					data: cols,
+					data: opts,
 					minimumResultsForSearch: 3
 				}).on("change", formChanged);
 				covariateSelect = $("#covariates").select2({
-					data: cols
+					data: opts 
 				}).on("change", formChanged);
 				formChanged();
 				$("#model-form").css("visibility","visible").hide().fadeIn();
@@ -70,7 +73,7 @@
 				evt.preventDefault();
 				resp = responseSelect.val();
 				opts = []
-				phenos.forEach(function(col, idx) {
+				covars.forEach(function(col, idx) {
 					if (idx != resp) {
 						opts.push(idx);
 					}
@@ -163,7 +166,7 @@
 				</div>
 				<div class="form-group">
 					<div class="col-xs-offset-2 col-xs-10">
-						<button>Submit</button>
+						<button class="btn-success">Submit</button>
 					</div>
 				</div>
             </form>

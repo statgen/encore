@@ -13,6 +13,34 @@
 		var genoSelect;
 		var responseSelect;
 		var covariateSelect;
+		var userHasNamedJob = false;
+
+		function nameChanged() {
+			userHasNamedJob = true;
+			var ele = $("#job_name", "#model-form");
+			if (ele.val()=="") {
+				userHasNamedJob = false;
+				ele.val(suggestName());
+			}
+		};
+
+		function formChanged() {
+			if (!userHasNamedJob) {
+				$("#job_name", "#model-form").val(suggestName());
+			}
+		};
+
+		function suggestName() {
+			var name = $('input[name=model]:checked', '#model-form').val()
+			name = name + ": " + responseSelect.find("option:selected").text();
+			var covar = covariateSelect.find("option:selected");
+			if (covar.length>4) {
+				name = name + " = Covar(" + covar.length + ")"
+			} else if (covar.length>0) {
+				name = name + " = " + covar.map(function() {return $(this).text()}).get().join(" + ")	
+			}
+			return name;
+		}
 
 		function loadPheno(pheno_id) {
 			$.getJSON("/api/pheno/" + pheno_id).done(function(pheno) {
@@ -24,19 +52,20 @@
 				responseSelect = $("#response").select2({
 					data: cols,
 					minimumResultsForSearch: 3
-				});
+				}).on("change", formChanged);
 				covariateSelect = $("#covariates").select2({
 					data: cols
-				});
+				}).on("change", formChanged);
+				formChanged();
 				$("#model-form").css("visibility","visible").hide().fadeIn();
 			});
 		}
 
 		$(function() {
 			genoSelect = $("#genotype").select2({
-				data: [{id:1, text:"Freeze 1"}, {id:2, text:"Freeze2"}],
+				data: [{id:1, text:"Freeze 3"}, {id:2, text:"Freeze2"}],
 				minimumResultsForSearch: 3
-			})
+			}).on("change", formChanged);
 			$("#covar_add_all").click(function(evt) {
 				evt.preventDefault();
 				resp = responseSelect.val();
@@ -60,9 +89,11 @@
 				phenoSelect = $("#phenotype").select2({
 					data: phenos,
 					minimumResultsForSearch: 3
-				});
+				}).on("change", formChanged);
 				loadPheno(resp[0].id)
 			});
+			$("input[type=radio]", "#model-form").on("change", formChanged);
+			$("#job_name", "#model-form").on("change", nameChanged);
 		})
 	</script>
 {% endblock %}
@@ -90,7 +121,7 @@
 				</div>
 				<div class="form-group">
 					<div class="col-xs-offset-2 col-xs-10">
-						<label class="chklabel"><input id="resp_logtrans" type="checkbox"/> Log Transform Response</label>
+						<label class="chklabel"><input id="resp_invnormtrans" type="checkbox"/> Inverse Normalize Response</label>
 					</div>
 				</div>
 				<div class="form-group">
@@ -105,9 +136,16 @@
 					<div class="col-xs-10">
 						<div class="radio">
 							<label for="model-lm">
-							<input type="radio" name="model" id="model-lm" value="lm" checked="checked">
-							<p><strong>Linear Model</strong></p>
+							<input type="radio" name="model" id="model-lm" value="lm">
+							<p><strong>Linear Wald Test (LM)</strong></p>
 							<p>A simple linear model</p></label>
+						</div>
+						<div class="radio">
+							<label for="model-lmm">
+							<input type="radio" name="model" id="model-lmm" value="lmm" checked="checked">
+							<p><strong>Linear Mixed Model (LMM)</strong></p>
+							<p>Adjust for potential relatedness using
+							kinship matrix</p></label>
 						</div>
 						<div class="radio">
 							<label for="model-burden">
@@ -115,6 +153,12 @@
 							<p><strong>Burden</strong></p>
 							<p>A simple burden test</p></label>
 						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="response" class="control-label col-xs-2">Name</label>
+					<div class="col-xs-10">
+						<input id="job_name" class="form-control"></input>
 					</div>
 				</div>
 				<div class="form-group">

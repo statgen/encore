@@ -158,7 +158,7 @@ def get_api_job_tophits(job_id):
 @app.route("/api/jobs/<job_id>/chunks", methods=["GET"])
 @login_required
 def get_api_job_chuncks(job_id):
-   return job_handlers.send_as_json(job_handlers.get_job_chunks(job_id))
+    return job_handlers.json_resp(job_handlers.get_job_chunks(job_id))
 
 @app.route("/jobs/<job_id>/plots/tmp-qq", methods=["GET"])
 @login_required

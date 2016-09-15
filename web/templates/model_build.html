@@ -6,6 +6,8 @@
 	<style>
 		form div {width:500px}
 		.chklabel {font-weight: normal;}
+		label .radio-title {display: block; font-weight: bold;}
+		label .radio-desc {display: block; padding: 5px 0}
 	</style>
 	<script type="text/javascript">
 		var phenoSelect;
@@ -105,63 +107,63 @@
         <div class="section">
             <form class="form-horizontal vflex" method="post" action="/api/model" id="model-form" style="visibility:hidden">
 				<div class="form-group">
-					<label for="genotypes" class="control-label col-xs-2">Genotypes</label>
+					<label for="genotype" class="control-label col-xs-2">Genotypes</label>
 					<div class="col-xs-10">
-						<select id="genotype" class="form-control"></select>
+						<select id="genotype" name="genotype" class="form-control"></select>
 					</div>
 				</div>
 				<div class="form-group">
 					<label for="phenotype" class="control-label col-xs-2">Phenotypes</label>
 					<div class="col-xs-10">
-						<select id="phenotype" class="form-control"></select>
+						<select id="phenotype" name="phenotype" class="form-control"></select>
 					</div>
 				</div>
 				<div class="form-group">
 					<label for="response" class="control-label col-xs-2">Response</label>
 					<div class="col-xs-10">
-						<select id="response" class="form-control"></select>
+						<select id="response" name="response" class="form-control"></select>
 					</div>
 				</div>
 				<div class="form-group">
 					<div class="col-xs-offset-2 col-xs-10">
-						<label class="chklabel"><input id="resp_invnormtrans" type="checkbox"/> Inverse Normalize Response</label>
+						<label class="chklabel"><input id="resp_invnormtrans" name="resp_invnormtrans" type="checkbox"/> Inverse Normalize Response</label>
 					</div>
 				</div>
 				<div class="form-group">
 					<label for="covariates" class="control-label col-xs-2">Covariates</label>
 					<div class="col-xs-10">
-						<select id="covariates" class="form-control" multiple="multiple"></select>
+						<select id="covariates" name="covariates" class="form-control" multiple="multiple"></select>
 						<br/><a href="#" id="covar_add_all">Add All</a> - <a href="#" id="covar_remove_all">Remove All</a>
 					</div>
 				</div>
 				<div class="form-group">
-					<label for="model" class="control-label col-xs-2">Model</label>
+					<label class="control-label col-xs-2">Model</label>
 					<div class="col-xs-10">
 						<div class="radio">
 							<label for="model-lm">
-							<input type="radio" name="model" id="model-lm" value="lm">
-							<p><strong>Linear Wald Test (LM)</strong></p>
-							<p>A simple linear model</p></label>
+							<input type="radio" name="model" id="model-lm" value="lm" />
+							<span class="radio-title">Linear Wald Test (LM)</span>
+							<span class="radio-desc">A simple linear model</span></label>
 						</div>
 						<div class="radio">
 							<label for="model-lmm">
-							<input type="radio" name="model" id="model-lmm" value="lmm" checked="checked">
-							<p><strong>Linear Mixed Model (LMM)</strong></p>
-							<p>Adjust for potential relatedness using
-							kinship matrix</p></label>
+							<input type="radio" name="model" id="model-lmm" value="lmm" checked="checked" />
+							<span class="radio-title">Linear Mixed Model (LMM)</span>
+							<span class="radio-desc">Adjust for potential relatedness using
+							kinship matrix</span></label>
 						</div>
 						<div class="radio">
 							<label for="model-burden">
-							<input type="radio" name="model" id="model-burden" value="burden">
-							<p><strong>Burden</strong></p>
-							<p>A simple burden test</p></label>
+							<input type="radio" name="model" id="model-burden" value="burden" />
+							<span class="radio-title">Burden</span>
+							<span class="radio-desc">A simple burden test</span></label>
 						</div>
 					</div>
 				</div>
 				<div class="form-group">
 					<label for="response" class="control-label col-xs-2">Name</label>
 					<div class="col-xs-10">
-						<input id="job_name" class="form-control"></input>
+						<input id="job_name" name="job_name" class="form-control" />
 					</div>
 				</div>
 				<div class="form-group">

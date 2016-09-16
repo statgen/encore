@@ -87,7 +87,10 @@ class Tracker(object):
 
 
     def timer_callback(self):
-        self.routine()
+        try:
+            self.routine()
+        except:
+            True
         self.start()
 
     def cancel(self):

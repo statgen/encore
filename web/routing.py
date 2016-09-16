@@ -102,7 +102,6 @@ def post_api_jobs():
 def get_api_jobs():
     return job_handlers.get_jobs()
 
-
 @app.route("/api/jobs-all", methods=["GET"])
 @login_required
 @admin_required
@@ -201,6 +200,11 @@ def post_api_pheno():
 @login_required
 def get_model_build():
     return job_handlers.get_model_build_view()
+
+@app.route("/api/model", methods=["POST"])
+@login_required
+def post_api_model():
+    return job_handlers.post_to_model()
 
 @app.route("/admin", methods=["GET"])
 @login_required

@@ -10,17 +10,13 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 -- -----------------------------------------------------
 -- Schema gasp
 -- -----------------------------------------------------
-
--- -----------------------------------------------------
--- Schema gasp
--- -----------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS `gasp` DEFAULT CHARACTER SET utf8 ;
 USE `gasp` ;
 
 -- -----------------------------------------------------
--- Table `gasp`.`users`
+-- Table `users`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gasp`.`users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `email` VARCHAR(256) NOT NULL,
   `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -30,9 +26,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gasp`.`statuses`
+-- Table `statuses`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gasp`.`statuses` (
+CREATE TABLE IF NOT EXISTS `statuses` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NOT NULL,
   PRIMARY KEY (`id`))
@@ -40,9 +36,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gasp`.`jobs`
+-- Table `jobs`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gasp`.`jobs` (
+CREATE TABLE IF NOT EXISTS `jobs` (
   `id` BINARY(16) NOT NULL,
   `user_id` INT UNSIGNED NOT NULL,
   `name` VARCHAR(128) NOT NULL,
@@ -55,21 +51,21 @@ CREATE TABLE IF NOT EXISTS `gasp`.`jobs` (
   INDEX `fk_jobs_statuses1_idx` (`status_id` ASC),
   CONSTRAINT `fk_jobs_users`
     FOREIGN KEY (`user_id`)
-    REFERENCES `gasp`.`users` (`id`)
+    REFERENCES `users` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_jobs_statuses1`
     FOREIGN KEY (`status_id`)
-    REFERENCES `gasp`.`statuses` (`id`)
+    REFERENCES `statuses` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gasp`.`phenotypes`
+-- Table `phenotypes`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gasp`.`phenotypes` (
+CREATE TABLE IF NOT EXISTS `phenotypes` (
   `id` BINARY(16) NOT NULL,
   `user_id` INT UNSIGNED NOT NULL,
   `name` VARCHAR(512) NOT NULL,
@@ -80,9 +76,18 @@ CREATE TABLE IF NOT EXISTS `gasp`.`phenotypes` (
   INDEX `fk_phenotypes_users_idx` (`user_id` ASC),
   CONSTRAINT `fk_phenotypes_users`
     FOREIGN KEY (`user_id`)
-    REFERENCES `gasp`.`users` (`id`)
+    REFERENCES `users` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
+
+-- -----------------------------------------------------
+-- Table `genotypes`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `genotypes` (
+  `id` BINARY(16) NOT NULL,
+  `name` VARCHAR(512) NOT NULL,
+  `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`))
 
 USE `gasp` ;
 
@@ -121,18 +126,18 @@ SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
 -- -----------------------------------------------------
--- Data for table `gasp`.`statuses`
+-- Data for table `statuses`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `gasp`;
-INSERT INTO `gasp`.`statuses` (`id`, `name`) VALUES (DEFAULT, 'created');
-INSERT INTO `gasp`.`statuses` (`id`, `name`) VALUES (DEFAULT, 'queued');
-INSERT INTO `gasp`.`statuses` (`id`, `name`) VALUES (DEFAULT, 'started');
-INSERT INTO `gasp`.`statuses` (`id`, `name`) VALUES (DEFAULT, 'cancel_requested');
-INSERT INTO `gasp`.`statuses` (`id`, `name`) VALUES (DEFAULT, 'cancelled');
-INSERT INTO `gasp`.`statuses` (`id`, `name`) VALUES (DEFAULT, 'failed');
-INSERT INTO `gasp`.`statuses` (`id`, `name`) VALUES (DEFAULT, 'succeeded');
-INSERT INTO `gasp`.`statuses` (`id`, `name`) VALUES (DEFAULT, 'quarantined');
+INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'created');
+INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'queued');
+INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'started');
+INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'cancel_requested');
+INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'cancelled');
+INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'failed');
+INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'succeeded');
+INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'quarantined');
 
 COMMIT;
 

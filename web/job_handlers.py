@@ -12,6 +12,7 @@ import glob
 import re
 import time
 import hashlib
+from genotype import Genotype
 from pheno import PhenoReader
 #from werkzeug import secure_filename
 
@@ -286,9 +287,6 @@ def get_job_zoom(job_id):
 def get_pheno_upload_view():
     return render_template("pheno_upload.html")
 
-def get_model_build_view():
-    return render_template("model_build.html")
-
 def get_phenos(): 
     db = sql_pool.get_conn()
     cur = db.cursor(MySQLdb.cursors.DictCursor)
@@ -374,6 +372,63 @@ def post_to_pheno():
         json.dump(meta, f)
     return json_resp(meta)
     
+def get_model_build_view():
+    return render_template("model_build.html")
+
+def post_to_model():
+    user = current_user
+    job_desc = dict()
+    if request.method != 'POST':
+        return json_resp({"error": "NOT A POST REQUEST"}), 405
+    form_data = request.form
+    genotype_id = form_data["genotype"]
+    phenotype_id = form_data["phenotype"]
+    job_desc["genotype"] = genotype_id
+    job_desc["phenotype"] = phenotype_id
+    job_desc["name"] = form_data["name"]
+    model = {"response": form_data["response"], 
+        "covariates": form_data.getlist("covariates"),
+        "model": form_data["model"]
+    }
+    job_desc["models"] = [model]
+    job_id = str(uuid.uuid4())
+    if not job_id:
+        return json_resp({"error": "COULD NOT GENERATE JOB ID"}), 500
+    job_directory =  os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
+    try:
+        os.mkdir(job_directory)
+        job_desc_file = os.path.join(job_directory, "job.json")
+        with open(job_desc_file, "w") as outfile:
+            json.dump(job_desc, outfile)
+    except:
+        return json_resp({"error": "COULD NOT SAVE JOB DESCRIPTION"}), 500
+    # file has been saved to disc
+    try:
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute("""
+            INSERT INTO jobs (id, name, user_id, status_id)
+            VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'queued'))
+            """, (job_id, job_desc["name"], current_user.rid))
+        db.commit()
+    except:
+        shutil.rmtree(job_directory)
+        return json_resp({"error": "COULD NOT SAVE TO DATABASE"}), 500 
+    # everything worked
+    return json_resp({"id": job_id})
+
+def get_genotypes():
+    genos = Genotype.listAll()
+    def get_stats(x):
+        s = Genotype.get(x["id"],current_app.config).getStats() 
+        s["name"] = x["name"]
+        s["creation_date"] = x["creation_date"]
+        s["id"] = x["id"]
+        return s
+    stats = [get_stats(x) for x in genos]
+    return json_resp(stats)
+     
+
 def get_admin_main_page():
     return render_template("admin_main.html")
 

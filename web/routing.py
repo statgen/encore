@@ -47,6 +47,10 @@ def index():
 def get_sign_in():
     return sign_in_handler.get_sign_in_view("sign-in") 
 
+@app.route("/api/geno", methods=["GET"])
+@login_required
+def get_genotypes():
+    return job_handlers.get_genotypes()
 
 @app.route("/api/vcf/statistics", methods=["GET"])
 def get_api_vcf_statistics():

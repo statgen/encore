@@ -67,10 +67,6 @@
 		}
 
 		$(function() {
-			genoSelect = $("#genotype").select2({
-				data: [{id:1, text:"Freeze 3"}, {id:2, text:"Freeze2"}],
-				minimumResultsForSearch: 3
-			}).on("change", formChanged);
 			$("#covar_add_all").click(function(evt) {
 				evt.preventDefault();
 				resp = responseSelect.val();
@@ -86,16 +82,29 @@
 				evt.preventDefault();
 				covariateSelect.val("").trigger("change");
 			});
-			$.getJSON("/api/pheno").done(function(resp) {
+			var d1 = $.getJSON("/api/geno").then(function(resp) {
+				var genos = [];
+				resp.forEach(function(g) {
+					genos.push({id: g.id, text: g.name})
+				});
+				genoSelect = $("#genotype").select2({
+					data: genos,
+					minimumResultsForSearch: 4
+				}).on("change", formChanged);
+			});
+			var d2 = $.getJSON("/api/pheno").then(function(resp) {
 				var phenos = [];
 				resp.forEach(function(p) {
 					phenos.push({id: p.id, text:p.name})
 				});
 				phenoSelect = $("#phenotype").select2({
 					data: phenos,
-					minimumResultsForSearch: 3
+					minimumResultsForSearch: 4
 				}).on("change", formChanged);
-				loadPheno(resp[0].id)
+				return resp[0].id
+			});
+			$.when(d1, d2).done(function(g, p) {
+				loadPheno(p);
 			});
 			$("input[type=radio]", "#model-form").on("change", formChanged);
 			$("#job_name", "#model-form").on("change", nameChanged);

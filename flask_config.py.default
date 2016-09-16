@@ -1,4 +1,6 @@
 JOB_DATA_FOLDER = "./"
+PHENO_DATA_FOLDER = "./"
+GENO_DATA_FOLDER = "./"
 ANALYSIS_BINARY = "epacts"
 QUEUE_JOB_BINARY = "sbatch"
 MANHATTAN_BINARY = "make_manhattan_json.py"

@@ -49,9 +49,9 @@
 				covars = pheno.meta.columns;
 				var opts  = [];
 				var hideCols = ["family_id","sample_id","mother_id","father_id"];
-				pheno.meta.columns.forEach(function(col, idx) {
+				pheno.meta.columns.forEach(function(col) {
 					if (hideCols.indexOf(col.class)<0 && col.class != "fixed") {
-						opts.push({id: idx, text: col.name});	
+						opts.push({id: col.name, text: col.name});	
 					}
 				})
 				responseSelect = $("#response").select2({
@@ -71,9 +71,9 @@
 				evt.preventDefault();
 				resp = responseSelect.val();
 				opts = []
-				covars.forEach(function(col, idx) {
-					if (idx != resp) {
-						opts.push(idx);
+				covars.forEach(function(col) {
+					if (col.name != resp) {
+						opts.push(col.name);
 					}
 				});
 				covariateSelect.val(opts).trigger("change");

@@ -53,6 +53,11 @@ def guess_column_class(colinfo):
         # all same type
         best_type = n_vals.most_common(1)[0][0]
         return guess_atomic_column_class(best_type, col[best_type])
+    if len(col)==2 and "int" in col and "float" in col:
+        #promote to float
+        best_type = "float"
+        vals = col["int"] + col["float"]
+        return guess_atomic_column_class(best_type, vals)
     if len(col)==2 and (n_uniq_vals["str"]==1):
         # likely a numeric value with a missing indicator
         best_type = [x[0] for x in n_vals.most_common(2) if x[0] != "str"][0]

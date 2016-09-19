@@ -17,6 +17,41 @@
 		var covariateSelect;
 		var userHasNamedJob = false;
 
+		function submitModel(e) {
+			e.preventDefault()
+			var form = $("#model-form")[0];
+			var fd = new FormData(form);
+			var xhr = new XMLHttpRequest();
+			//TODO: Add error handling
+			xhr.addEventListener("load", function () {
+				if (xhr.status >= 200 && xhr.status < 300) {
+					try {
+						var resp = JSON.parse(xhr.responseText);
+						if (resp.url_job) {
+							document.window.location = resp.url_job;
+						}
+					} catch (ex) {
+						console.warning(ex)
+					}
+					document.window.location = "/";
+				} else {
+					var message;
+					try {
+						var resp = JSON.parse(xhr.responseText);
+						message = resp.error;
+					} catch (ex) {
+						message = xhr.responseText || xhr.statusText;
+					}
+					alert(message);
+				}
+			//	submitButton.prop("disabled", false);
+			}.bind(this), false);
+			//xhr.addEventListener("error", uploadFailed, false);
+			//xhr.addEventListener("abort", uploadCanceled, false);
+			xhr.open("POST", form.action);
+			xhr.send(fd);
+		}
+
 		function nameChanged() {
 			userHasNamedJob = true;
 			var ele = $("#job_name", "#model-form");
@@ -108,6 +143,7 @@
 			});
 			$("input[type=radio]", "#model-form").on("change", formChanged);
 			$("#job_name", "#model-form").on("change", nameChanged);
+			$("#model-form").on("submit", submitModel);
 		})
 	</script>
 {% endblock %}

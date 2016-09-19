@@ -8,10 +8,15 @@ class Genotype:
         self.geno_id = geno_id
         self.meta = meta
        
-    def getVCFPath(self, chrom):
+    def getVCFPath(self, chrom=1):
         vcf_stub = self.meta.get("vcf_path", "vcfs/ALL.chr%(chrom)s.pass.gtonly.genotypes.vcf.gz")
         vcf_path = self.relative_path(vcf_stub % {"chrom": str(chrom)})
         return vcf_path
+
+    def getGroupsPath(self, group, chrom=1):
+        grp_stub = self.meta.get("group_path", "groups/%(grp)s.chr%(chrom)s.grp")
+        grp_path = self.relative_path(grp_stub % {"grp": group, "chrom": str(chrom)})
+        return grp_path
 
     def getKinshipPath(self):
         kinship_stub = self.meta.get("kinship_path", "kinship/kinship.kin")

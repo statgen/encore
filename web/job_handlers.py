@@ -14,6 +14,7 @@ import time
 import hashlib
 from genotype import Genotype
 from pheno import PhenoReader
+from slurm_epacts_job import SlurmEpactsJob
 #from werkzeug import secure_filename
 
 def get_job_list_view():
@@ -385,24 +386,34 @@ def post_to_model():
     phenotype_id = form_data["phenotype"]
     job_desc["genotype"] = genotype_id
     job_desc["phenotype"] = phenotype_id
-    job_desc["name"] = form_data["name"]
+    job_desc["name"] = form_data["job_name"]
     model = {"response": form_data["response"], 
         "covariates": form_data.getlist("covariates"),
         "model": form_data["model"]
     }
     job_desc["models"] = [model]
     job_id = str(uuid.uuid4())
+
     if not job_id:
         return json_resp({"error": "COULD NOT GENERATE JOB ID"}), 500
     job_directory =  os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
+
+    job = SlurmEpactsJob(job_id, job_directory, current_app.config) 
+
     try:
         os.mkdir(job_directory)
         job_desc_file = os.path.join(job_directory, "job.json")
         with open(job_desc_file, "w") as outfile:
             json.dump(job_desc, outfile)
-    except:
+    except Exception:
         return json_resp({"error": "COULD NOT SAVE JOB DESCRIPTION"}), 500
     # file has been saved to disc
+    try:
+        job.submit_job(job_desc)
+    except:
+        shutil.rmtree(job_directory)
+        return json_resp({"error": "COULD NOT ADD JOB TO QUEUE"}), 500 
+    # job submitted to queue
     try:
         db = sql_pool.get_conn()
         cur = db.cursor()

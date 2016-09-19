@@ -1,6 +1,6 @@
 import os
 import shutil
-from flask import render_template, request, json, Response, current_app, redirect, send_file, make_response
+from flask import render_template, request, json, Response, current_app, redirect, send_file, make_response, url_for
 from flask_login import current_user
 import sql_pool
 import MySQLdb
@@ -371,7 +371,7 @@ def post_to_pheno():
     meta = pheno.infer_meta()
     with open(pheno_meta_path, "w") as f:
         json.dump(meta, f)
-    return json_resp(meta)
+    return json_resp({"id": pheno_id, "url_model": url_for("get_model_build", pheno=pheno_id)})
     
 def get_model_build_view():
     return render_template("model_build.html")
@@ -425,7 +425,7 @@ def post_to_model():
         shutil.rmtree(job_directory)
         return json_resp({"error": "COULD NOT SAVE TO DATABASE"}), 500 
     # everything worked
-    return json_resp({"id": job_id})
+    return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
 
 def get_genotypes():
     genos = Genotype.listAll()

@@ -8,9 +8,12 @@
 		$(function() {
 			var um = new UploadManager("form.ubox");
 			um.onupload = function(resp) {
-				alert("Upload successful!");	
+				if (resp.url_model) {
+					document.location.href = resp.url_model;
+				} else {
+					window.alert("Upload Successful");
+				}
 				console.log(resp);
-				//TODO: allow user to change settings
 			}
 		})
 	</script>

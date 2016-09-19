@@ -387,11 +387,9 @@ def post_to_model():
     job_desc["genotype"] = genotype_id
     job_desc["phenotype"] = phenotype_id
     job_desc["name"] = form_data["job_name"]
-    model = {"response": form_data["response"], 
-        "covariates": form_data.getlist("covariates"),
-        "model": form_data["model"]
-    }
-    job_desc["models"] = [model]
+    job_desc["response"] =  form_data["response"] 
+    job_desc["covariates"] =  form_data.getlist("covariates")
+    job_desc["type"] = form_data["model"]
     job_id = str(uuid.uuid4())
 
     if not job_id:
@@ -410,7 +408,8 @@ def post_to_model():
     # file has been saved to disc
     try:
         job.submit_job(job_desc)
-    except:
+    except Exception as e:
+        print e
         shutil.rmtree(job_directory)
         return json_resp({"error": "COULD NOT ADD JOB TO QUEUE"}), 500 
     # job submitted to queue

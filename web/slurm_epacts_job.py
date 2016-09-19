@@ -1,5 +1,7 @@
 from genotype import Genotype
 from phenotype import Phenotype 
+import os
+import subprocess
 
 class SlurmEpactsJob:
 
@@ -33,31 +35,32 @@ class SlurmEpactsJob:
             else:
                 raise Exception("No phenotype information in job")
 
-        analysis_cmd = ""
-        for model in job_desc["models"]:
-
-            analysis_cmd += "{} single".format(self.config.get("ANALYSIS_BINARY", "epacts")) + \
+        def one_cmd(model):
+            cmd = ""
+            cmd += "{} single".format(self.config.get("ANALYSIS_BINARY", "epacts")) + \
                 " --vcf {}".format(geno.getVCFPath(1)) + \
                 " --ped {}".format(pheno.getRawPath()) +  \
                 " --min-maf 0.001 --field GT" + \
                 " --sepchr --unit 500000" + \
                 " --out ./output --run 48"
 
-            analysis_cmd += " --pheno {}".format(model["response"])
+            cmd += " --pheno {}".format(model["response"])
             for covar in model["covariates"]:
-                analysis_cmd += " --cov {}".format(covar)
+                cmd += " --cov {}".format(covar)
 
-            if model["model"] == "lm":
-                analysis_cmd += " --test q.linear"
-            elif model["model"] == "lmm":
-                analysis_cmd += " --test q.emmax --kin {}".format(geno.getKinshipPath())
-            elif model["model"] == "burden":
+            if model["type"] == "lm":
+                cmd += " --test q.linear"
+            elif model["type"] == "lmm":
+                cmd += " --test q.emmax --kin {}".format(geno.getKinshipPath())
+            elif model["type"] == "burden":
                 group = model.get("group", "nonsyn")
-                analysis_cmd += " --test skat " +  \
+                cmd += " --test skat " +  \
                     "--groups {}".format(geno.getGroupsPath(group))
             else:
-                raise ValueError('Unrecognize model: %s' % (model["model"],))
+                raise ValueError('Unrecognize model type: %s' % (model["type"],))
+            return cmd
 
+        analysis_cmd = one_cmd(job_desc)
         return analysis_cmd
 
     def create_postprocessing_command(self, job_desc):
@@ -84,7 +87,7 @@ class SlurmEpactsJob:
     def submit_job(self, job_desc):
         sbatch = self.config.get("QUEUE_JOB_BINARY", "sbatch")
         batch_script_path = self.relative_path("batch_script.sh")
-        batch_output_path = self.relative_path("batch_script_output.sh")
+        batch_output_path = self.relative_path("batch_script_output.txt")
         with open(batch_script_path, "w") as f:
             f.write(self.create_launch_script(job_desc))
         with open(batch_output_path, "w") as f:

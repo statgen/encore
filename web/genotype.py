@@ -13,9 +13,9 @@ class Genotype:
         vcf_path = self.relative_path(vcf_stub % {"chrom": str(chrom)})
         return vcf_path
 
-    def getGroupsPath(self, group, chrom=1):
-        grp_stub = self.meta.get("group_path", "groups/%(grp)s.chr%(chrom)s.grp")
-        grp_path = self.relative_path(grp_stub % {"grp": group, "chrom": str(chrom)})
+    def getGroupsPath(self, group):
+        grp_stub = self.meta.get("group_path", "groups/%(grp)s.grp")
+        grp_path = self.relative_path(grp_stub % {"grp": group})
         return grp_path
 
     def getKinshipPath(self):

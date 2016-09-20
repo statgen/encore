@@ -13,7 +13,7 @@
 		function init_job_table() {
 			$("#jobs-table").DataTable({
 				ajax: {url: "/api/jobs", dataSrc: ""},
-				//order: [[2, "desc"]],
+				order: [[1, "desc"]],
 				columns: [
 					{data: "name", title: "Job Name"},
 					{data: "creation_date", title: "Date Created"},

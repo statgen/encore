@@ -28,10 +28,10 @@
 					try {
 						var resp = JSON.parse(xhr.responseText);
 						if (resp.url_job) {
-							document.window.location = resp.url_job;
+							window.location = resp.url_job;
 						}
 					} catch (ex) {
-						console.warning(ex)
+						console.warn(ex)
 					}
 					document.window.location = "/";
 				} else {

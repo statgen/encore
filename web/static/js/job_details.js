@@ -75,56 +75,57 @@ function init_tophits(job_id, selector, data_url) {
 				data[j].chrom_sort = chrpos[chr] = i++
 			}
 		}
+        var datacols = [
+            {data: null, title:"Chrom",
+                orderData: [0,1],
+                type: "num",
+                render: function(data, type) {
+                    if (type=="sort") {
+                        return data.chrom_sort
+                    }
+                    return data.chrom
+                },
+                className: "dt-body-right"
+            },
+            {data: "pos", title:"Position", 
+                render: function(data, type) {
+                    if (type=="display") {
+                        return data.toLocaleString()
+                    }
+                    return data
+                },
+                orderData: [0,1],
+                className: "dt-body-right"
+            },
+            {data: "name", title:"Variant"},
+            {data: "pval", title:"Best P-Value", 
+                render: function(data, type) {
+                    if (type=="display") {
+                        return data.toExponential(2)
+                    }
+                    return data
+                },
+                className: "dt-body-right"
+            },
+            {data: "sig_count", title:"# Significant",
+                className: "dt-body-center"
+            },
+            {data: "gene", title:"Nearest gene",
+                className: "dt-body-center"
+            },
+            {data: "pos", title:"Plot",
+                render:function(data, type, row) {
+                    var fn = "event.preventDefault();" + 
+                        "jumpToLocusZoom(\"" + job_id + "\",\"" + row.chrom + "\"," + data + ")";
+                    return "<a href='#' onclick='" + fn + "'>View</a>"
+                },
+                orderable: false,
+                className: "dt-body-center"
+            }
+        ];
 		var table = $(selector).DataTable( {
 			data: data,
-			columns: [
-				{data: null, title:"Chrom",
-					orderData: [0,1],
-					type: "num",
-					render: function(data, type) {
-						if (type=="sort") {
-							return data.chrom_sort
-						}
-						return data.chrom
-					},
-					className: "dt-body-right"
-				},
-				{data: "pos", title:"Position", 
-					render: function(data, type) {
-						if (type=="display") {
-							return data.toLocaleString()
-						}
-						return data
-					},
-					orderData: [0,1],
-					className: "dt-body-right"
-				},
-				{data: "name", title:"Variant"},
-				{data: "pval", title:"Most Significant P-Value", 
-					render: function(data, type) {
-						if (type=="display") {
-							return data.toExponential(2)
-						}
-						return data
-					},
-					className: "dt-body-right"
-				},
-				{data: "sig_count", title:"# Significant Hits",
-					className: "dt-body-center"
-				},
-				{data: "gene", title:"Nearest gene",
-					className: "dt-body-center"
-				},
-				{data: "pos", title:"Plot",
-					render:function(data, type, row) {
-						var fn = "event.preventDefault();" + 
-							"jumpToLocusZoom(\"" + job_id + "\",\"" + row.chrom + "\"," + data + ")";
-						return "<a href='#' onclick='" + fn + "'>View</a>"
-					},
-					orderable: false,
-					className: "dt-body-center"
-				}
-			],
+			columns: datacols,
 			order: [[3, "asc"]],
 			lengthChange: false,
 			searching: false,

@@ -106,13 +106,14 @@ function init_vcf_stats() {
         if (xhr.status >= 200 && xhr.status < 300)
         {
             var stats = JSON.parse(xhr.responseText);
+            stats = stats[0];
 
             $("#carousel tr.genotype-stats td:nth-child(1)").text(stats.genotype_count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
             $("#carousel tr.marker-stats td:nth-child(1)").text(stats.record_count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
             $("#carousel tr.sample-stats td:nth-child(1)").text(stats.sample_count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
         }
     }, false);
-    xhr.open("GET", "/api/vcf/statistics");
+    xhr.open("GET", "/api/geno");
     xhr.send();
 }
 

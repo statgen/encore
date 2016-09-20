@@ -270,21 +270,24 @@ def get_job_zoom(job_id):
     json_response_data["BEGIN"] = []
     json_response_data["END"] = []
     json_response_data["MARKER_ID"] = []
-    #json_response_data["NS"] = []
+    json_response_data["NS"] = []
     #json_response_data["AC"] = []
     #json_response_data["CALLRATE"] = []
     json_response_data["MAF"] = []
     json_response_data["PVALUE"] = []
+    json_response_data["BETA"] = []
     for r in results:
-        json_response_data["CHROM"].append(r[header.index("#CHROM")])
-        json_response_data["BEGIN"].append(r[header.index("BEGIN")])
-        json_response_data["END"].append(r[header.index("END")])
-        json_response_data["MARKER_ID"].append(r[header.index("MARKER_ID")])
-        #json_response_data["NS"].append(r[4])
-        #json_response_data["AC"].append(r[5])
-        #json_response_data["CALLRATE"].append(r[6])
-        json_response_data["MAF"].append(r[header.index("MAF")])
-        json_response_data["PVALUE"].append(r[header.index("PVALUE")])
+        if r[header.index("PVALUE")] != "NA":
+            json_response_data["CHROM"].append(r[header.index("#CHROM")])
+            json_response_data["BEGIN"].append(r[header.index("BEGIN")])
+            json_response_data["END"].append(r[header.index("END")])
+            json_response_data["MARKER_ID"].append(r[header.index("MARKER_ID")])
+            json_response_data["NS"].append(r[4])
+            #json_response_data["AC"].append(r[5])
+            #json_response_data["CALLRATE"].append(r[6])
+            json_response_data["MAF"].append(r[header.index("MAF")])
+            json_response_data["PVALUE"].append(r[header.index("PVALUE")])
+            json_response_data["BETA"].append(r[header.index("BETA")])
     resp.set_data(json.dumps(json_response_data))
     return resp
 

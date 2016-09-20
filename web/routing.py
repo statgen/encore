@@ -38,9 +38,9 @@ def favicon():
     return app.send_static_file('favicon.ico')
 
 @app.route("/")
+@login_required
 def index():
-    return redirect("/jobs")
-
+    return job_handlers.get_home_view()
 
 @app.route("/sign-in", methods=["GET"])
 @login_manager.unauthorized_handler

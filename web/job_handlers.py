@@ -17,6 +17,9 @@ from pheno import PhenoReader
 from slurm_epacts_job import SlurmEpactsJob
 #from werkzeug import secure_filename
 
+def get_home_view():
+    return render_template("home.html")
+
 def get_job_list_view():
     return render_template("job_list.html")
 

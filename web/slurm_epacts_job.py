@@ -36,28 +36,41 @@ class SlurmEpactsJob:
                 raise Exception("No phenotype information in job")
 
         def one_cmd(model):
+            ecmd = ""
+            opts = ""
+            if model["type"] == "lm":
+                ecmd = "single"
+                opts += " --test q.linear" + \
+                    " --unit 500000" + \
+                    " --min-maf 0.001" 
+            elif model["type"] == "lmm":
+                ecmd = "single"
+                opts += " --test q.emmax --kin {}".format(geno.getKinshipPath()) + \
+                    " --unit 500000" + \
+                    " --min-maf 0.001" 
+            elif model["type"] == "burden":
+                ecmd = "group"
+                group = model.get("group", "nonsyn")
+                opts += " --test skat" +  \
+                    " --groupf {}".format(geno.getGroupsPath(group)) + \
+                    " --max-maf 0.05" + \
+                    " --unit 500"
+            else:
+                raise ValueError('Unrecognize model type: %s' % (model["type"],))
+
             cmd = ""
-            cmd += "{} single".format(self.config.get("ANALYSIS_BINARY", "epacts")) + \
+            cmd += "{} {}".format(self.config.get("ANALYSIS_BINARY", "epacts"), ecmd) + \
                 " --vcf {}".format(geno.getVCFPath(1)) + \
                 " --ped {}".format(pheno.getRawPath()) +  \
-                " --min-maf 0.001 --field GT" + \
-                " --sepchr --unit 500000" + \
+                " --field GT" + \
+                " --sepchr" + \
                 " --out ./output --run 48"
 
             cmd += " --pheno {}".format(model["response"])
             for covar in model["covariates"]:
                 cmd += " --cov {}".format(covar)
+            cmd += opts
 
-            if model["type"] == "lm":
-                cmd += " --test q.linear"
-            elif model["type"] == "lmm":
-                cmd += " --test q.emmax --kin {}".format(geno.getKinshipPath())
-            elif model["type"] == "burden":
-                group = model.get("group", "nonsyn")
-                cmd += " --test skat " +  \
-                    "--groups {}".format(geno.getGroupsPath(group))
-            else:
-                raise ValueError('Unrecognize model type: %s' % (model["type"],))
             return cmd
 
         analysis_cmd = one_cmd(job_desc)

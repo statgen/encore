@@ -205,6 +205,11 @@ def post_api_pheno():
 def get_model_build():
     return job_handlers.get_model_build_view()
 
+@app.route("/api/model/", methods=["GET"])
+@login_required
+def get_api_models():
+    return job_handlers.get_models()
+
 @app.route("/api/model", methods=["POST"])
 @login_required
 def post_api_model():

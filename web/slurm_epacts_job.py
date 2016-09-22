@@ -120,7 +120,7 @@ class SlurmEpactsJob:
         return [
             {"code":"lm", "name":" Linear Wald Test", "description": "A simple linear model"},
             {"code":"lmm", "name": "Linear Mixed Model", 
-                "description": "Adjust for potential relatedness using kinship matrix"},
-            {"code":"skat", "name":"SKAT-O Test", 
-                "description": "Adaptive Burden Test"}
+                "description": "Adjust for potential relatedness using kinship matrix"} #,
+            #{"code":"skat", "name":"SKAT-O Test", 
+            #    "description": "Adaptive Burden Test"}
         ];

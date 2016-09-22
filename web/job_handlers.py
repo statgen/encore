@@ -443,7 +443,10 @@ def get_genotypes():
         return s
     stats = [get_stats(x) for x in genos]
     return json_resp(stats)
-     
+
+def get_models():
+    models = SlurmEpactsJob.available_models()
+    return json_resp(models)
 
 def get_admin_main_page():
     return render_template("admin_main.html")

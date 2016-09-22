@@ -13,7 +13,7 @@ import re
 import time
 import hashlib
 from genotype import Genotype
-from pheno import PhenoReader
+from pheno_reader import PhenoReader
 from slurm_epacts_job import SlurmEpactsJob
 #from werkzeug import secure_filename
 

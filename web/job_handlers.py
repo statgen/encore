@@ -259,12 +259,27 @@ def get_job_locuszoom_plot(job_id, region):
     return render_template("job_locuszoom.html", job=job_data, region=region)
 
 
-def get_job_output(job_id, filename, as_attach=False, mimetype=None):
+def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, head=None):
     try:
         job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-        output_file_path = os.path.join(job_directory, filename)
-        return send_file(output_file_path, as_attachment=as_attach, mimetype=mimetype)
-    except:
+        output_file = os.path.join(job_directory, filename)
+        if tail or head:
+            if tail and head:
+                return "Cannot specify tail AND head", 500
+            cmd = "head" if head else "tail"
+            count = tail or head
+            p = subprocess.Popen([cmd, "-n", count, output_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            tail_data, tail_error = p.communicate()
+            resp = make_response(tail_data)
+            if as_attach:
+                resp.headers["Content-Disposition"] = "attachment; filename={}".format(filename)
+            if mimetype:
+                resp.headers["Content-Type"] = mimetype
+            return resp
+        else:
+            return send_file(output_file, as_attachment=as_attach, mimetype=mimetype)
+    except Exception as e:
+        print e
         return "File Not Found", 404
 
 

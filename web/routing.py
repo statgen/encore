@@ -229,8 +229,11 @@ def get_admin_page():
 @login_required
 @admin_required
 def get_job_log(job_id, log_name):
+    tail = request.args.get("tail", 0)
+    head = request.args.get("head", 0)
     if log_name in ["err.log","out.log"]:
-        return job_handlers.get_job_output(job_id, log_name, mimetype="text/plain")
+        return job_handlers.get_job_output(job_id, log_name, \
+            mimetype="text/plain", tail=tail, head=head)
     else:
         return "Not Found", 404
 

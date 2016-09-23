@@ -100,7 +100,6 @@ def get_job_locuszoom_plot(job_id, region):
 def post_api_jobs():
     return job_handlers.post_to_jobs()
 
-
 @app.route("/api/jobs", methods=["GET"])
 @login_required
 def get_api_jobs():
@@ -117,6 +116,11 @@ def get_api_jobs_all():
 def get_api_job(job_id):
     return job_handlers.get_job(job_id)
 
+@app.route("/api/jobs/<job_id>", methods=["DELETE"])
+@login_required
+@admin_required
+def delete_api_job(job_id):
+    return job_handlers.purge_job(job_id)
 
 @app.route("/api/jobs/<job_id>/cancel_request", methods=["POST"])
 @login_required

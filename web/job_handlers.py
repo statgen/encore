@@ -189,6 +189,25 @@ def cancel_job(job_id):
 
     return resp
 
+def purge_job(job_id):
+    db = sql_pool.get_conn()
+    cur = db.cursor()
+    sql = "DELETE FROM jobs WHERE id = uuid_to_bin(%s)"
+    cur.execute(sql, (job_id, ))
+    affected = cur.rowcount
+    db.commit()
+
+    job_directory =  os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
+    removed = False
+    if os.path.isdir(job_directory):
+        removed = True
+        shutil.rmtree(job_directory)
+
+    resp = json_resp({"db": affected, "files": removed})
+    if affected >0 or removed:
+        return resp
+    else:
+        return resp, 404
 
 def get_job_details_view(job_id):
     db = sql_pool.get_conn()

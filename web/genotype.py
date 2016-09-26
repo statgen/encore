@@ -8,19 +8,50 @@ class Genotype:
         self.geno_id = geno_id
         self.meta = meta
        
-    def getVCFPath(self, chrom=1):
-        vcf_stub = self.meta.get("vcf_path", "vcfs/ALL.chr%(chrom)s.pass.gtonly.genotypes.vcf.gz")
-        vcf_path = self.relative_path(vcf_stub % {"chrom": str(chrom)})
+    def getVCFPath(self, chrom=1, must_exist=False):
+        vcf_stub = ""
+        chrom = str(chrom)
+        if "vcfs" in self.meta:
+            vcfs = self.meta["vcfs"]
+            if type(vcfs) is dict:
+                if chrom in vcfs:
+                    vcf_stub = vcfs[chrom]
+                elif "*" in vcfs:
+                    vcf_stub = vcfs["*"]
+            else:
+                vcf_stub = vcfs
+        if vcf_stub == "":
+            vcf_stub = "vcfs/chr{0}.vcf.gz"
+        vcf_stub = vcf_stub.replace("*","{0}").format(chrom)
+        vcf_path = self.relative_path(vcf_stub)
+        if must_exist and not os.path.exists(vcf_path):
+            return None
         return vcf_path
 
-    def getGroupsPath(self, group):
-        grp_stub = self.meta.get("group_path", "groups/%(grp)s.grp")
-        grp_path = self.relative_path(grp_stub % {"grp": group})
+    def getGroupsPath(self, group, must_exist=False):
+        grp_stub = ""
+        if "groups" in self.meta:
+            groups = self.meta["groups"]
+            if type(groups) is dict:
+                if group in groups:
+                    grp_stub = groups[group]
+                elif "*" in groups:
+                    grp_stub = groups["*"]
+            else:
+                grp_stub = groups
+        if grb_stub == "":
+            grp_stub = "groups/{0}.grp"
+        grp_stub = grp_stub.replace("*","{0}").format(group)
+        grp_path = self.relative_path(grp_stub)
+        if must_exist and not os.path.exists(grp_path):
+            return None
         return grp_path
 
-    def getKinshipPath(self):
+    def getKinshipPath(self, must_exist=False):
         kinship_stub = self.meta.get("kinship_path", "kinship/kinship.kin")
         kinship_path = self.relative_path(kinship_stub)
+        if must_exist and not os.path.exists(kinship_path):
+            return None
         return kinship_path
 
     def getStats(self):

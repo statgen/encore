@@ -15,6 +15,7 @@ import hashlib
 from genotype import Genotype
 from phenotype import Phenotype
 from pheno_reader import PhenoReader
+from job import Job 
 from slurm_epacts_job import SlurmEpactsJob
 
 def get_home_view():
@@ -117,20 +118,8 @@ def post_to_jobs():
 
 
 def get_jobs():
-    resp = Response(mimetype='application/json')
-    db = sql_pool.get_conn()
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = """
-        SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
-        FROM jobs
-        LEFT JOIN statuses ON jobs.status_id = statuses.id
-        WHERE jobs.user_id = %s
-        ORDER BY jobs.creation_date DESC
-        """
-    cur.execute(sql, (current_user.rid,))
-    results = cur.fetchall()
-    resp.set_data(json.dumps(results))
-    return resp
+    jobs = Job.list_all_for_user(current_user.rid, current_app.config)
+    return json_resp(jobs)
 
 def get_all_jobs():
     resp = Response(mimetype='application/json')
@@ -213,53 +202,12 @@ def purge_job(job_id):
         return resp, 404
 
 def get_job_details_view(job_id):
-    db = sql_pool.get_conn()
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = """
-        SELECT
-          bin_to_uuid(jobs.id) AS id,
-          jobs.name AS name,
-          statuses.name AS status,
-          jobs.error_message AS error_message,
-          DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
-          DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
-        FROM jobs
-        LEFT JOIN statuses ON jobs.status_id = statuses.id
-        WHERE jobs.id = uuid_to_bin(%s)
-        """
-    cur.execute(sql, (job_id,))
-
-    if cur.rowcount == 0:
-        return "Job does not exist.", 404
-    else:
-        job_data = cur.fetchone()
-
-        return render_template("job_details.html", job=job_data)
-
+    job = Job.get(job_id, current_app.config)
+    return render_template("job_details.html", job=job.as_object())
 
 def get_job_locuszoom_plot(job_id, region):
-    db = sql_pool.get_conn()
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = """
-        SELECT
-          bin_to_uuid(jobs.id) AS id,
-          jobs.name AS name,
-          statuses.name AS status,
-          jobs.error_message AS error_message,
-          DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
-          DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
-        FROM jobs
-        LEFT JOIN statuses ON jobs.status_id = statuses.id
-        WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
-        """
-    cur.execute(sql, (current_user.rid, job_id))
-
-    if cur.rowcount == 0:
-        return "Job does not exist.", 404
-    else:
-        job_data = cur.fetchone()
-
-    return render_template("job_locuszoom.html", job=job_data, region=region)
+    job = Job.get(job_id, current_app.config)
+    return render_template("job_locuszoom.html", job=job.as_object(), region=region)
 
 
 def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, head=None):

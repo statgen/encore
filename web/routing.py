@@ -237,7 +237,6 @@ def get_job_log(job_id, log_name):
     else:
         return "Not Found", 404
 
-
 # @app.errorhandler(500)
 # def internal_error(exception):
 #     return render_template('500.html'), 500

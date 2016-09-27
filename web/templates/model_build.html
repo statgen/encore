@@ -31,7 +31,7 @@
 			var form = $("#model-form")[0];
 			var fd = new FormData(form);
 			var formErrors = validateModel(fd);
-			if (formErrors) {
+			if (formErrors.length) {
 				alert("Error!");
 				return false;
 			}
@@ -181,7 +181,7 @@
 {% block content %}
 	<h1>Build your model...</h1>
         <div class="section">
-            <form class="form-horizontal vflex" method="post" action="/api/model" id="model-form" style="visibility:hidden">
+            <form class="form-horizontal vflex" method="post" action="/api/jobs" id="model-form" style="visibility:hidden">
 				<div class="form-group">
 					<label for="genotype" class="control-label col-xs-2">Genotypes</label>
 					<div class="col-xs-10">

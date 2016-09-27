@@ -214,11 +214,6 @@ def get_model_build():
 def get_api_models():
     return job_handlers.get_models()
 
-@app.route("/api/model", methods=["POST"])
-@login_required
-def post_api_model():
-    return job_handlers.post_to_model()
-
 @app.route("/admin", methods=["GET"])
 @login_required
 @admin_required

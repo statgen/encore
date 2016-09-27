@@ -23,99 +23,6 @@ def get_home_view():
 def get_job_list_view():
     return render_template("job_list.html")
 
-def post_to_jobs():
-    resp = Response(mimetype="application/json")
-    db = sql_pool.get_conn()
-    if request.method != 'POST':
-        resp.status_code = 405
-        resp.mimetype = "text/plain"
-        resp.set_data(json.dumps({"error": "NOT A POST REQUEST"}))
-    else:
-        if "job_name" not in request.form or "ped_file" not in request.files:
-            resp.status_code = 400
-            resp.set_data(json.dumps({"error": "INVALID FILE"}))
-        else:
-            job_id = str(uuid.uuid4())
-            if not job_id:
-                resp.status_code = 500
-                resp.set_data(json.dumps({"error": "COULD NOT GENERATE JOB ID"}))
-            else:
-                ped_file = request.files["ped_file"]
-                job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-                os.mkdir(job_directory)
-                ped_file_path = os.path.join(job_directory, "input.ped")
-                ped_file.save(ped_file_path)
-
-                validate_exe = os.path.join(current_app.config.root_path, "../bin/validate-ped")
-                p = subprocess.Popen([validate_exe, ped_file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                out, err = p.communicate()
-                if p.returncode != 0:
-                    shutil.rmtree(job_directory)
-                    resp.status_code = 400
-                    resp.set_data(json.dumps({"error": err.upper()}))
-                else:
-
-                    with open(ped_file_path) as f:
-                        ped_header_line = f.readline()
-
-                    ped_column_names = ped_header_line.strip().split()
-
-                    kin_file = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), "vcf_kinship.kin")
-
-
-
-                    analysis_cmd = current_app.config.get("ANALYSIS_BINARY", "epacts") + " single"
-                    analysis_cmd += " --vcf " + current_app.config.get("VCF_FILE")
-                    analysis_cmd += " --ped " + ped_file_path
-                    analysis_cmd += " --min-maf 0.001 --field GT"
-                    analysis_cmd += " --sepchr"
-                    analysis_cmd += " --unit 500000 --test q.emmax"
-                    analysis_cmd += " --kin " + kin_file
-                    analysis_cmd += " --out ./output"
-                    analysis_cmd += " --run 48"
-                    for col in ped_column_names[4:-1]:
-                        analysis_cmd += " --cov " + col
-                    analysis_cmd += " --pheno " + ped_column_names[-1]
-
-                    batch_script_path = os.path.join(job_directory, "batch_script.sh")
-
-                    with open(batch_script_path, "w+") as f:
-                        f.write("#!/bin/bash\n")
-                        f.write("#SBATCH --job-name=gasp_" + job_id + "\n")
-                        f.write("#SBATCH --cpus-per-task=48\n")
-                        f.write("#SBATCH --workdir=" + job_directory + "\n")
-                        f.write("#SBATCH --mem-per-cpu=4000\n")
-                        f.write("#SBATCH --time=14-0\n")
-                        f.write("#SBATCH --nodes=1\n")
-                        f.write("\n")
-                        f.write(analysis_cmd + " 2> ./err.log 1> ./out.log\n")
-                        f.write("EXIT_STATUS=$?\n")
-                        f.write("if [ $EXIT_STATUS == 0 ]; then\n")
-                        f.write("  " + current_app.config.get("MANHATTAN_BINARY") + " ./output.epacts.gz ./manhattan.json\n")
-                        f.write("  " + current_app.config.get("QQPLOT_BINARY") + " ./output.epacts.gz ./qq.json\n")
-                        if current_app.config.get("TOPHITS_BINARY"):
-                            f.write("  " + current_app.config.get("TOPHITS_BINARY") + " ./output.epacts.top5000 ./tophits.json")
-                            if current_app.config.get("NEAREST_GENE_BED"):
-                                f.write(" --gene " + current_app.config.get("NEAREST_GENE_BED") )
-                            f.write("\n")
-                        f.write("fi\n")
-                        f.write("echo $EXIT_STATUS > ./exit_status.txt\n")
-                        f.write("exit $EXIT_STATUS\n")
-
-                    if subprocess.call(current_app.config.get("QUEUE_JOB_BINARY", "sbatch") + " " + batch_script_path + " > " + os.path.join(job_directory, "batch_script_output.txt"), shell=True):
-                        resp.status_code = 500
-                        resp.set_data(json.dumps({"error": "An error occurred while scheduling job."}))
-                    else:
-                        cur = db.cursor()
-                        cur.execute("""
-                            INSERT INTO jobs (id, name, user_id, status_id)
-                            VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'queued'))
-                            """, (job_id, request.form["job_name"], current_user.rid))
-                        db.commit()
-                        resp.set_data(json.dumps({"id": job_id}))
-    return resp
-
-
 def get_jobs():
     resp = Response(mimetype='application/json')
     db = sql_pool.get_conn()
@@ -390,7 +297,7 @@ def post_to_pheno():
 def get_model_build_view():
     return render_template("model_build.html")
 
-def post_to_model():
+def post_to_jobs():
     user = current_user
     job_desc = dict()
     if request.method != 'POST':

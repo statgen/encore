@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, session, send_from_directory, redirect, send_file, url_for
+from flask import request,Response,Flask, render_template, session, send_from_directory, redirect, send_file, url_for
 from flask_login import LoginManager, login_required, current_user
 import job_handlers
 import sign_in_handler
@@ -38,15 +38,19 @@ def favicon():
     return app.send_static_file('favicon.ico')
 
 @app.route("/")
+@login_required
 def index():
-    return redirect("/jobs")
-
+    return job_handlers.get_home_view()
 
 @app.route("/sign-in", methods=["GET"])
 @login_manager.unauthorized_handler
 def get_sign_in():
     return sign_in_handler.get_sign_in_view("sign-in") 
 
+@app.route("/api/geno", methods=["GET"])
+@login_required
+def get_genotypes():
+    return job_handlers.get_genotypes()
 
 @app.route("/api/vcf/statistics", methods=["GET"])
 def get_api_vcf_statistics():
@@ -96,12 +100,10 @@ def get_job_locuszoom_plot(job_id, region):
 def post_api_jobs():
     return job_handlers.post_to_jobs()
 
-
 @app.route("/api/jobs", methods=["GET"])
 @login_required
 def get_api_jobs():
     return job_handlers.get_jobs()
-
 
 @app.route("/api/jobs-all", methods=["GET"])
 @login_required
@@ -114,6 +116,11 @@ def get_api_jobs_all():
 def get_api_job(job_id):
     return job_handlers.get_job(job_id)
 
+@app.route("/api/jobs/<job_id>", methods=["DELETE"])
+@login_required
+@admin_required
+def delete_api_job(job_id):
+    return job_handlers.purge_job(job_id)
 
 @app.route("/api/jobs/<job_id>/cancel_request", methods=["POST"])
 @login_required
@@ -158,7 +165,7 @@ def get_api_job_tophits(job_id):
 @app.route("/api/jobs/<job_id>/chunks", methods=["GET"])
 @login_required
 def get_api_job_chuncks(job_id):
-   return job_handlers.send_as_json(job_handlers.get_job_chunks(job_id))
+   return job_handlers.json_resp(job_handlers.get_job_chunks(job_id))
 
 @app.route("/jobs/<job_id>/plots/tmp-qq", methods=["GET"])
 @login_required
@@ -177,6 +184,41 @@ def get_job_tmp_manhattan(job_id):
     else:
         return job_handlers.get_job_output(job_id, "output.epacts.mh.pdf", False)
 
+@app.route("/pheno-upload", methods=["GET"])
+@login_required
+def get_pheno_upload():
+    return job_handlers.get_pheno_upload_view()
+
+@app.route("/api/pheno", methods=["GET"])
+@login_required
+def get_api_pheno_list():
+    return job_handlers.get_phenos()
+
+@app.route("/api/pheno/<pheno_id>", methods=["GET"])
+@login_required
+def get_api_pheno_detail(pheno_id):
+    return job_handlers.get_pheno(pheno_id)
+
+@app.route("/api/pheno", methods=["POST"])
+@login_required
+def post_api_pheno():
+    return job_handlers.post_to_pheno()
+
+@app.route("/model-build", methods=["GET"])
+@login_required
+def get_model_build():
+    return job_handlers.get_model_build_view()
+
+@app.route("/api/model", methods=["GET"])
+@login_required
+def get_api_models():
+    return job_handlers.get_models()
+
+@app.route("/api/model", methods=["POST"])
+@login_required
+def post_api_model():
+    return job_handlers.post_to_model()
+
 @app.route("/admin", methods=["GET"])
 @login_required
 @admin_required
@@ -187,8 +229,11 @@ def get_admin_page():
 @login_required
 @admin_required
 def get_job_log(job_id, log_name):
+    tail = request.args.get("tail", 0)
+    head = request.args.get("head", 0)
     if log_name in ["err.log","out.log"]:
-        return job_handlers.get_job_output(job_id, log_name, mimetype="text/plain")
+        return job_handlers.get_job_output(job_id, log_name, \
+            mimetype="text/plain", tail=tail, head=head)
     else:
         return "Not Found", 404
 

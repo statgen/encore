@@ -55,7 +55,7 @@ $(document).ready(function() {
 					positions: {
 						fields: ["epacts:MARKER_ID", "epacts:MAF", "epacts:CHROM", "epacts:END",
 							 "epacts:BEGIN", "epacts:PVALUE|neglog10", "epacts:PVALUE|scinotation",
-							 "ld:state"],
+							 "epacts:PVALUE", "epacts:BETA", "epacts:NS", "ld:state"],
 						id_field: "epacts:MARKER_ID",
 						x_axis: {field: "epacts:BEGIN"},
 						y_axis: {field: "epacts:PVALUE|neglog10"},
@@ -67,10 +67,11 @@ $(document).ready(function() {
                             "<div style='text-align: right'>"
                             + "<strong>{{epacts:MARKER_ID}}</strong><br>"
                             + "Chrom: <strong>{{epacts:CHROM}}</strong><br/>"
-                            + "Pos Beg: <strong>{{epacts:BEGIN}}</strong><br/>"
-                            + "Pos End: <strong>{{epacts:END}}</strong><br/>"
+                            + "Pos: <strong>{{epacts:BEGIN}}</strong><br/>"
                             + "P Value: <strong>{{epacts:PVALUE|scinotation}}</strong><br>"
                             + "MAF: <strong>{{epacts:MAF}}</strong><br/>"
+                            + "BETA: <strong>{{epacts:BETA}}</strong><br/>"
+                            + "N: <strong>{{epacts:NS}}</strong><br/>"
                             + "</div>"
                         }
 					}

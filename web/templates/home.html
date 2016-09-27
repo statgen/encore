@@ -1,65 +1,43 @@
 {% extends "layout.html" %}
 {% block header %}
-	<link rel="stylesheet" href="{{ url_for('static', 'css/job_list.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
+    <script type="text/javascript" src="{{ url_for('static', filename='js/job_list.js') }}"></script>
 
-    <script id="new_job_table_tmpl" type="x-tmpl">
-        <table>
-            <tr>
-                <% for (var j = 0; j < rows[0].length; j++) { %>
-                <th><%= rows[0][j]; %></th>
-                <% } %>
-            </tr>
-            <% for (var i = 1; i < rows.length && i < 4; i++) { %>
-            <tr>
-                <% for (var j = 0; j < rows[i].length; j++) { %>
-                <td><%= rows[i][j]; %></td>
-                <% } %>
-            </tr>
-            <% } %>
-            <tr>
-                <td colspan="4" align="center">REQUIRED</td>
-                <td colspan="<%= (rows[0].length - 5); %>" align="center">COV</td>
-                <td colspan="1" align="center">PHENO</td>
-            </tr>
-        </table>
-    </script>
+	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 
-    <script id="table_row_tmpl" type="x-tmpl">
-        <tr>
-            <th>Job Name</th>
-            <th>Date Created</th>
-            <th>Status</th>
-        </tr>
-        <% jobs.forEach(function(j) { %>
-        <tr data-id="<%= j.id; %>">
-            <td><%= j.name; %></td>
-            <td><%= j.creation_date; %></td>
-            <td><%= j.status; %></td>
-        </tr>
-        <% }); %>
-        <% if (jobs.length === 0) { %>
-        <tr>
-            <td colspan="4" align="center">No jobs were found.</td>
-        </tr>
-        <% } %>
-    </script>
+	<style>
+		.home-nav-list li {padding: 10px 0}
+	</style>
+	<script type="text/javascript">
+		function init_job_table() {
+			$("#jobs-table").DataTable({
+				ajax: {url: "/api/jobs", dataSrc: ""},
+				order: [[1, "desc"]],
+				columns: [
+					{data: "name", title: "Job Name"},
+					{data: "creation_date", title: "Date Created"},
+					{data: "status", title: "Status"},
+					{title: "Job", data: "id", render: function(data) {
+						return "<a href='/jobs/" + data + "'>View</a>" 
+					}, orderable: false}
+				]
+			})
+		};
+		$(document).ready(function() {
+			init_job_table();
+			init_vcf_stats();
+		});
+	</script>
 
-    <script id="empty_table_row_tmpl" type="x-tmpl">
-        <tr>
-            <td colspan="3" align="center"></td>
-        </tr>
-    </script>
-
-    <script type="text/javascript" src="{{ url_for('static', 'js/ejs.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', 'js/job_list.js') }}"></script>
 {% endblock %}
 {% block content %}
         <div class="section row">
 			<div class="col-sm-6">
 				<h2>Welcome</h2>
-				<ul>
-					<li><a href="pheno-upload">Upload New Phenotype File...</a></li>
-					<li>Create New Job from Existing Phenotypes</li>
+				<ul class="home-nav-list">
+					<li><a href="{{ url_for("get_pheno_upload") }}">Upload New Phenotype File</a></li>
+					<li><a href="{{ url_for("get_model_build") }}">Create New Job from Existing Phenotypes</a></li>
 				</ul>
 			</div>
             <div id="carousel" class="col-sm-6" style="text-align: center">
@@ -93,39 +71,13 @@
             </div>
         </div>
 
-
-        <div id="new_job_table_scroll_box" class="scroll-box">
-
-        </div>
-
         <br/>
 
 
         <div class="section">
             <div class="section-title">
                 <h2>Jobs</h2>
-                <!--<button id="create_job_button">+</button>-->
             </div>
-            <table id="jobs_table">
-                <tr>
-                    <th>Job Name</th>
-                    <th>Date Created</th>
-                    <th>Status</th>
-                </tr>
-                <!--<tr>
-                    <td>--</td>
-                    <td>--</td>
-                    <td>--</td>
-                </tr>
-                <tr>
-                    <td>--</td>
-                    <td>--</td>
-                    <td>--</td>
-                </tr>-->
-                <tr>
-                    <td colspan="3" align="center">Loading ...</td>
-                </tr>
-            </table>
+            <table id="jobs-table"></table>
         </div>
-    </div>
 {% endblock %}

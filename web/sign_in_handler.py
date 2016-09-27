@@ -1,4 +1,4 @@
-from flask import render_template, request, json, current_app, redirect, session
+from flask import render_template, request, json, current_app, redirect, session, url_for
 import urllib2
 from rauth import OAuth2Service
 from user import User
@@ -34,7 +34,7 @@ def get_sign_in_view(target):
             verify = False)
         user_data = oauth_session.get("", verify=False).json()
         flask_login.login_user(user_loader(user_data["email"]))
-        return redirect("/jobs")
+        return redirect(url_for("index"))
     elif "authorize" in request.args:
         return redirect(oauth_service.get_authorize_url(
             scope="email",

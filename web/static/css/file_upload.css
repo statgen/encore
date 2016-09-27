@@ -1,0 +1,41 @@
+.ubox {
+	position: relative;
+	height: 220px;
+	outline: 2px dashed #666666;
+	outline-offset: -10px;
+}
+
+.ubox-progress {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 0%;
+	height: 100%;
+	z-index: -1;
+	background: rgba(0, 50, 255, 0.2);
+	border-radius: 4px;
+}
+
+.ubox.is-dragged-over {
+	background: rgba(0, 50, 255, 0.2);
+}
+
+.ubox .ubox-dragndrop {
+	display: inline;
+}
+
+.ubox label {
+	font-weight: normal;
+	cursor: pointer;
+}
+
+button[name=upload] {
+	font-size: 14px;
+}
+
+.ubox-input-view,.ubox-submit-view {
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+

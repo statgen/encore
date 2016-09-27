@@ -44,7 +44,7 @@ class BEDReader:
         return None
 
 
-AssocResult = collections.namedtuple('AssocResult', 'chrom pos ref alt pval name'.split())
+AssocResult = collections.namedtuple('AssocResult', 'chrom pos ref alt pval name other'.split())
 class AssocResultReader:
     def __init__(self, path):
         self.path = path
@@ -71,13 +71,14 @@ class AssocResultReader:
 
 
     def row_parser(self, row):
-        cols = row.split("\t")
+        cols = row.rstrip().split("\t")
         marker_id = cols[self.filecols["MARKER_ID"]]
         chrom, pos, ref, alt, name = re.match(r'([^:]+):([0-9]+)_([-ATCG]+)/([-ATCG]+)(?:_(.+))?', marker_id).groups()
         pval = cols[self.filecols["PVALUE"]]
+        other = { k: cols[v] for k,v in self.filecols.iteritems()};
         if pval=="NA":
             pval="nan"
-        return AssocResult(chrom, int(pos), ref, alt, float(pval), name)
+        return AssocResult(chrom, int(pos), ref, alt, float(pval), name, other)
 
     def __iter__(self):
         self.itr = iter(self.f)
@@ -135,6 +136,7 @@ def process_file(results, window=5e5, sig_pvalue=5e-8, max_sites = 5000, max_bin
                 pval = result.pval,
                 start = int(result.pos-window), 
                 stop = int(result.pos+window),
+                other = result.other,
                 assoc = [result])
             if result.name is not None:
                 newbin['name'] = result.name

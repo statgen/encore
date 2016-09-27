@@ -1,0 +1,252 @@
+{% set backlink = "/" %}
+{% extends "layout.html" %}
+{% block header%}
+	<link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+	<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/ejs.js') }}"></script>
+	<style>
+		form div {width:500px}
+		.chklabel {font-weight: normal;}
+		label .radio-title {display: block; font-weight: bold;}
+		label .radio-desc {display: block; padding: 5px 0}
+	</style>
+	<script type="text/javascript">
+		var phenoSelect;
+		var covars;
+		var genoSelect;
+		var responseSelect;
+		var covariateSelect;
+		var userHasNamedJob = false;
+
+		function validateModel(m) {
+			var errors = [];
+			if (m.get("response") == "") {
+				errors.push("Missing response");
+			}
+			return errors;
+		}
+
+		function submitModel(e) {
+			e.preventDefault()
+			var form = $("#model-form")[0];
+			var fd = new FormData(form);
+			var formErrors = validateModel(fd);
+			if (formErrors) {
+				alert("Error!");
+				return false;
+			}
+			var xhr = new XMLHttpRequest();
+			//TODO: Add error handling
+			xhr.addEventListener("load", function () {
+				if (xhr.status >= 200 && xhr.status < 300) {
+					try {
+						var resp = JSON.parse(xhr.responseText);
+						if (resp.url_job) {
+							window.location = resp.url_job;
+						}
+					} catch (ex) {
+						console.warn(ex)
+					}
+					document.window.location = "/";
+				} else {
+					var message;
+					try {
+						var resp = JSON.parse(xhr.responseText);
+						message = resp.error;
+					} catch (ex) {
+						message = xhr.responseText || xhr.statusText;
+					}
+					alert(message);
+				}
+			//	submitButton.prop("disabled", false);
+			}.bind(this), false);
+			//xhr.addEventListener("error", uploadFailed, false);
+			//xhr.addEventListener("abort", uploadCanceled, false);
+			xhr.open("POST", form.action);
+			xhr.send(fd);
+		}
+
+		function nameChanged() {
+			userHasNamedJob = true;
+			var ele = $("#job_name", "#model-form");
+			if (ele.val()=="") {
+				userHasNamedJob = false;
+				ele.val(suggestName());
+			}
+		};
+
+		function formChanged() {
+			if (!userHasNamedJob) {
+				$("#job_name", "#model-form").val(suggestName());
+			}
+		};
+
+		function suggestName() {
+			var name = $('input[name=model]:checked', '#model-form').val()
+			name = name + ": " + responseSelect.find("option:selected").text();
+			var covar = covariateSelect.find("option:selected");
+			if (covar.length>4) {
+				name = name + " = Covar(" + covar.length + ")"
+			} else if (covar.length>0) {
+				name = name + " = " + covar.map(function() {return $(this).text()}).get().join(" + ")	
+			}
+			return name;
+		}
+
+		function loadPheno(pheno_id) {
+			$.getJSON("/api/pheno/" + pheno_id).done(function(pheno) {
+				covars = pheno.meta.columns;
+				var opts  = [];
+				var hideCols = ["family_id","sample_id","mother_id","father_id"];
+				pheno.meta.columns.forEach(function(col) {
+					if (hideCols.indexOf(col.class)<0 && col.class != "fixed") {
+						opts.push({id: col.name, text: col.name});	
+					}
+				})
+				responseSelect = $("#response").select2({
+					data: [""].concat(opts),
+					placeholder: "",
+					minimumResultsForSearch: 3
+				}).on("change", formChanged);
+				covariateSelect = $("#covariates").select2({
+					data: opts 
+				}).on("change", formChanged);
+				formChanged();
+				$("#model-form").css("visibility","visible").hide().fadeIn();
+			});
+		}
+
+		$(function() {
+			$("#covar_add_all").click(function(evt) {
+				evt.preventDefault();
+				resp = responseSelect.val();
+				opts = []
+				covars.forEach(function(col) {
+					if (col.name != resp) {
+						opts.push(col.name);
+					}
+				});
+				covariateSelect.val(opts).trigger("change");
+			});
+			$("#covar_remove_all").click(function(evt) {
+				evt.preventDefault();
+				covariateSelect.val("").trigger("change");
+			});
+			var d1 = $.getJSON("/api/geno").then(function(resp) {
+				var genos = [];
+				resp.forEach(function(g) {
+					genos.push({id: g.id, text: g.name})
+				});
+				genoSelect = $("#genotype").select2({
+					data: genos,
+					minimumResultsForSearch: 4
+				}).on("change", formChanged);
+			});
+			var d2 = $.getJSON("/api/pheno").then(function(resp) {
+				var phenos = [];
+				resp.forEach(function(p) {
+					phenos.push({id: p.id, text:p.name})
+				});
+				phenoSelect = $("#phenotype").select2({
+					data: phenos,
+					minimumResultsForSearch: 4
+				}).on("change", formChanged);
+				return resp[0].id
+			});
+			var d3 = $.getJSON("/api/model").then(function(resp) {
+				modelSelect = $("#model-type")
+				template = document.getElementById("model-radio-group").innerText
+				modelSelect.html(ejs.render(template, {"models" : resp }));
+			});
+			$.when(d1, d2, d3).done(function(g, p, m) {
+				loadPheno(p);
+				$("input[type=radio]", "#model-form").on("change", formChanged).
+					first().prop("checked", true);
+				$("#job_name", "#model-form").on("change", nameChanged);
+				$("#model-form").on("submit", submitModel);
+			});
+		})
+	</script>
+    <script id="model-radio-group" type="text/x-tmpl">
+		<% models.forEach(function(m) { %>
+		<div class="radio">
+			<label for="model-<%= m.code %>">
+			<input type="radio" name="model" id="model-<%= m.code %>" value="<%= m.code %>" />
+			<span class="radio-title"><%= m.name %> (<%= m.code %>)</span>
+			<span class="radio-desc"><%= m.description %></span></label>
+		</div>
+		<% }); %>
+	</script>
+{% endblock %}
+{% block content %}
+	<h1>Build your model...</h1>
+        <div class="section">
+            <form class="form-horizontal vflex" method="post" action="/api/model" id="model-form" style="visibility:hidden">
+				<div class="form-group">
+					<label for="genotype" class="control-label col-xs-2">Genotypes</label>
+					<div class="col-xs-10">
+						<select id="genotype" name="genotype" class="form-control"></select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="phenotype" class="control-label col-xs-2">Phenotypes</label>
+					<div class="col-xs-10">
+						<select id="phenotype" name="phenotype" class="form-control"></select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="response" class="control-label col-xs-2">Response</label>
+					<div class="col-xs-10">
+						<select id="response" name="response" class="form-control"></select>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-xs-offset-2 col-xs-10">
+						<label class="chklabel"><input id="resp_invnormtrans" name="resp_invnormtrans" type="checkbox"/> Inverse Normalize Response</label>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="covariates" class="control-label col-xs-2">Covariates</label>
+					<div class="col-xs-10">
+						<select id="covariates" name="covariates" class="form-control" multiple="multiple"></select>
+						<br/><a href="#" id="covar_add_all">Add All</a> - <a href="#" id="covar_remove_all">Remove All</a>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-xs-2">Model</label>
+					<div class="col-xs-10" id="model-type"> 
+						<div class="radio">
+							<label for="model-lm">
+							<input type="radio" name="model" id="model-lm" value="lm" />
+							<span class="radio-title">Linear Wald Test (LM)</span>
+							<span class="radio-desc">A simple linear model</span></label>
+						</div>
+						<div class="radio">
+							<label for="model-lmm">
+							<input type="radio" name="model" id="model-lmm" value="lmm" checked="checked" />
+							<span class="radio-title">Linear Mixed Model (LMM)</span>
+							<span class="radio-desc">Adjust for potential relatedness using
+							kinship matrix</span></label>
+						</div>
+						<div class="radio">
+							<label for="model-burden">
+							<input type="radio" name="model" id="model-burden" value="burden" />
+							<span class="radio-title">Burden</span>
+							<span class="radio-desc">A simple burden test</span></label>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="response" class="control-label col-xs-2">Name</label>
+					<div class="col-xs-10">
+						<input id="job_name" name="job_name" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-xs-offset-2 col-xs-10">
+						<button class="btn-success">Submit</button>
+					</div>
+				</div>
+            </form>
+        </div>
+{% endblock %}

@@ -63,6 +63,41 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
+-- Table `job_user_roles`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `job_user_roles` (
+  `id` INT UNSIGNED NOT NULL,
+  `role_name` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_job_user_roles_idx` (`id` ASC)
+);
+
+-- -----------------------------------------------------
+-- Table `job_users`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `job_users` (
+  `job_id` BINARY(16) NOT NULL,
+  `user_id` INT UNSIGNED NOT NULL,
+  `role_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_by` INT UNSIGNED NOT NULL,
+  `modified_by` INT UNSIGNED,
+  `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `modified_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`job_id`, `user_id`),
+  INDEX `fk_job_users_user_idx` (`user_id` ASC),
+  INDEX `fk_job_users_job_idx` (`job_id` ASC),
+  CONSTRAINT `fk_job_users_user`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `users` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_job_users_role`
+    FOREIGN KEY (`role_id`)
+    REFERENCES `job_user_roles` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
+-- -----------------------------------------------------
 -- Table `phenotypes`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `phenotypes` (
@@ -126,7 +161,7 @@ SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
 -- -----------------------------------------------------
--- Data for table `statuses`
+-- Data for table `statuses` and `job_user_roles`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `gasp`;
@@ -138,6 +173,9 @@ INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'cancelled');
 INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'failed');
 INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'succeeded');
 INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'quarantined');
+
+INSERT INTO `job_user_roles` (`id`, `role_name`) VALUES (0, 'viewer');
+INSERT INTO `job_user_roles` (`id`, `role_name`) VALUES (1, 'owner');
 
 COMMIT;
 

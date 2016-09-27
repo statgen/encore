@@ -7,8 +7,11 @@ class Genotype:
     def __init__(self, geno_id, meta=None):
         self.geno_id = geno_id
         self.meta = meta
+        self.name = None
+        self.creation_date = None
+        self.root_path = ""
        
-    def getVCFPath(self, chrom=1, must_exist=False):
+    def get_vcf_path(self, chrom=1, must_exist=False):
         vcf_stub = ""
         chrom = str(chrom)
         if "vcfs" in self.meta:
@@ -28,7 +31,7 @@ class Genotype:
             return None
         return vcf_path
 
-    def getGroupsPath(self, group, must_exist=False):
+    def get_groups_path(self, group, must_exist=False):
         grp_stub = ""
         if "groups" in self.meta:
             groups = self.meta["groups"]
@@ -47,7 +50,7 @@ class Genotype:
             return None
         return grp_path
 
-    def getKinshipPath(self, must_exist=False):
+    def get_kinship_path(self, must_exist=False):
         kinship_stub = self.meta.get("kinship_path", "kinship/kinship.kin")
         kinship_path = self.relative_path(kinship_stub)
         if must_exist and not os.path.exists(kinship_path):
@@ -67,7 +70,7 @@ class Genotype:
         return dict() 
 
     def relative_path(self, *args):
-        return os.path.expanduser(os.path.join(self.meta.get("root_path",""), *args))
+        return os.path.expanduser(os.path.join(self.root_path, *args))
 
     @staticmethod
     def get(geno_id, config):
@@ -81,19 +84,21 @@ class Genotype:
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
-            SELECT bin_to_uuid(id) AS id, name, DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
+            SELECT bin_to_uuid(id) AS id, name, 
+            DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
             FROM genotypes
             WHERE id = uuid_to_bin(%s)
             """
         cur.execute(sql, (geno_id,))
         result = cur.fetchone()
-        meta["root_path"] = geno_folder
-        meta["name"] = result["name"]
-        meta["creation_date"] = result["creation_date"]
-        return Genotype(geno_id, meta)
+        g = Genotype(geno_id, meta)
+        g.name = result["name"]
+        g.creation_date = result["creation_date"]
+        g.root_path = geno_folder
+        return g
         
     @staticmethod
-    def listAll():
+    def list_all():
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """

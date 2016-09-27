@@ -45,14 +45,14 @@ class SlurmEpactsJob:
                     " --min-maf 0.001" 
             elif model["type"] == "lmm":
                 ecmd = "single"
-                opts += " --test q.emmax --kin {}".format(geno.getKinshipPath()) + \
+                opts += " --test q.emmax --kin {}".format(geno.get_kinship_path()) + \
                     " --unit 500000" + \
                     " --min-maf 0.001" 
             elif model["type"] == "burden":
                 ecmd = "group"
                 group = model.get("group", "nonsyn")
                 opts += " --test skat" +  \
-                    " --groupf {}".format(geno.getGroupsPath(group)) + \
+                    " --groupf {}".format(geno.get_groups_path(group)) + \
                     " --max-maf 0.05" + \
                     " --unit 500"
             else:
@@ -60,8 +60,8 @@ class SlurmEpactsJob:
 
             cmd = ""
             cmd += "{} {}".format(self.config.get("ANALYSIS_BINARY", "epacts"), ecmd) + \
-                " --vcf {}".format(geno.getVCFPath(1)) + \
-                " --ped {}".format(pheno.getRawPath()) +  \
+                " --vcf {}".format(geno.get_vcf_path(1)) + \
+                " --ped {}".format(pheno.get_raw_path()) +  \
                 " --field GT" + \
                 " --sepchr" + \
                 " --out ./output --run 48"

@@ -13,9 +13,9 @@ import re
 import time
 import hashlib
 from genotype import Genotype
+from phenotype import Phenotype
 from pheno_reader import PhenoReader
 from slurm_epacts_job import SlurmEpactsJob
-#from werkzeug import secure_filename
 
 def get_home_view():
     return render_template("home.html")
@@ -329,41 +329,12 @@ def get_pheno_upload_view():
     return render_template("pheno_upload.html")
 
 def get_phenos(): 
-    db = sql_pool.get_conn()
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = """
-        SELECT bin_to_uuid(id) AS id, user_id, name, orig_file_name, md5sum, DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
-        FROM phenotypes 
-        WHERE user_id = %s
-        ORDER BY creation_date DESC
-        """
-    cur.execute(sql, (current_user.rid,))
-    results = cur.fetchall()
-    return json_resp(results)
+    phenos = Phenotype.list_all_for_user(current_user.rid)
+    return json_resp(phenos)
 
 def get_pheno(pheno_id):
-    db = sql_pool.get_conn()
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = """
-        SELECT bin_to_uuid(id) AS id, user_id, name, orig_file_name, md5sum, DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
-        FROM phenotypes 
-        WHERE bin_to_uuid(id) = %s
-        ORDER BY creation_date DESC
-        """
-    cur.execute(sql, (pheno_id,))
-    results = cur.fetchone()
-    if results['user_id'] != current_user.rid and not current_user.is_admin():
-        return "NOT AUTHORIZED", 403
-    pheno_directory = os.path.join(current_app.config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
-    pheno_meta_path = os.path.join(pheno_directory, "meta.json")
-    try:
-        with open(pheno_meta_path, 'r') as metafile:
-            meta = json.load(metafile)
-        results['meta'] = meta
-    except Exception as e:
-       print "Meta read error: %s" % e 
-    return json_resp(results)
-
+    p = Phenotype.get(pheno_id, current_app.config)
+    return json_resp(p.as_object())
 
 def post_to_pheno():
     user = current_user
@@ -468,7 +439,7 @@ def post_to_model():
     return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
 
 def get_genotypes():
-    genos = Genotype.listAll()
+    genos = Genotype.list_all()
     def get_stats(x):
         s = Genotype.get(x["id"],current_app.config).getStats() 
         s["name"] = x["name"]

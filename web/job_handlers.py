@@ -383,6 +383,10 @@ def post_to_model():
             INSERT INTO jobs (id, name, user_id, status_id)
             VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'queued'))
             """, (job_id, job_desc["name"], current_user.rid))
+        cur.execute("""
+            INSERT INTO job_users(job_id, user_id, created_by, role_id)
+            VALUES (uuid_to_bin(%s), %s, %s, (SELECT id FROM job_user_roles WHERE role_name = 'owner'))
+            """, (job_id, current_user.rid, current_user.rid))
         db.commit()
     except:
         shutil.rmtree(job_directory)

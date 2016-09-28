@@ -12,6 +12,7 @@ import glob
 import re
 import time
 import hashlib
+from auth import access_job_page
 from genotype import Genotype
 from phenotype import Phenotype
 from pheno_reader import PhenoReader
@@ -116,6 +117,9 @@ def post_to_jobs():
                         resp.set_data(json.dumps({"id": job_id}))
     return resp
 
+@access_job_page
+def get_job(job_id, job=None):
+    return json_resp(job.as_object())
 
 def get_jobs():
     jobs = Job.list_all_for_user(current_user.rid, current_app.config)
@@ -201,19 +205,18 @@ def purge_job(job_id):
     else:
         return resp, 404
 
-def get_job_details_view(job_id):
-    job = Job.get(job_id, current_app.config)
+@access_job_page
+def get_job_details_view(job_id, job=None):
     return render_template("job_details.html", job=job.as_object())
 
-def get_job_locuszoom_plot(job_id, region):
-    job = Job.get(job_id, current_app.config)
+@access_job_page
+def get_job_locuszoom_plot(job_id, region, job=None):
     return render_template("job_locuszoom.html", job=job.as_object(), region=region)
 
-
-def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, head=None):
+@access_job_page
+def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, head=None, job=None):
     try:
-        job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-        output_file = os.path.join(job_directory, filename)
+        output_file = job.relative_path(filename)
         if tail or head:
             if tail and head:
                 return "Cannot specify tail AND head", 500
@@ -233,12 +236,10 @@ def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, 
         print e
         return "File Not Found", 404
 
-
-def get_job_zoom(job_id):
-    resp = Response(mimetype='application/json')
-    db = sql_pool.get_conn()
+@access_job_page
+def get_job_zoom(job_id, job=None):
     header = []
-    epacts_filename = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id, "output.epacts.gz")
+    epacts_filename = job.relative_path("output.epacts.gz")
     with gzip.open(epacts_filename) as f:
         header = f.readline().rstrip('\n').split('\t')
         if header[1] == "BEG":

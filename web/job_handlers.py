@@ -274,8 +274,7 @@ def get_job_zoom(job_id, job=None):
             json_response_data["MAF"].append(r[header.index("MAF")])
             json_response_data["PVALUE"].append(r[header.index("PVALUE")])
             json_response_data["BETA"].append(r[header.index("BETA")])
-    resp.set_data(json.dumps(json_response_data))
-    return resp
+    return json_resp(json_response_data)
 
 def get_pheno_upload_view():
     return render_template("pheno_upload.html")

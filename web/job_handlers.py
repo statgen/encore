@@ -276,6 +276,10 @@ def get_job_zoom(job_id, job=None):
             json_response_data["BETA"].append(r[header.index("BETA")])
     return json_resp(json_response_data)
 
+@access_job_page
+def get_job_share_page(job_id, job=None):
+    return render_template("job_share.html", job=job)
+
 def get_pheno_upload_view():
     return render_template("pheno_upload.html")
 

@@ -56,7 +56,7 @@ class Job:
         sql = """
             SELECT 
                 ju.user_id as user_id, ju.role_id as role_id,
-                role.role_name as role,
+                role.role_name as role, users.email, 
                 DATE_FORMAT(ju.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
             FROM job_users as ju
                 LEFT JOIN job_user_roles role on role.id = ju.role_id

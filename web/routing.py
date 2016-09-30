@@ -95,6 +95,11 @@ def get_job_locuszoom_plot(job_id, region):
         return job_handlers.get_job_locuszoom_plot(job_id, region)
 
 
+@app.route("/jobs/<job_id>/share", methods=["GET"])
+@login_required
+def get_job_share_page(job_id):
+    return job_handlers.get_job_share_page(job_id)
+
 @app.route("/api/jobs", methods=["POST"])
 @login_required
 def post_api_jobs():

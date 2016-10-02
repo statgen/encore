@@ -52,10 +52,10 @@ class SlurmEpactsJob:
                 opts += " --test q.emmax --kin {}".format(geno.get_kinship_path()) + \
                     " --unit 500000" + \
                     " --min-maf 0.001" 
-            elif model["type"] == "burden":
+            elif model["type"] == "skato":
                 ecmd = "group"
                 group = model.get("group", "nonsyn")
-                opts += " --test skat" +  \
+                opts += " --test skat --skat-o" +  \
                     " --groupf {}".format(geno.get_groups_path(group)) + \
                     " --max-maf 0.05" + \
                     " --unit 500"
@@ -124,7 +124,7 @@ class SlurmEpactsJob:
         return [
             {"code":"lm", "name":" Linear Wald Test", "description": "A simple linear model"},
             {"code":"lmm", "name": "Linear Mixed Model", 
-                "description": "Adjust for potential relatedness using kinship matrix"} #,
-            #{"code":"skat", "name":"SKAT-O Test", 
-            #    "description": "Adaptive Burden Test"}
+                "description": "Adjust for potential relatedness using kinship matrix"} ,
+            {"code":"skato", "name": "SKAT-O Test", 
+                "description": "Adaptive Burden Test"}
         ];

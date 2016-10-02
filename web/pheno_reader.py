@@ -117,6 +117,14 @@ def check_if_ped(cols, obs):
         return False, None
     return True, None 
 
+def is_possible_sample_id_col(meta, colinfo):
+    colclass = meta["class"]
+    if meta["class"] == "id" and meta["type"] == "str":
+        matches = sum(x.startswith("NWD") for x in colinfo["str"])
+        return matches == len(colinfo["str"])
+    else:
+        return False
+
 def infer_meta(csvfile, dialect=None):
     meta = {"layout": {}, "columns": []}
 
@@ -159,11 +167,18 @@ def infer_meta(csvfile, dialect=None):
     #check if ped
     pedlike, ped_columns = check_if_ped(meta["columns"], cols)
     if pedlike:
+        #assign standard ped column types
         meta["pedlike"] = 1
         colclasses = ["family_id","sample_id","father_id","mother_id","sex"]
         for actas, col in zip(colclasses, meta["columns"][0:3]):
             if col["class"] != "fixed":
                 col["class"] =  actas
+    else:
+        #if not ped, try to find ID column
+        id_col =  next((i for i in range(len(cols)) if  \
+            is_possible_sample_id_col(meta["columns"][i], cols[i])), None)
+        if id_col is not None:
+            meta["columns"][id_col]["class"] = "sample_id"
     return meta
 
 class PhenoReader:

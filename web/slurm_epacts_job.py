@@ -36,6 +36,10 @@ class SlurmEpactsJob:
                 raise Exception("No phenotype information in job")
 
         def one_cmd(model):
+            pheno_path = self.relative_path("pheno.ped")
+            pheno_cols = model["response"] + model["covariates"]
+            with open(pheno_path,"r") as pedfile:
+                pheno.write_as_ped(pheno_cols, pedfile)
             ecmd = ""
             opts = ""
             if model["type"] == "lm":
@@ -61,7 +65,7 @@ class SlurmEpactsJob:
             cmd = ""
             cmd += "{} {}".format(self.config.get("ANALYSIS_BINARY", "epacts"), ecmd) + \
                 " --vcf {}".format(geno.get_vcf_path(1)) + \
-                " --ped {}".format(pheno.get_raw_path()) +  \
+                " --ped {}".format(pheno_path) +  \
                 " --field GT" + \
                 " --sepchr" + \
                 " --out ./output --run 48"

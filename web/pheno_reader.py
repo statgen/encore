@@ -159,6 +159,7 @@ def infer_meta(csvfile, dialect=None):
     #check if ped
     pedlike, ped_columns = check_if_ped(meta["columns"], cols)
     if pedlike:
+        meta["pedlike"] = 1
         colclasses = ["family_id","sample_id","father_id","mother_id","sex"]
         for actas, col in zip(colclasses, meta["columns"][0:3]):
             if col["class"] != "fixed":
@@ -180,13 +181,15 @@ class PhenoReader:
     def get_dialect(self, opts=None):
         class dialect(csv.Dialect):
             pass
-        if opts is None and self.meta and self.meta["layout"]:
+        if opts is None and self.meta and "layout" in self.meta:
             opts = {k[4:]:v for (k,v) in self.meta["layout"].items() if k.startswith("csv_")}
             opts = {k: v.encode('utf8') if isinstance(v, unicode) else v
                 for (k,v) in opts.items()} 
-        for (k, v) in opts.items():
-            setattr(dialect, k, v)
-        return dialect
+            for (k, v) in opts.items():
+                setattr(dialect, k, v)
+            return dialect
+        else:
+            return None
 
     def get_column_indexes(self):
         cols = self.get_columns();
@@ -198,20 +201,22 @@ class PhenoReader:
         else:
             return [];
 
-    def data_extractor(self, cols):
+    def data_extractor(self, cols, noneColValue=0):
         pos = self.get_column_indexes()
-        missing = [c for c in cols if not c in pos];
-        if len(missing)>0:
-            raise ValueError("can't find columns: " + ", ".join(missing))
-        extract = [pos[c] for c in cols]
         dialect = self.get_dialect()
-        skip = self.meta['layout']['skip']
+        if "layout" in self.meta and "skip" in self.meta["layout"]:
+            skip = self.meta['layout']['skip']
+        else:
+            skip = 0
         with open(self.path, 'rb') as csvfile:
+            if not dialect:
+                dialect = sniff_file(csvfile)
+                csvfile.seek(0)
             if skip>0:
                 [csvfile.readline() for i in xrange(skip)]
             cvr = csv.reader(csvfile, dialect)
             for row in cvr:
-                yield [row[i] for i in extract]
+                yield [row[pos[col]] if col else noneColValue for col in cols]
 
     @staticmethod
     def get_file_type(file):
@@ -236,7 +241,7 @@ if __name__ == "__main__":
             with open(sys.argv[2]) as f:
                 meta = json.load(f)
             p = PhenoReader(sys.argv[1], meta)
-            print [x for x in p.data_extractor(["VAL", "COL"])]
+            print [x for x in p.data_extractor(["VAL", None, "COL"])]
         else:
             p = PhenoReader(sys.argv[1], meta)
             print json.dumps(p.meta, indent=2)

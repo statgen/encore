@@ -267,6 +267,8 @@ def post_to_jobs():
     job_desc["phenotype"] = phenotype_id
     job_desc["name"] = form_data["job_name"]
     job_desc["response"] =  form_data["response"] 
+    if form_data.get("response_invnorm", False):
+        job_desc["response_invnorm"] = True
     job_desc["covariates"] =  form_data.getlist("covariates")
     job_desc["type"] = form_data["model"]
     job_id = str(uuid.uuid4())

@@ -42,6 +42,8 @@ class SlurmEpactsJob:
                 pheno.write_as_ped(pheno_cols, pedfile)
             ecmd = ""
             opts = ""
+            if model["response_invnorm"]:
+                opts += " --inv-norm" 
             if model["type"] == "lm":
                 ecmd = "single"
                 opts += " --test q.linear" + \

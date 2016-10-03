@@ -51,23 +51,26 @@ class Job:
             """
         cur.execute(sql, (job_id,))
         result = cur.fetchone()
-        map(lambda x: setattr(j, x, result[x]), \
-            (val for val in Job.__dbfields + Job.__extfields if val in result))
-        sql = """
-            SELECT 
-                ju.user_id as user_id, ju.role_id as role_id,
-                role.role_name as role, users.email, 
-                DATE_FORMAT(ju.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
-            FROM job_users as ju
-                LEFT JOIN job_user_roles role on role.id = ju.role_id
-                LEFT JOIN users on users.id = ju.user_id
-            WHERE 
-                ju.job_id = uuid_to_bin(%s)
-            """
-        cur.execute(sql, (job_id,))
-        result = cur.fetchall()
-        j.users = result
-        return j
+        if result is not None:
+            map(lambda x: setattr(j, x, result[x]), \
+                (val for val in Job.__dbfields + Job.__extfields if val in result))
+            sql = """
+                SELECT 
+                    ju.user_id as user_id, ju.role_id as role_id,
+                    role.role_name as role, users.email, 
+                    DATE_FORMAT(ju.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
+                FROM job_users as ju
+                    LEFT JOIN job_user_roles role on role.id = ju.role_id
+                    LEFT JOIN users on users.id = ju.user_id
+                WHERE 
+                    ju.job_id = uuid_to_bin(%s)
+                """
+            cur.execute(sql, (job_id,))
+            result = cur.fetchall()
+            j.users = result
+            return j
+        else:
+            return None
 
     @staticmethod
     def list_all_for_user(user_id, config=None):

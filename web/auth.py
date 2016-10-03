@@ -50,10 +50,13 @@ def can_view_job_page(f):
             raise Exception("unnamed args")
         job = kwargs["job"]
         user = current_user
-        if can_user_view_job(user, job):
-            return f(**kwargs)
+        if job is not None:
+            if can_user_view_job(user, job):
+                return f(**kwargs)
+            else:
+                return "Unauthorized", 403
         else:
-            return "Unauthorized", 403
+            return "Job not found", 404
     return inner
 
 def access_job_page(f):

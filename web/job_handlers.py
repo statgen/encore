@@ -12,9 +12,11 @@ import glob
 import re
 import time
 import hashlib
+from auth import access_job_page
 from genotype import Genotype
 from phenotype import Phenotype
 from pheno_reader import PhenoReader
+from job import Job 
 from slurm_epacts_job import SlurmEpactsJob
 
 def get_home_view():
@@ -23,21 +25,13 @@ def get_home_view():
 def get_job_list_view():
     return render_template("job_list.html")
 
+@access_job_page
+def get_job(job_id, job=None):
+    return json_resp(job.as_object())
+
 def get_jobs():
-    resp = Response(mimetype='application/json')
-    db = sql_pool.get_conn()
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = """
-        SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
-        FROM jobs
-        LEFT JOIN statuses ON jobs.status_id = statuses.id
-        WHERE jobs.user_id = %s
-        ORDER BY jobs.creation_date DESC
-        """
-    cur.execute(sql, (current_user.rid,))
-    results = cur.fetchall()
-    resp.set_data(json.dumps(results))
-    return resp
+    jobs = Job.list_all_for_user(current_user.rid, current_app.config)
+    return json_resp(jobs)
 
 def get_all_jobs():
     resp = Response(mimetype='application/json')
@@ -119,60 +113,18 @@ def purge_job(job_id):
     else:
         return resp, 404
 
-def get_job_details_view(job_id):
-    db = sql_pool.get_conn()
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = """
-        SELECT
-          bin_to_uuid(jobs.id) AS id,
-          jobs.name AS name,
-          statuses.name AS status,
-          jobs.error_message AS error_message,
-          DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
-          DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
-        FROM jobs
-        LEFT JOIN statuses ON jobs.status_id = statuses.id
-        WHERE jobs.id = uuid_to_bin(%s)
-        """
-    cur.execute(sql, (job_id,))
+@access_job_page
+def get_job_details_view(job_id, job=None):
+    return render_template("job_details.html", job=job.as_object())
 
-    if cur.rowcount == 0:
-        return "Job does not exist.", 404
-    else:
-        job_data = cur.fetchone()
+@access_job_page
+def get_job_locuszoom_plot(job_id, region, job=None):
+    return render_template("job_locuszoom.html", job=job.as_object(), region=region)
 
-        return render_template("job_details.html", job=job_data)
-
-
-def get_job_locuszoom_plot(job_id, region):
-    db = sql_pool.get_conn()
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = """
-        SELECT
-          bin_to_uuid(jobs.id) AS id,
-          jobs.name AS name,
-          statuses.name AS status,
-          jobs.error_message AS error_message,
-          DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
-          DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
-        FROM jobs
-        LEFT JOIN statuses ON jobs.status_id = statuses.id
-        WHERE jobs.user_id = %s AND jobs.id = uuid_to_bin(%s)
-        """
-    cur.execute(sql, (current_user.rid, job_id))
-
-    if cur.rowcount == 0:
-        return "Job does not exist.", 404
-    else:
-        job_data = cur.fetchone()
-
-    return render_template("job_locuszoom.html", job=job_data, region=region)
-
-
-def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, head=None):
+@access_job_page
+def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, head=None, job=None):
     try:
-        job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-        output_file = os.path.join(job_directory, filename)
+        output_file = job.relative_path(filename)
         if tail or head:
             if tail and head:
                 return "Cannot specify tail AND head", 500
@@ -192,12 +144,10 @@ def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, 
         print e
         return "File Not Found", 404
 
-
-def get_job_zoom(job_id):
-    resp = Response(mimetype='application/json')
-    db = sql_pool.get_conn()
+@access_job_page
+def get_job_zoom(job_id, job=None):
     header = []
-    epacts_filename = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id, "output.epacts.gz")
+    epacts_filename = job.relative_path("output.epacts.gz")
     with gzip.open(epacts_filename) as f:
         header = f.readline().rstrip('\n').split('\t')
         if header[1] == "BEG":
@@ -232,8 +182,11 @@ def get_job_zoom(job_id):
             json_response_data["MAF"].append(r[header.index("MAF")])
             json_response_data["PVALUE"].append(r[header.index("PVALUE")])
             json_response_data["BETA"].append(r[header.index("BETA")])
-    resp.set_data(json.dumps(json_response_data))
-    return resp
+    return json_resp(json_response_data)
+
+@access_job_page
+def get_job_share_page(job_id, job=None):
+    return render_template("job_share.html", job=job)
 
 def get_pheno_upload_view():
     return render_template("pheno_upload.html")
@@ -341,6 +294,10 @@ def post_to_jobs():
             INSERT INTO jobs (id, name, user_id, status_id)
             VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'queued'))
             """, (job_id, job_desc["name"], current_user.rid))
+        cur.execute("""
+            INSERT INTO job_users(job_id, user_id, created_by, role_id)
+            VALUES (uuid_to_bin(%s), %s, %s, (SELECT id FROM job_user_roles WHERE role_name = 'owner'))
+            """, (job_id, current_user.rid, current_user.rid))
         db.commit()
     except:
         shutil.rmtree(job_directory)

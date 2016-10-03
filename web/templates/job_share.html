@@ -1,0 +1,83 @@
+{% set backlink = "/jobs/" + job.job_id %}
+{% extends "layout.html" %}
+{% block header %}
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/job_details.css') }}">
+    <script type="text/javascript" src="{{ url_for('static', filename='js/listblock.js') }}"></script>
+
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.jquery.js"></script>
+
+	<script type="text/javascript">
+		var job_id = "{{ job.job_id }}";
+		var owner_id = {{job.user_id}};
+		var sharelist = {{ job.users|tojson() }};
+
+		$(function() {
+			$("#shares").listblock({items: sharelist});
+		})
+	</script>
+	<style>
+		form div {width:500px}
+		.chklabel {font-weight: normal;}
+		label .radio-title {display: block; font-weight: bold;}
+		label .radio-desc {display: block; padding: 5px 0}
+
+		.listblock .glyphicon-plus-sign {color: white}
+		.listblock button {margin-left: .5em; background-color: #009933; border:0}
+		.listblock input {
+			width: 90% 
+		}
+		.listblock ul {
+			padding: 0;
+		}
+		.listblock li {
+			border-radius: .5em;
+			list-style: none;
+			height: 0;
+			line-height: 2em;
+			margin: 2px 0;
+			padding: 0 0.5em;
+			overflow: hidden;
+			border: 1px solid #bbb;
+		}
+		.listblock li {
+			transition: all 0.4s ease-out;
+			opacity: 0;
+		}
+		.listblock li.show {
+			height: 2em;
+			opacity: 1;
+		}
+		.listblock li.focus {
+			background: #ffff80;
+		}
+		.listblock li a {
+			padding: 0 .6em;
+		}
+		.listblock li:hover {
+			border-color: black;
+		}
+		.listblock li .glyphicon-minus-sign {
+			transition: all 0.4s ease-out;
+			color: #dddddd;
+		}
+		.listblock li:hover .glyphicon-minus-sign {
+			opacity: 1;
+			color: red;
+		}
+	</style>
+{% endblock %}
+{% block content %}
+
+	<h1>Share with collaborators</h1>
+        <div class="section">
+            <form class="form-horizontal vflex" method="post" action="/api/model" id="share-form">
+				<div class="form-group">
+					<label for="phenotype" class="control-label col-xs-2">E-mail</label>
+					<div class="col-xs-10">
+						<select id="shares" name="shares" class="form-control"></select>
+					</div>
+				</div>
+			</form>
+		</div>
+{% endblock %}

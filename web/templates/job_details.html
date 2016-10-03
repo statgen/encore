@@ -18,7 +18,7 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/plot.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/job_details.js') }}"></script>
 	<script type="text/javascript">
-		job_id = "{{ job.id }}"
+		job_id = "{{ job.job_id }}"
 		job_status = "{{ job.status }}"
 		$(document).ready(function() {
 			init_job_tabs();
@@ -73,7 +73,7 @@
         </div>
 
         {% if job.status == "succeeded" %}
-        <form class="section" action="/jobs/{{ job.id }}/output">
+        <form class="section" action="/jobs/{{ job.job_id }}/output">
             <button type="submit">Download Output</button>
         </form>
 
@@ -87,14 +87,14 @@
             <div class="tab-container">
 
                 <div id="tab1" class="tab-content">
-                    <!--<object data="/jobs/{{ job.id }}/plots/tmp-manhattan" type="application/pdf" height="600px" width="100%">
-                        alt : <a href="/jobs/{{ job.id }}/plots/tmp-manhattan">manhattan.pdf</a>
+                    <!--<object data="/jobs/{{ job.job_id }}/plots/tmp-manhattan" type="application/pdf" height="600px" width="100%">
+                        alt : <a href="/jobs/{{ job.job_id }}/plots/tmp-manhattan">manhattan.pdf</a>
                     </object>-->
 
                 </div>
                 <div id="tab2" class="tab-content">
-                    <!--<object data="/jobs/{{ job.id }}/plots/tmp-qq" type="application/pdf" height="600px" width="100%">
-                        alt : <a href="/jobs/{{ job.id }}/plots/tmp-manhattan">qq.pdf</a>
+                    <!--<object data="/jobs/{{ job.job_id }}/plots/tmp-qq" type="application/pdf" height="600px" width="100%">
+                        alt : <a href="/jobs/{{ job.job_id }}/plots/tmp-manhattan">qq.pdf</a>
                     </object>-->
                 </div>
 				<div id="tab3" class="tab-content">

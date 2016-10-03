@@ -37,8 +37,8 @@ class SlurmEpactsJob:
 
         def one_cmd(model):
             pheno_path = self.relative_path("pheno.ped")
-            pheno_cols = model["response"] + model["covariates"]
-            with open(pheno_path,"r") as pedfile:
+            pheno_cols = [model["response"]] + model.get("covariates",[])
+            with open(pheno_path,"w") as pedfile:
                 pheno.write_as_ped(pheno_cols, pedfile)
             ecmd = ""
             opts = ""

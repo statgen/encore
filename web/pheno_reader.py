@@ -9,6 +9,7 @@ from collections import defaultdict, Counter
 # of a phenotype file
 
 def guess_raw_type(s):
+    # return one of "int","float","str","bool","_empty_"
     if re.match(r'^\s*$', s):
         return "_empty_"
     try:
@@ -59,9 +60,16 @@ def guess_column_class(colinfo):
         vals = col["int"] + col["float"]
         return guess_atomic_column_class(best_type, vals)
     if len(col)==2 and (n_uniq_vals["str"]==1):
-        # likely a numeric value with a missing indicator
+        # likely a single type with a missing indicator
         best_type = [x[0] for x in n_vals.most_common(2) if x[0] != "str"][0]
         ci = guess_atomic_column_class(best_type, colinfo[best_type])
+        ci["missing"] = colinfo["str"].keys()[0]
+        return ci
+    if all((x in ["str","int","float"] for x in col.keys())) and (n_uniq_vals["str"]==1):
+        # likely a numeric value with a missing indicator
+        best_type = "float"
+        vals = col["int"] + col["float"]
+        ci = guess_atomic_column_class(best_type, vals)
         ci["missing"] = colinfo["str"].keys()[0]
         return ci
     return None

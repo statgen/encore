@@ -22,12 +22,14 @@ class Job:
         obj = {key: getattr(self, key) for key in self.__dbfields  + self.__extfields if hasattr(self, key)} 
         obj["job_id"] = self.job_id
         obj["users"] = self.users
+        if self.meta:
+            obj["details"] = self.meta
         return obj
 
     @staticmethod
     def get(job_id, config):
         job_folder = os.path.join(config.get("JOB_DATA_FOLDER", "./"), job_id)
-        meta_path = os.path.expanduser(os.path.join(job_folder, "meta.json"))
+        meta_path = os.path.expanduser(os.path.join(job_folder, "job.json"))
         if os.path.exists(meta_path):
             with open(meta_path) as meta_file:
                 meta = json.load(meta_file)

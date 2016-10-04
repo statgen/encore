@@ -23,35 +23,39 @@
 			if (m.get("response") == "") {
 				errors.push("Missing response");
 			}
+			if( m.getAll("covariates").indexOf(m.get("response"))>-1) {
+				errors.push("Response cannot also be a covariate");
+			}
 			return errors;
 		}
 
 		function submitModel(e) {
-			e.preventDefault()
+			e.preventDefault();
 			var form = $("#model-form")[0];
 			var fd = new FormData(form);
 			var formErrors = validateModel(fd);
 			if (formErrors.length) {
-				alert("Error!");
+				alert("Invalid model:\n" + formErrors[0]);
 				return false;
 			}
 			var xhr = new XMLHttpRequest();
 			//TODO: Add error handling
 			xhr.addEventListener("load", function () {
+				var resp;
 				if (xhr.status >= 200 && xhr.status < 300) {
 					try {
-						var resp = JSON.parse(xhr.responseText);
+						resp = JSON.parse(xhr.responseText);
 						if (resp.url_job) {
 							window.location = resp.url_job;
 						}
 					} catch (ex) {
-						console.warn(ex)
+						console.warn(ex);
 					}
 					document.window.location = "/";
 				} else {
 					var message;
 					try {
-						var resp = JSON.parse(xhr.responseText);
+						resp = JSON.parse(xhr.responseText);
 						message = resp.error;
 					} catch (ex) {
 						message = xhr.responseText || xhr.statusText;
@@ -73,36 +77,36 @@
 				userHasNamedJob = false;
 				ele.val(suggestName());
 			}
-		};
+		}
 
 		function formChanged() {
 			if (!userHasNamedJob) {
 				$("#job_name", "#model-form").val(suggestName());
 			}
-		};
+		}
 
 		function suggestName() {
 			var response = responseSelect.find("option:selected").text();
 			if (!response) {
 				return "";
 			}
-			var model = $('input[name=model]:checked', '#model-form').val();
-			var logtran = $('input[name=response_invnorm]', '#model-form').prop("checked");
+			var model = $("input[name=model]:checked", "#model-form").val();
+			var logtran = $("input[name=response_invnorm]", "#model-form").prop("checked");
 			if (logtran) {
 				response = "invNorm(" + response + ")";
-			};
+			}
 			var name = model + ": " + response; 
 			var covar = covariateSelect.find("option:selected");
 			if (covar.length>4) {
-				name = name + " = Covar(" + covar.length + ")"
+				name = name + " = Covar(" + covar.length + ")";
 			} else if (covar.length>0) {
-				name = name + " = " + covar.map(function() {return $(this).text()}).get().join(" + ")	
+				name = name + " = " + covar.map(function() {return $(this).text();}).get().join(" + ");
 			}
 			return name;
 		}
 
 		function loadPheno(pheno_id) {
-			$.getJSON("/api/pheno/" + pheno_id).done(function(pheno) {
+			return $.getJSON("/api/pheno/" + pheno_id).done(function(pheno) {
 				covars = pheno.meta.columns;
 				var opts  = [];
 				var hideCols = ["family_id","sample_id","mother_id","father_id"];
@@ -111,18 +115,34 @@
 						opts.push({id: col.name, text: col.name});	
 					}
 				});
-				responseSelect.html("").select2({"data": [""].concat(opts)});
+				responseSelect.html("").select2(
+					{"data": [""].concat(opts),
+					placeholder: "",
+					minimumResultsForSearch: 4});
 				covariateSelect.html("").select2({"data": opts});
 				formChanged();
-				$("#model-form").css("visibility","visible").hide().fadeIn();
 			});
 		}
+
+		function getQuerystring () {
+			// from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+			var match,
+				pl     = /\+/g,  // Regex for replacing addition symbol with a space
+				search = /([^&=]+)=?([^&]*)/g,
+				decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+				query  = window.location.search.substring(1);
+
+			var urlParams = {};
+			while (match = search.exec(query))
+				urlParams[decode(match[1])] = decode(match[2]);
+			return urlParams;
+		} 
 
 		$(function() {
 			$("#covar_add_all").click(function(evt) {
 				evt.preventDefault();
-				resp = responseSelect.val();
-				opts = []
+				var resp = responseSelect.val();
+				var opts = [];
 				covars.forEach(function(col) {
 					if (col.name != resp) {
 						opts.push(col.name);
@@ -137,7 +157,7 @@
 			var d1 = $.getJSON("/api/geno").then(function(resp) {
 				var genos = [];
 				resp.forEach(function(g) {
-					genos.push({id: g.id, text: g.name})
+					genos.push({id: g.id, text: g.name});
 				});
 				genoSelect = $("#genotype").select2({
 					data: genos,
@@ -147,38 +167,82 @@
 			var d2 = $.getJSON("/api/pheno").then(function(resp) {
 				var phenos = [];
 				resp.forEach(function(p) {
-					phenos.push({id: p.id, text:p.name})
+					phenos.push({id: p.id, text:p.name});
 				});
 				responseSelect = $("#response").select2({
 					data: [""],
 					placeholder: "",
-					minimumResultsForSearch: 3
+					minimumResultsForSearch: 5
 				}).on("change", formChanged);
 				covariateSelect = $("#covariates").select2({
-					data: [""], 
+					data: [""] 
 				}).on("change", formChanged);
 				phenoSelect = $("#phenotype").select2({
 					data: phenos,
-					minimumResultsForSearch: 4
-				}).on("change", function(e) {
+					minimumResultsForSearch: 5
+				}).on("change", function() {
 					loadPheno($(this).val());
 				});
-				return resp[0].id
+				return resp[0].id;
 			});
 			var d3 = $.getJSON("/api/model").then(function(resp) {
-				modelSelect = $("#model-type")
-				template = document.getElementById("model-radio-group").innerText
+				var modelSelect = $("#model-type");
+				var template = document.getElementById("model-radio-group").innerText;
 				modelSelect.html(ejs.render(template, {"models" : resp }));
-			});
+			}); 
+			var qs = getQuerystring();
 			$.when(d1, d2, d3).done(function(g, p, m) {
-				loadPheno(p);
+				var promise;
+				if (qs.like) {
+					promise = $.getJSON("/api/jobs/" + qs.like).then(function(x){
+						var opts = {p: p};
+						if (x.details) {
+							opts.p = x.details.phenotype;
+							opts.g = x.details.genotype;
+							opts.m = x.details.type;
+							opts.r = x.details.response;
+							opts.c = x.details.covariates;
+						}
+						return $.when(opts);
+					}, function() {
+						return $.when({p: p});
+					});
+				} else {
+					promise = $.when({p: qs.pheno || p});
+				}
+				promise.then(function(opts) {
+					return loadPheno(opts.p).then(function() {
+						phenoSelect.val(opts.p).trigger("change.select2");
+						return $.when(opts);
+					});
+				}).then(function(opts) {
+					if (opts.g) {
+						genoSelect.val(opts.g).trigger("change");
+					}
+					if (opts.r) {
+						responseSelect.val(opts.r).trigger("change");
+					}
+					if (opts.c) {
+						covariateSelect.val(opts.c).trigger("change");
+					}
+					if (opts.m) {
+						$("input[type=radio]", "#model-form").
+							filter("[value='" + opts.m + "']").
+							prop("checked", true).trigger("change");
+					} else {
+						$("input[type=radio]", "#model-form").
+							first().prop("checked", true).trigger("change");
+					}
+				}).then(function() {
+					$("#model-form").css("visibility","visible").hide().fadeIn();
+				});
 				$("input[type=radio]", "#model-form").on("change", formChanged).
 					first().prop("checked", true);
 				$("input[type=checkbox]", "#model-form").on("change", formChanged);
 				$("#job_name", "#model-form").on("change", nameChanged);
 				$("#model-form").on("submit", submitModel);
 			});
-		})
+		});
 	</script>
     <script id="model-radio-group" type="text/x-tmpl">
 		<% models.forEach(function(m) { %>

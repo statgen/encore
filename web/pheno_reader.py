@@ -96,17 +96,26 @@ def sniff_file(csvfile):
 
 def find_header(firstrow, lastcomment, cols):
     colclasses = {k: guess_column_class(v) for k,v in cols.items()}
-    firstrowtypes = [guess_raw_type(x) for x in firstrow]
-    coltypes = [z["type"] for z in [colclasses[i] for i in xrange(len(firstrow))]]
-    rowtypes = [guess_raw_type(x) for x in firstrow]
-    if sum([x=="str" for x in firstrowtypes]) > sum([x=="str" for x in coltypes]):
-        # we have more strings than expected, assume it's the header
+    col_types = [z["type"] for z in [colclasses[i] for i in xrange(len(firstrow))]]
+    firstrow_types = [guess_raw_type(x) for x in firstrow]
+
+    nonstringcols = sum((x != "str" for x in col_types))
+    firstrow_promotions = sum((f=="str" for (f,c) in zip(firstrow_types, col_types) if c!="str"))
+    if lastcomment:
+        comment_types = [guess_raw_type(x) for x in lastcomment]
+        if len(lastcomment) == len(colclasses):
+            comment_promotions = sum((f=="str" for (f,c) in zip(comment_types, col_types) if c!="str"))
+        else:
+            comment_promotions = 0
+    else:
+        comment_types = []
+        comment_promotions = 0
+
+    if comment_promotions > firstrow_promotions and (float)(comment_promotions)/nonstringcols > .9:
+        #the last comment has the right number of rows and string in non-string columns
+        return (lastcomment, "comment")
+    if (float)(firstrow_promotions)/nonstringcols >= .5:
         return (firstrow, "firstrow")
-    if len(lastcomment) == len(colclasses):
-        # we have a length match of mostly str values, assume it's the header
-        commenttypes = [guess_raw_type(x) for x in lastcomment]
-        if sum([x=="str" for x in commenttypes])/float(len(commenttypes)) > .9:
-            return (lastcomment, "comment")
     # no header found, return unique names
     return (["COL{0}".format(i) for i in xrange(len(colclasses))], "position")
 
@@ -161,7 +170,7 @@ def infer_meta(csvfile, dialect=None):
     else:
         lastcomment = None
     headers, headersource = find_header(firstrow, lastcomment, cols)
-    if headersource == "position":
+    if headersource == "firstrow":
         skip = len(comments)+1
     else:
         skip = len(comments)
@@ -231,7 +240,6 @@ class PhenoReader:
     def data_extractor(self, cols, noneColValue=0, skip_any_missing = True):
         pos = self.get_column_indexes()
         missing = self.get_column_missing_values()
-        print missing
         dialect = self.get_dialect()
         if "layout" in self.meta and "skip" in self.meta["layout"]:
             skip = self.meta['layout']['skip']

@@ -214,6 +214,10 @@ class PhenoReader:
         else:
             return None
 
+    def get_column_missing_values(self):
+        cols = self.get_columns();
+        return { v["name"]: v.get("missing",None) for v in cols }
+
     def get_column_indexes(self):
         cols = self.get_columns();
         return { v["name"]: i for (i,v) in enumerate(cols)}
@@ -224,8 +228,10 @@ class PhenoReader:
         else:
             return [];
 
-    def data_extractor(self, cols, noneColValue=0):
+    def data_extractor(self, cols, noneColValue=0, skip_any_missing = True):
         pos = self.get_column_indexes()
+        missing = self.get_column_missing_values()
+        print missing
         dialect = self.get_dialect()
         if "layout" in self.meta and "skip" in self.meta["layout"]:
             skip = self.meta['layout']['skip']
@@ -239,7 +245,10 @@ class PhenoReader:
                 [csvfile.readline() for i in xrange(skip)]
             cvr = csv.reader(csvfile, dialect)
             for row in cvr:
-                yield [row[pos[col]] if col else noneColValue for col in cols]
+                vals = [row[pos[col]] if col else noneColValue for col in cols]
+                has_missing = any(( v == missing[col] for (v,col) in zip(vals, cols) if col))
+                if not skip_any_missing or not has_missing:
+                    yield vals
 
     @staticmethod
     def get_file_type(file):
@@ -264,7 +273,7 @@ if __name__ == "__main__":
             with open(sys.argv[2]) as f:
                 meta = json.load(f)
             p = PhenoReader(sys.argv[1], meta)
-            print [x for x in p.data_extractor(["VAL", None, "COL"])]
+            print [x for x in p.data_extractor(["ID", None, "LDL"])]
         else:
             p = PhenoReader(sys.argv[1], meta)
             print json.dumps(p.meta, indent=2)

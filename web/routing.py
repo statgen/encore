@@ -65,7 +65,8 @@ def get_api_vcf_statistics():
 @app.route("/jobs", methods=["GET"])
 @login_required
 def get_jobs():
-    return job_handlers.get_job_list_view()
+    return redirect(url_for("index"))
+    #return job_handlers.get_job_list_view()
 
 
 @app.route("/jobs/<job_id>", methods=["GET"])

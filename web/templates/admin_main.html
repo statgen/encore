@@ -10,7 +10,7 @@
 		$(document).ready(function() {
 			$("#jobs-table").DataTable({
 				ajax: {url: "/api/jobs-all", dataSrc: ""},
-				order: [[3, "desc"]],
+				order: [[4, "desc"]],
 				columns: [
 					{data: "id", title: "Job ID"},
 					{data: "name", title: "Job Name"},

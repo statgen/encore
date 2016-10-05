@@ -11,11 +11,8 @@ import gzip
 import glob
 import re
 import time
-import hashlib
 from auth import access_job_page
 from genotype import Genotype
-from phenotype import Phenotype
-from pheno_reader import PhenoReader
 from job import Job 
 from slurm_epacts_job import SlurmEpactsJob
 
@@ -34,22 +31,8 @@ def get_jobs():
     return json_resp(jobs)
 
 def get_all_jobs():
-    resp = Response(mimetype='application/json')
-    db = sql_pool.get_conn()
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = """
-        SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%Y-%m-%d %H:%i:%s') AS modified_date,
-        users.email as user_email
-        FROM jobs
-        LEFT JOIN statuses ON jobs.status_id = statuses.id
-        LEFT JOIN users ON jobs.user_id = users.id
-        ORDER BY jobs.creation_date DESC
-        """
-    cur.execute(sql)
-    results = cur.fetchall()
-    resp.set_data(json.dumps(results))
-    return resp
-
+    jobs = Job.list_all(current_app.config)
+    return json_resp(jobs)
 
 def get_job_chunks(job_id):
     job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
@@ -90,33 +73,14 @@ def cancel_job(job_id):
         if subprocess.call("scancel " + slurm_job_id):
             resp.status_code = 500
             resp.status = "JOB CANCELLATION FAILED"
-
     return resp
 
 def purge_job(job_id):
-    removed = False
-
-    db = sql_pool.get_conn()
-    cur = db.cursor()
-    sql = "DELETE FROM job_users WHERE job_id = uuid_to_bin(%s)"
-    users = cur.execute(sql, (job_id, ))
-    sql = "DELETE FROM jobs WHERE id = uuid_to_bin(%s)"
-    cur.execute(sql, (job_id, ))
-    affected = cur.rowcount
-    db.commit()
-
-    if affected > 0:
-        #only delete if found in data base
-        job_directory =  os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-        if os.path.isdir(job_directory):
-            removed = True
-            shutil.rmtree(job_directory)
-
-    resp = json_resp({"jobs": affected, "users": users, "files": removed})
-    if affected >0:
-        return resp
+    result = Job.purge(job_id, current_app.config)
+    if result["found"]:
+        return json_resp(result)
     else:
-        return resp, 404
+        return json_resp(result), 404
 
 @access_job_page
 def get_job_details_view(job_id, job=None):
@@ -193,68 +157,6 @@ def get_job_zoom(job_id, job=None):
 def get_job_share_page(job_id, job=None):
     return render_template("job_share.html", job=job)
 
-def get_pheno_upload_view():
-    return render_template("pheno_upload.html")
-
-def get_phenos(): 
-    phenos = Phenotype.list_all_for_user(current_user.rid)
-    return json_resp(phenos)
-
-def get_pheno(pheno_id):
-    p = Phenotype.get(pheno_id, current_app.config)
-    return json_resp(p.as_object())
-
-def post_to_pheno():
-    user = current_user
-    if request.method != 'POST':
-        return json_resp({"error": "NOT A POST REQUEST"}), 405
-    if "pheno_file" not in request.files:
-        return json_resp({"error": "FILE NOT SENT"}), 400
-    pheno_id = str(uuid.uuid4())
-    if not pheno_id:
-        return json_resp({"error": "COULD NOT GENERATE PHENO ID"}), 500
-    pheno_file = request.files["pheno_file"]
-    orig_file_name = pheno_file.filename
-    pheno_directory = os.path.join(current_app.config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
-    try:
-        os.mkdir(pheno_directory)
-        pheno_file_path = os.path.join(pheno_directory, "pheno.txt")
-        pheno_meta_path = os.path.join(pheno_directory, "meta.json")
-        pheno_file.save(pheno_file_path)
-        md5 =  hashfile(open(pheno_file_path, "rb")).encode("hex")
-    except Exception as e:
-        print "File saving error: %s" % e
-        return json_resp({"error": "COULD NOT SAVE FILE"}), 500
-    # file has been saved to server
-    istext, filetype, mimetype = PhenoReader.is_text_file(pheno_file_path)
-    if not istext:
-        shutil.rmtree(pheno_directory)
-        return json_resp({"error": "NOT A RECOGNIZED TEXT FILE",
-            "filetype": filetype,
-            "mimetype": mimetype}), 400
-    try:
-        db = sql_pool.get_conn()
-        cur = db.cursor()
-        sql = """
-            INSERT INTO phenotypes (id, user_id, name, orig_file_name, md5sum)
-            VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, %s, %s)
-            """
-        cur.execute(sql, (pheno_id, user.rid, orig_file_name, orig_file_name, md5))
-        db.commit()
-    except Exception as e:
-        print "Databse error: %s" % e
-        shutil.rmtree(pheno_directory)
-        return json_resp({"error": "COULD NOT SAVE TO DATABASE"}), 500
-    # file has been saved to DB
-    pheno = PhenoReader(pheno_file_path)
-    meta = pheno.infer_meta()
-    with open(pheno_meta_path, "w") as f:
-        json.dump(meta, f)
-    return json_resp({"id": pheno_id, "url_model": url_for("get_model_build", pheno=pheno_id)})
-    
-def get_model_build_view():
-    return render_template("model_build.html")
-
 def post_to_jobs():
     user = current_user
     job_desc = dict()
@@ -323,6 +225,9 @@ def get_genotypes():
     stats = [get_stats(x) for x in genos]
     return json_resp(stats)
 
+def get_model_build_view():
+    return render_template("model_build.html")
+
 def get_models():
     models = SlurmEpactsJob.available_models()
     return json_resp(models)
@@ -335,11 +240,3 @@ def json_resp(data):
     resp.set_data(json.dumps(data))
     return resp
 
-def hashfile(afile, hasher=None, blocksize=65536):
-    if not hasher:
-        hasher = hashlib.md5()
-    buf = afile.read(blocksize)
-    while len(buf) > 0:
-        hasher.update(buf)
-        buf = afile.read(blocksize)
-    return hasher.digest()

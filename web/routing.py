@@ -2,6 +2,7 @@ import os
 from flask import request,Response,Flask, render_template, session, send_from_directory, redirect, send_file, url_for
 from flask_login import LoginManager, login_required, current_user
 import job_handlers
+import pheno_handlers
 import sign_in_handler
 import re
 import job_tracking
@@ -52,16 +53,6 @@ def get_sign_in():
 def get_genotypes():
     return job_handlers.get_genotypes()
 
-@app.route("/api/vcf/statistics", methods=["GET"])
-def get_api_vcf_statistics():
-    # API endpoint not protected.
-    try:
-        output_file_path = os.path.join(app.config.get("JOB_DATA_FOLDER", "./"), "vcf_stats.json")
-        return send_file(output_file_path, as_attachment=False)
-    except:
-        return "File Not Found", 404
-
-
 @app.route("/jobs", methods=["GET"])
 @login_required
 def get_jobs():
@@ -72,28 +63,19 @@ def get_jobs():
 @app.route("/jobs/<job_id>", methods=["GET"])
 @login_required
 def get_job(job_id):
-    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
-        return "Not Found", 404
-    else:
-        return job_handlers.get_job_details_view(job_id)
+    return job_handlers.get_job_details_view(job_id)
 
 
 @app.route("/jobs/<job_id>/output", methods=["GET"])
 @login_required
 def get_job_output(job_id):
-    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
-        return "Not Found", 404
-    else:
-        return job_handlers.get_job_output(job_id, "output.epacts.gz", True)
+    return job_handlers.get_job_output(job_id, "output.epacts.gz", True)
 
 
 @app.route("/jobs/<job_id>/locuszoom/<region>", methods=["GET"])
 @login_required
 def get_job_locuszoom_plot(job_id, region):
-    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
-        return "Not Found", 404
-    else:
-        return job_handlers.get_job_locuszoom_plot(job_id, region)
+    return job_handlers.get_job_locuszoom_plot(job_id, region)
 
 
 @app.route("/jobs/<job_id>/share", methods=["GET"])
@@ -137,36 +119,24 @@ def post_api_job_cancel_request(job_id):
 @app.route("/api/jobs/<job_id>/plots/qq", methods=["GET"])
 @login_required
 def get_api_job_qq(job_id):
-    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
-        return "Not Found", 404
-    else:
-        return job_handlers.get_job_output(job_id, "qq.json")
+    return job_handlers.get_job_output(job_id, "qq.json")
 
 
 @app.route("/api/jobs/<job_id>/plots/manhattan", methods=["GET"])
 @login_required
 def get_api_job_manhattan(job_id):
-    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
-        return "Not Found", 404
-    else:
-        return job_handlers.get_job_output(job_id, "manhattan.json")
+    return job_handlers.get_job_output(job_id, "manhattan.json")
 
 
 @app.route("/api/jobs/<job_id>/plots/zoom", methods=["GET"])
 @login_required
 def get_api_job_zoom(job_id):
-    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
-        return "Not Found", 404
-    else:
-        return job_handlers.get_job_zoom(job_id)
+    return job_handlers.get_job_zoom(job_id)
 
 @app.route("/api/jobs/<job_id>/tables/top", methods=["GET"])
 @login_required
 def get_api_job_tophits(job_id):
-    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
-        return "Not Found", 404
-    else:
-        return job_handlers.get_job_output(job_id, "tophits.json", False)
+    return job_handlers.get_job_output(job_id, "tophits.json", False)
 
 @app.route("/api/jobs/<job_id>/chunks", methods=["GET"])
 @login_required
@@ -176,39 +146,39 @@ def get_api_job_chuncks(job_id):
 @app.route("/jobs/<job_id>/plots/tmp-qq", methods=["GET"])
 @login_required
 def get_job_tmp_qq(job_id):
-    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
-        return "Not Found", 404
-    else:
-        return job_handlers.get_job_output(job_id, "output.epacts.qq.pdf", False)
+    return job_handlers.get_job_output(job_id, "output.epacts.qq.pdf", False)
 
 
 @app.route("/jobs/<job_id>/plots/tmp-manhattan", methods=["GET"])
 @login_required
 def get_job_tmp_manhattan(job_id):
-    if not re.match("^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$", job_id):
-        return "Not Found", 404
-    else:
-        return job_handlers.get_job_output(job_id, "output.epacts.mh.pdf", False)
+    return job_handlers.get_job_output(job_id, "output.epacts.mh.pdf", False)
 
 @app.route("/pheno-upload", methods=["GET"])
 @login_required
 def get_pheno_upload():
-    return job_handlers.get_pheno_upload_view()
+    return pheno_handlers.get_pheno_upload_view()
 
 @app.route("/api/pheno", methods=["GET"])
 @login_required
 def get_api_pheno_list():
-    return job_handlers.get_phenos()
+    return pheno_handlers.get_phenos()
 
 @app.route("/api/pheno/<pheno_id>", methods=["GET"])
 @login_required
 def get_api_pheno_detail(pheno_id):
-    return job_handlers.get_pheno(pheno_id)
+    return pheno_handlers.get_pheno(pheno_id)
+
+@app.route("/api/pheno/<pheno_id>", methods=["DELETE"])
+@login_required
+@admin_required
+def delete_api_pheno(pheno_id):
+    return pheno_handlers.purge_pheno(pheno_id)
 
 @app.route("/api/pheno", methods=["POST"])
 @login_required
 def post_api_pheno():
-    return job_handlers.post_to_pheno()
+    return pheno_handlers.post_to_pheno()
 
 @app.route("/model-build", methods=["GET"])
 @login_required

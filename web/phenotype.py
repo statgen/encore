@@ -91,3 +91,29 @@ class Phenotype:
         cur.execute(sql, (user_id,))
         results = cur.fetchall()
         return results
+
+    @staticmethod
+    def purge(pheno_id, config=None):
+        pheno = Phenotype.get(pheno_id, config)
+        result = {}
+        if pheno:
+            db = sql_pool.get_conn()
+            cur = db.cursor()
+            sql = "DELETE FROM phenotypes WHERE id = uuid_to_bin(%s)"
+            cur.execute(sql, (pheno_id, ))
+            affected = cur.rowcount
+            db.commit()
+
+            removed = False
+            pheno_directory = pheno.root_path 
+            if os.path.isdir(pheno_directory) and affected>0:
+                try:
+                    shutil.rmtree(pheno_directory)
+                    removed = True
+                except:
+                    pass
+
+            result = {"phenos": affected, "files": removed, "found": True}
+            return result
+        else:
+            return {"found": False}

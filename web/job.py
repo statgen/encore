@@ -1,4 +1,5 @@
 import os
+import shutil
 import json
 import sql_pool
 import MySQLdb
@@ -12,7 +13,6 @@ class Job:
         map(lambda x: setattr(self, x, None), self.__dbfields + self.__extfields)
         self.root_path = "" 
         self.users = []
-        self.root_folder = ""
         self.meta = meta
 
     def relative_path(self, *args):
@@ -98,3 +98,48 @@ class Job:
         cur.execute(sql, (user_id,))
         results = cur.fetchall()
         return results 
+
+    @staticmethod
+    def list_all(config=None):
+        db = sql_pool.get_conn()
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = """
+            SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%Y-%m-%d %H:%i:%s') AS modified_date,
+            users.email as user_email
+            FROM jobs
+            LEFT JOIN statuses ON jobs.status_id = statuses.id
+            LEFT JOIN users ON jobs.user_id = users.id
+            ORDER BY jobs.creation_date DESC
+            """
+        cur.execute(sql)
+        results = cur.fetchall()
+        return results
+
+    @staticmethod
+    def purge(job_id, config=None):
+        job = Job.get(job_id, config)
+        result = {}
+        if job:
+            db = sql_pool.get_conn()
+            cur = db.cursor()
+            sql = "DELETE FROM job_users WHERE job_id = uuid_to_bin(%s)"
+            cur.execute(sql, (job_id, ))
+            users = cur.rowcount
+            sql = "DELETE FROM jobs WHERE id = uuid_to_bin(%s)"
+            cur.execute(sql, (job_id, ))
+            affected = cur.rowcount
+            db.commit()
+
+            removed = False
+            job_directory = job.root_path 
+            if os.path.isdir(job_directory) and affected>0:
+                try:
+                    shutil.rmtree(job_directory)
+                    removed = True
+                except:
+                    pass
+
+            result = {"jobs": affected, "users": users, "files": removed, "found": True}
+            return result
+        else:
+            return {"found": False}

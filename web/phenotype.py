@@ -70,11 +70,14 @@ class Phenotype:
             """
         cur.execute(sql, (pheno_id,))
         result = cur.fetchone()
-        p = Phenotype(pheno_id, meta)
-        p.root_path = pheno_folder
-        map(lambda x: setattr(p, x, result[x]), \
-            (val for val in Phenotype.__dbfields if val in result))
-        return p
+        if result is not None:
+            p = Phenotype(pheno_id, meta)
+            p.root_path = pheno_folder
+            map(lambda x: setattr(p, x, result[x]), \
+                (val for val in Phenotype.__dbfields if val in result))
+            return p
+        else:
+            return None
     
     @staticmethod
     def list_all_for_user(user_id, config=None):

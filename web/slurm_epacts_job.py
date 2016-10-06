@@ -42,19 +42,20 @@ class SlurmEpactsJob:
                 pheno.write_as_ped(pheno_cols, pedfile)
             ecmd = ""
             opts = ""
-            if model["response_invnorm"]:
+            if model.get("response_invnorm", False):
                 opts += " --inv-norm" 
-            if model["type"] == "lm":
+            model_type = model.get("type", None)
+            if model_type == "lm":
                 ecmd = "single"
                 opts += " --test q.linear" + \
                     " --unit 500000" + \
                     " --min-maf 0.001" 
-            elif model["type"] == "lmm":
+            elif model_type == "lmm":
                 ecmd = "single"
                 opts += " --test q.emmax --kin {}".format(geno.get_kinship_path()) + \
                     " --unit 500000" + \
                     " --min-maf 0.001" 
-            elif model["type"] == "skato":
+            elif model_type == "skato":
                 ecmd = "group"
                 group = model.get("group", "nonsyn")
                 opts += " --test skat --skat-o" +  \
@@ -62,7 +63,7 @@ class SlurmEpactsJob:
                     " --max-maf 0.05" + \
                     " --unit 500"
             else:
-                raise ValueError('Unrecognize model type: %s' % (model["type"],))
+                raise ValueError('Unrecognized model type: %s' % (model_type,))
 
             cmd = ""
             cmd += "{} {}".format(self.config.get("ANALYSIS_BINARY", "epacts"), ecmd) + \

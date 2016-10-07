@@ -4,10 +4,10 @@ from flask_login import LoginManager, login_required, current_user
 import job_handlers
 import pheno_handlers
 import sign_in_handler
-import re
 import job_tracking
 from functools import wraps
 import atexit
+import subprocess
 
 APP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC_PATH = os.path.join(APP_ROOT_PATH, 'static')
@@ -221,4 +221,8 @@ def on_exit():
 atexit.register(on_exit)
 
 if __name__ == "__main__":
+    try:
+        app.config["git-hash"] = subprocess.check_output(["git", "rev-parse", "HEAD"])
+    except:
+        pass
     app.run(debug=True, use_reloader=False, port=8080, host="0.0.0.0");

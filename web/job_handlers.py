@@ -233,7 +233,7 @@ def get_models():
     return json_resp(models)
 
 def get_admin_main_page():
-    return render_template("admin_main.html")
+    return render_template("admin_main.html", githash=current_app.config.get("git-hash", None))
 
 def json_resp(data):
     resp = Response(mimetype='application/json')

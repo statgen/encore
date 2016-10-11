@@ -21,26 +21,8 @@ class Phenotype:
     def get_raw_path(self):
         return self.relative_path("pheno.txt")
 
-    def find_ped_columns(self):
-        classes = ["family_id","sample_id","father_id","mother_id","sex"];
-        def nameOrNone(x):
-            return next((c["name"] for (i,c) in enumerate(self.meta["columns"]) if c["class"]==x), None)
-        cols = [nameOrNone(x) for x in classes]
-        return cols
-
-    def write_as_ped(self, cols, fconn=None):
-        pr = PhenoReader(self.get_raw_path(), self.meta)
-        ped_cols = self.find_ped_columns()
-        if ped_cols[0] is None:
-            ped_cols[0] = ped_cols[1] # use ind ID for family ID
-        pheno_cols = [x for x in cols if x not in ped_cols]
-        pull_cols = ped_cols + pheno_cols
-        header = [y if x is None else y for (x,y) in \
-            zip(ped_cols, ["FAM_ID","IND_ID","FAT_ID","MOT_ID","SEX"])] + pheno_cols
-        header[0] = "#" + header[0]
-        fconn.write("\t".join([str(x) for x in header]) + "\n")
-        for row in pr.data_extractor(pull_cols):
-            fconn.write("\t".join([str(x) for x in row]) + "\n")
+    def get_pheno_reader(self):
+        return PhenoReader(self.get_raw_path(), self.meta)
 
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))

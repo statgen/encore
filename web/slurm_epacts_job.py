@@ -1,5 +1,6 @@
 from genotype import Genotype
 from phenotype import Phenotype 
+from ped_writer import PedWriter
 import os
 import subprocess
 
@@ -38,8 +39,10 @@ class SlurmEpactsJob:
         def one_cmd(model):
             pheno_path = self.relative_path("pheno.ped")
             pheno_cols = [model["response"]] + model.get("covariates",[])
+            ped_writer = PedWriter(pheno.get_pheno_reader(), \
+                model["response"], model.get("covariates",[])) 
             with open(pheno_path,"w") as pedfile:
-                pheno.write_as_ped(pheno_cols, pedfile)
+                ped_writer.write_to_file(pedfile)
             ecmd = ""
             opts = ""
             if model.get("response_invnorm", False):
@@ -73,8 +76,9 @@ class SlurmEpactsJob:
                 " --sepchr" + \
                 " --out ./output --run 48"
 
-            cmd += " --pheno {}".format(model["response"])
-            for covar in model["covariates"]:
+            for resp in ped_writer.get_response_headers():
+                cmd += " --pheno {}".format(resp)
+            for covar in ped_writer.get_covar_headers():
                 cmd += " --cov {}".format(covar)
             cmd += opts
 

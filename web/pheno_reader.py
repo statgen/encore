@@ -237,9 +237,7 @@ class PhenoReader:
         else:
             return [];
 
-    def data_extractor(self, cols, noneColValue=0, skip_any_missing = True):
-        pos = self.get_column_indexes()
-        missing = self.get_column_missing_values()
+    def row_extractor(self):
         dialect = self.get_dialect()
         if "layout" in self.meta and "skip" in self.meta["layout"]:
             skip = self.meta['layout']['skip']
@@ -253,10 +251,16 @@ class PhenoReader:
                 [csvfile.readline() for i in xrange(skip)]
             cvr = csv.reader(csvfile, dialect)
             for row in cvr:
-                vals = [row[pos[col]] if col else noneColValue for col in cols]
-                has_missing = any(( v == missing[col] for (v,col) in zip(vals, cols) if col))
-                if not skip_any_missing or not has_missing:
-                    yield vals
+                yield row
+
+    def data_extractor(self, cols, noneColValue=0, skip_any_missing = True):
+        pos = self.get_column_indexes()
+        missing = self.get_column_missing_values()
+        for row in self.row_extractor():
+            vals = [row[pos[col]] if col else noneColValue for col in cols]
+            has_missing = any(( v == missing[col] for (v,col) in zip(vals, cols) if col))
+            if not skip_any_missing or not has_missing:
+                yield vals
 
     @staticmethod
     def get_file_type(file):

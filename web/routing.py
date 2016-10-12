@@ -147,8 +147,8 @@ def get_api_job_chuncks(job_id):
 @app.route('/api/lz/<resource>', methods=["GET"])
 @login_required
 def get_api_annotations(resource):
-    if resource == "ld":
-        return requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/', params=request.args).content
+    if resource == "ld-results":
+        return requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/results', params=request.args).content
     elif resource == "gene":
         return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/genes/', params=request.args).content
     elif resource == "recomb":

@@ -20,7 +20,7 @@ $(document).ready(function() {
 
 	var apiBase = "/api/lz/";
     data_sources.add("epacts", new EpactsDS)
-      .add("ld", ["LDEP", apiBase + "ld"])
+      .add("ld", ["LDEP", apiBase + "ld-"])
       .add("gene", ["GeneLZ", { url: apiBase + "gene", params: {source: 2} }])
       .add("recomb", ["RecombLZ", { url: apiBase + "recomb", params: {source: 15} }])
       .add("constraint", ["GeneConstraintLZ", { url: "constraint" }])

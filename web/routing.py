@@ -144,11 +144,11 @@ def get_api_job_tophits(job_id):
 def get_api_job_chuncks(job_id):
    return job_handlers.json_resp(job_handlers.get_job_chunks(job_id))
 
-@app.route('/api/lz/<resource>', methods=["GET"])
+@app.route('/api/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
 @login_required
 def get_api_annotations(resource):
     if resource == "ld-results":
-        return requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/results', params=request.args).content
+        return requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/results/', params=request.args).content
     elif resource == "gene":
         return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/genes/', params=request.args).content
     elif resource == "recomb":

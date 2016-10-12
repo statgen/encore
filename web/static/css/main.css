@@ -243,3 +243,8 @@ button[disabled]
 {
     fill: #666666;
 }
+
+.vertical-align {
+    display: flex;
+	align-items: center;
+}

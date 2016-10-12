@@ -235,9 +235,11 @@ def on_exit():
 
 atexit.register(on_exit)
 
+# track current version
+try:
+    app.config["git-hash"] = subprocess.check_output([app.config.get("GIT_BINARY","git"), "rev-parse", "HEAD"])
+except:
+    pass
+
 if __name__ == "__main__":
-    try:
-        app.config["git-hash"] = subprocess.check_output([app.config.get("GIT_BINARY","git"), "rev-parse", "HEAD"])
-    except:
-        pass
     app.run(debug=True, use_reloader=False, port=8080, host="0.0.0.0");

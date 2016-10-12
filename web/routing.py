@@ -1,5 +1,5 @@
 import os
-from flask import request,Response,Flask, render_template, session, send_from_directory, redirect, send_file, url_for
+from flask import request, Response, Flask, render_template, session, send_from_directory, redirect, send_file, url_for
 from flask_login import LoginManager, login_required, current_user
 import job_handlers
 import pheno_handlers
@@ -8,6 +8,7 @@ import job_tracking
 from functools import wraps
 import atexit
 import subprocess
+import requests
 
 APP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC_PATH = os.path.join(APP_ROOT_PATH, 'static')
@@ -142,6 +143,20 @@ def get_api_job_tophits(job_id):
 @login_required
 def get_api_job_chuncks(job_id):
    return job_handlers.json_resp(job_handlers.get_job_chunks(job_id))
+
+@app.route('/api/lz/<resource>', methods=["GET"])
+@login_required
+def get_api_annotations(resource):
+    if resource == "ld":
+        return requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/', params=request.args).content
+    elif resource == "gene":
+        return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/genes/', params=request.args).content
+    elif resource == "recomb":
+        return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/recomb/results/', params=request.args).content
+    elif resource == "constraint":
+        return requests.get('http://exac.broadinstitute.org/api/constraint', params=request.args).content
+    else:
+        return "Not Found", 404
 
 @app.route("/jobs/<job_id>/plots/tmp-qq", methods=["GET"])
 @login_required

@@ -16,15 +16,14 @@ $(document).ready(function() {
 			position: "epacts:BEGIN",
 			pvalue: "epacts:PVALUE|neglog10"
 		}
-	};	
-	var apiBase = "http://portaldev.sph.umich.edu/api/v1/";
-    var ldBase = apiBase + "pair/LD/"
-    //var ldBase = "http://portaldev.sph.umich.edu/api/topmed/pair/LD/"
+	};
+
+	var apiBase = "/api/lz/";
     data_sources.add("epacts", new EpactsDS)
-      .add("ld", ["LDEP" ,ldBase])
-      .add("gene", ["GeneLZ", { url: apiBase + "annotation/genes/", params: {source: 2} }])
-      .add("recomb", ["RecombLZ", { url: apiBase + "annotation/recomb/results/", params: {source: 15} }])
-      .add("constraint", ["GeneConstraintLZ", { url: "http://exac.broadinstitute.org/api/constraint" }])
+      .add("ld", ["LDEP", apiBase + "ld-"])
+      .add("gene", ["GeneLZ", { url: apiBase + "gene", params: {source: 2} }])
+      .add("recomb", ["RecombLZ", { url: apiBase + "recomb", params: {source: 15} }])
+      .add("constraint", ["GeneConstraintLZ", { url: apiBase + "constraint" }])
       .add("sig", ["StaticJSON", [{ "x": 0, "y": 4.522 }, { "x": 2881033286, "y": 4.522 }] ]);
 
 	LocusZoom.TransformationFunctions.set("scinotation", function(x) {

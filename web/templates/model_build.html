@@ -39,7 +39,8 @@
 				alert("Invalid model:\n" + formErrors[0]);
 				return false;
 			}
-			var fd = new FormData(form[0]);
+			form = form[0];
+			var fd = new FormData(form);
 			var xhr = new XMLHttpRequest();
 			//TODO: Add error handling
 			xhr.addEventListener("load", function () {

@@ -16,6 +16,7 @@ class SlurmEpactsJob:
 
     def create_sbatch_header(self, job_desc):
        return "#!/bin/bash\n" + \
+           "#SBATCH --partition=encore\n" + \
            "#SBATCH --job-name=gasp_{}\n".format(self.job_id)  + \
            "#SBATCH --cpus-per-task=48\n"  + \
            "#SBATCH --workdir={}\n".format(self.job_directory) + \

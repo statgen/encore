@@ -42,6 +42,13 @@ def post_to_pheno():
         print "File saving error: %s" % e
         return json_resp({"error": "COULD NOT SAVE FILE"}), 500
     # file has been saved to server
+    existing_pheno = Phenotype.get_by_hash_user(md5, user.rid, current_app.config)
+    if existing_pheno:
+        # TODO: give warning here if has different file name
+        shutil.rmtree(pheno_directory)
+        pheno_id = existing_pheno.pheno_id
+        return json_resp({"id": pheno_id, "url_model": url_for("get_model_build", pheno=pheno_id)})
+    # file has not been uploaded before
     istext, filetype, mimetype = PhenoReader.is_text_file(pheno_file_path)
     if not istext:
         shutil.rmtree(pheno_directory)

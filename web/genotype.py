@@ -42,7 +42,7 @@ class Genotype:
                     grp_stub = groups["*"]
             else:
                 grp_stub = groups
-        if grb_stub == "":
+        if grp_stub == "":
             grp_stub = "groups/{0}.grp"
         grp_stub = grp_stub.replace("*","{0}").format(group)
         grp_path = self.relative_path(grp_stub)

@@ -71,6 +71,7 @@ class SlurmEpactsJob:
                 group = model.get("group", "nonsyn")
                 opts += " --test mmskat --skat-o" +  \
                     " --groupf {}".format(geno.get_groups_path(group)) + \
+                    " --kin {}".format(geno.get_kinship_path()) + \
                     " --max-maf 0.05" + \
                     " --unit 500"
             else:

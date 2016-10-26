@@ -66,6 +66,13 @@ class SlurmEpactsJob:
                     " --groupf {}".format(geno.get_groups_path(group)) + \
                     " --max-maf 0.05" + \
                     " --unit 500"
+            elif model_type == "mmskato":
+                ecmd = "group"
+                group = model.get("group", "nonsyn")
+                opts += " --test mmskat --skat-o" +  \
+                    " --groupf {}".format(geno.get_groups_path(group)) + \
+                    " --max-maf 0.05" + \
+                    " --unit 500"
             else:
                 raise ValueError('Unrecognized model type: %s' % (model_type,))
 
@@ -134,5 +141,7 @@ class SlurmEpactsJob:
             {"code":"lmm", "name": "Linear Mixed Model", 
                 "description": "Adjust for potential relatedness using kinship matrix"} ,
             {"code":"skato", "name": "SKAT-O Test", 
-                "description": "Adaptive Burden Test"}
+                "description": "Adaptive burden test"},
+            {"code":"mmskato", "name": "Mixed Model SKAT-O Test", 
+                "description": "Adaptive burden test that adjusts for potential relatedness using kinship matrix"}
         ];

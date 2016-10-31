@@ -162,7 +162,7 @@ if __name__ == "__main__":
     argp.add_argument('--sig-pvalue','-p', help="P-value significance threshold", 
         type=float, default = 5e-8)
     argp.add_argument('--window', '-w', help="Window size (in bases) to collapse peaks",
-        type=float, default = 5e5)
+        type=float, default = 5e6)
     argp.add_argument('--gene', '-g', help="BED file for nearest gene")
     argp.add_argument('infile', help="Input file (use '-' for stdin)")
     argp.add_argument('outfile', nargs='?', help="Output file (stdout if not specified)")

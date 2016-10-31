@@ -13,11 +13,13 @@ class SlurmEpactsJob:
             self.config = config 
         else:
             self.config = dict()
+        self.cores_per_job = 56
 
     def create_sbatch_header(self, job_desc):
        return "#!/bin/bash\n" + \
+           "#SBATCH --partition=encore\n" + \
            "#SBATCH --job-name=gasp_{}\n".format(self.job_id)  + \
-           "#SBATCH --cpus-per-task=48\n"  + \
+           "#SBATCH --cpus-per-task={}\n".format(self.cores_per_job)  + \
            "#SBATCH --workdir={}\n".format(self.job_directory) + \
            "#SBATCH --mem-per-cpu=4000\n" + \
            "#SBATCH --time=14-0\n" + \
@@ -65,6 +67,14 @@ class SlurmEpactsJob:
                     " --groupf {}".format(geno.get_groups_path(group)) + \
                     " --max-maf 0.05" + \
                     " --unit 500"
+            elif model_type == "mmskato":
+                ecmd = "group"
+                group = model.get("group", "nonsyn")
+                opts += " --test mmskat --skat-o" +  \
+                    " --groupf {}".format(geno.get_groups_path(group)) + \
+                    " --kin {}".format(geno.get_kinship_path()) + \
+                    " --max-maf 0.05" + \
+                    " --unit 500"
             else:
                 raise ValueError('Unrecognized model type: %s' % (model_type,))
 
@@ -74,7 +84,7 @@ class SlurmEpactsJob:
                 " --ped {}".format(pheno_path) +  \
                 " --field GT" + \
                 " --sepchr" + \
-                " --out ./output --run 48"
+                " --out ./output --run {}".format(self.cores_per_job)
 
             for resp in ped_writer.get_response_headers():
                 cmd += " --pheno {}".format(resp)
@@ -133,5 +143,7 @@ class SlurmEpactsJob:
             {"code":"lmm", "name": "Linear Mixed Model", 
                 "description": "Adjust for potential relatedness using kinship matrix"} ,
             {"code":"skato", "name": "SKAT-O Test", 
-                "description": "Adaptive Burden Test"}
+                "description": "Adaptive burden test"},
+            {"code":"mmskato", "name": "Mixed Model SKAT-O Test", 
+                "description": "Adaptive burden test that adjusts for potential relatedness using kinship matrix"}
         ];

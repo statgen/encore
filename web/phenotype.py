@@ -35,25 +35,32 @@ class Phenotype:
 
     @staticmethod
     def get(pheno_id, config):
-        pheno_folder = os.path.join(config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
-        meta_path = os.path.expanduser(os.path.join(pheno_folder, "meta.json"))
-        if os.path.exists(meta_path):
-            with open(meta_path) as meta_file:
-                meta = json.load(meta_file)
-        else:
-           meta = dict()
+        return Phenotype.__get_by_sql_where("id = uuid_to_bin(%s)", (pheno_id,), config)
+
+    @staticmethod
+    def get_by_hash_user(filehash, user_id, config):
+        return Phenotype.__get_by_sql_where("md5sum = %s and user_id=%s", (filehash,user_id), config)
+    
+    @staticmethod
+    def __get_by_sql_where(where, vals, config):
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
             SELECT bin_to_uuid(id) AS id, user_id, name, 
             orig_file_name, md5sum, 
             DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
-            FROM phenotypes 
-            WHERE id = uuid_to_bin(%s)
-            """
-        cur.execute(sql, (pheno_id,))
+            FROM phenotypes WHERE """ + where
+        cur.execute(sql, vals)
         result = cur.fetchone()
         if result is not None:
+            pheno_id = result["id"]
+            pheno_folder = os.path.join(config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
+            meta_path = os.path.expanduser(os.path.join(pheno_folder, "meta.json"))
+            if os.path.exists(meta_path):
+                with open(meta_path) as meta_file:
+                    meta = json.load(meta_file)
+            else:
+               meta = dict()
             p = Phenotype(pheno_id, meta)
             p.root_path = pheno_folder
             map(lambda x: setattr(p, x, result[x]), \
@@ -61,7 +68,7 @@ class Phenotype:
             return p
         else:
             return None
-    
+
     @staticmethod
     def list_all_for_user(user_id, config=None):
         db = sql_pool.get_conn()

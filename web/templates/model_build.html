@@ -18,12 +18,14 @@
 		var covariateSelect;
 		var userHasNamedJob = false;
 
-		function validateModel(m) {
+		function validateForm(form) {
 			var errors = [];
-			if (m.get("response") == "") {
+			var resp =  responseSelect.val();
+			var covar = covariateSelect.val() || [];
+			if (resp == "") {
 				errors.push("Missing response");
 			}
-			if( m.getAll("covariates").indexOf(m.get("response"))>-1) {
+			if( covar.indexOf(resp)>-1) {
 				errors.push("Response cannot also be a covariate");
 			}
 			return errors;
@@ -31,13 +33,14 @@
 
 		function submitModel(e) {
 			e.preventDefault();
-			var form = $("#model-form")[0];
-			var fd = new FormData(form);
-			var formErrors = validateModel(fd);
+			var form = $("#model-form");
+			var formErrors = validateForm(form);
 			if (formErrors.length) {
 				alert("Invalid model:\n" + formErrors[0]);
 				return false;
 			}
+			form = form[0];
+			var fd = new FormData(form);
 			var xhr = new XMLHttpRequest();
 			//TODO: Add error handling
 			xhr.addEventListener("load", function () {

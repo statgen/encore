@@ -33,7 +33,7 @@ def admin_required(f):
 
 @login_manager.user_loader
 def user_loader(email):
-    return sign_in_handler.user_loader(email)
+    return sign_in_handler.load_user(email)
 
 @app.route('/favicon.ico')
 def favicon():

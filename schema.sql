@@ -8,10 +8,10 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 
 -- -----------------------------------------------------
--- Schema gasp
+-- Schema encore
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `gasp` DEFAULT CHARACTER SET utf8 ;
-USE `gasp` ;
+CREATE SCHEMA IF NOT EXISTS `encore` DEFAULT CHARACTER SET utf8 ;
+USE `encore` ;
 
 -- -----------------------------------------------------
 -- Table `users`
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `phenotypes` (
     FOREIGN KEY (`user_id`)
     REFERENCES `users` (`id`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION);
 
 -- -----------------------------------------------------
 -- Table `genotypes`
@@ -122,16 +122,13 @@ CREATE TABLE IF NOT EXISTS `genotypes` (
   `id` BINARY(16) NOT NULL,
   `name` VARCHAR(512) NOT NULL,
   `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`))
-
-USE `gasp` ;
+  PRIMARY KEY (`id`));
 
 -- -----------------------------------------------------
 -- function uuid_to_bin
 -- -----------------------------------------------------
 
 DELIMITER $$
-USE `gasp`$$
 CREATE DEFINER=`root`@`localhost` FUNCTION `uuid_to_bin`(s CHAR(36)) RETURNS binary(16)
     DETERMINISTIC
 BEGIN
@@ -145,7 +142,6 @@ DELIMITER ;
 -- -----------------------------------------------------
 
 DELIMITER $$
-USE `gasp`$$
 CREATE DEFINER=`root`@`localhost` FUNCTION `bin_to_uuid`(b BINARY(16)) RETURNS char(36) CHARSET utf8
     DETERMINISTIC
 BEGIN
@@ -164,7 +160,6 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 -- Data for table `statuses` and `job_user_roles`
 -- -----------------------------------------------------
 START TRANSACTION;
-USE `gasp`;
 INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'created');
 INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'queued');
 INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'started');

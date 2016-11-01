@@ -33,7 +33,7 @@ def admin_required(f):
 
 @login_manager.user_loader
 def user_loader(email):
-    return sign_in_handler.user_loader(email)
+    return sign_in_handler.load_user(email)
 
 @app.route('/favicon.ico')
 def favicon():
@@ -242,4 +242,4 @@ except:
     pass
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False, port=8080, host="0.0.0.0");
+    app.run(debug=True, use_reloader=False, port=5000, host="0.0.0.0");

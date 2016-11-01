@@ -8,7 +8,7 @@ import sql_pool
 googleinfo = urllib2.urlopen("https://accounts.google.com/.well-known/openid-configuration")
 google_params = json.load(googleinfo)
 
-def user_loader(email):
+def load_user(email):
     user = User.from_email(email, sql_pool.get_conn())
     if user:
         return user
@@ -30,16 +30,14 @@ def get_sign_in_view(target):
             data={"code": request.args["code"],
                   "grant_type": "authorization_code",
                   "redirect_uri": signin_url},
-            decoder = json.loads,
-            verify = False)
-        user_data = oauth_session.get("", verify=False).json()
-        user = user_loader(user_data["email"])
+            decoder=json.loads)
+        user_data = oauth_session.get("").json()
+        user = load_user(user_data["email"])
         if user:
             flask_login.login_user(user)
             return redirect(url_for("index"))
         else:
-            return render_template("/sign_in.html", \
-                error_message = "Not an authorized user")
+            return render_template("/sign_in.html", error_message="Not an authorized user")
     elif "authorize" in request.args:
         return redirect(oauth_service.get_authorize_url(
             scope="email",

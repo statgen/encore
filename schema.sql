@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `phenotypes` (
     FOREIGN KEY (`user_id`)
     REFERENCES `users` (`id`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION);
 
 -- -----------------------------------------------------
 -- Table `genotypes`
@@ -122,16 +122,13 @@ CREATE TABLE IF NOT EXISTS `genotypes` (
   `id` BINARY(16) NOT NULL,
   `name` VARCHAR(512) NOT NULL,
   `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`))
-
-USE `encore` ;
+  PRIMARY KEY (`id`));
 
 -- -----------------------------------------------------
 -- function uuid_to_bin
 -- -----------------------------------------------------
 
 DELIMITER $$
-USE `encore`$$
 CREATE DEFINER=`root`@`localhost` FUNCTION `uuid_to_bin`(s CHAR(36)) RETURNS binary(16)
     DETERMINISTIC
 BEGIN
@@ -145,7 +142,6 @@ DELIMITER ;
 -- -----------------------------------------------------
 
 DELIMITER $$
-USE `encore`$$
 CREATE DEFINER=`root`@`localhost` FUNCTION `bin_to_uuid`(b BINARY(16)) RETURNS char(36) CHARSET utf8
     DETERMINISTIC
 BEGIN
@@ -164,7 +160,6 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 -- Data for table `statuses` and `job_user_roles`
 -- -----------------------------------------------------
 START TRANSACTION;
-USE `encore`;
 INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'created');
 INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'queued');
 INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'started');

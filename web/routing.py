@@ -242,4 +242,4 @@ except:
     pass
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False, port=5000, host="0.0.0.0");
+    app.run(debug=True, use_reloader=False, port=8080, host="0.0.0.0");

@@ -21,49 +21,21 @@ import math
 import collections
 import heapq
 
-BIN_LENGTH = int(3e6)
-NEGLOG10_PVAL_BIN_SIZE = 0.05 # Use 0.05, 0.1, 0.15, etc
-NEGLOG10_PVAL_BIN_DIGITS = 2 # Then round to this many digits
-BIN_THRESHOLD = 1e-4 # pvals less than this threshold don't get binned.
-MAX_NUM_UNBINNED = 5000 # if there are too many points with pvals < BIN_THRESHOLD, the browser gets overwhelmed.  This limits the number of unbinned variants.
-
 def round_sig(x, digits):
     return 0 if x==0 else round(x, digits-1-int(math.floor(math.log10(abs(x)))))
 assert round_sig(0.00123, 2) == 0.0012
 assert round_sig(1.59e-10, 2) == 1.6e-10
 
-
-def get_binning_pval_threshold(variants):
-    # If too many variants have p-values smaller than the BIN_THRESHOLD, we want to make the BIN_THRESHOLD stricter (lower).
-    pvals = (v.pval for v in variants)
-    # similar to: sorted(pvals)[MAX_NUM_UNBINNED+1]
+def get_binning_pval_threshold(variants, default_bin_threshold, max_num_unbinned):
+    # If too many variants have p-values smaller than the default_bin_threshold, we want to make the threshold stricter (lower).
+    pvals = (v.pval for v in variants if v)
+    # similar to: sorted(pvals)[max_number_unbinned+1]
     # Use +1 because the largest pval in this heap will get binned.
-    largest_of_MAX_NUM_UNBINNED_smallest_pvals = heapq.nsmallest(MAX_NUM_UNBINNED+1, pvals)[-1]
-    return min(BIN_THRESHOLD, largest_of_MAX_NUM_UNBINNED_smallest_pvals)
+    largest_of_MAX_NUM_UNBINNED_smallest_pvals = heapq.nsmallest(max_num_unbinned+1, pvals)[-1]
+    return min(default_bin_threshold, largest_of_MAX_NUM_UNBINNED_smallest_pvals)
 
-_marker_id_regex = re.compile(r'([^:]+):([0-9]+)_([-ATCG]+)/([-ATCG]+)(?:_(.+))?')
-def parse_marker_id(marker_id):
-    try:
-        chr1, pos1, ref, alt, opt_info = _marker_id_regex.match(marker_id).groups()
-        #assert chr1 == chr2
-        #assert pos1 == pos2
-    except:
-        print(marker_id)
-        raise
-    return chr1, int(pos1), ref, alt
-
-Variant = collections.namedtuple('Variant', 'chrom pos ref alt maf pval beta sebeta'.split())
-def parse_variant_line(variant_line, column_indices):
-    v = variant_line.split('\t')
-    #assert v[1] == v[2]
-    if v[column_indices["PVALUE"]] == 'NA' or v[column_indices["BETA"]] == 'NA':
-        assert v[column_indices["PVALUE"]] == 'NA' and v[column_indices["BETA"]] == 'NA'
-    else:
-        chrom, pos, maf, pval, beta, sebeta = v[column_indices["#CHROM"]], int(v[column_indices["BEGIN"]]), float(v[column_indices["MAF"]]), float(v[column_indices["PVALUE"]]), float(v[column_indices["BETA"]]), float(v[column_indices["SEBETA"]])
-        chrom2, pos2, ref, alt = parse_marker_id(v[column_indices["MARKER_ID"]])
-        assert chrom == chrom2
-        assert pos == pos2
-        return Variant(chrom, pos, ref, alt, maf, pval, beta, sebeta)
+_single_id_regex = re.compile(r'([^:]+):([0-9]+)_([-ATCG]+)\/([-ATCG]+)(?:_(.+))?')
+_group_id_regex = re.compile(r'([^:]+):([0-9]+)-([0-9]+)(?:_(.+))?')
 
 def get_variants(f):
     header = f.readline().rstrip('\r\n').split('\t')
@@ -83,15 +55,15 @@ def get_variants(f):
             prev_chrom, prev_pos = v.chrom, v.pos
             yield v
 
-def rounded_neglog10(pval):
-    return round(-math.log10(pval) // NEGLOG10_PVAL_BIN_SIZE * NEGLOG10_PVAL_BIN_SIZE, NEGLOG10_PVAL_BIN_DIGITS)
+def rounded_neglog10(pval, neglog10_pval_bin_size, neglog10_pval_bin_digits):
+    return round(-math.log10(pval) // neglog10_pval_bin_size * neglog10_pval_bin_size, neglog10_pval_bin_digits)
 
-def get_pvals_and_pval_extents(pvals):
+def get_pvals_and_pval_extents(pvals, neglog10_pval_bin_size):
     # expects that NEGLOG10_PVAL_BIN_SIZE is the distance between adjacent bins.
     pvals = sorted(pvals)
     extents = [[pvals[0], pvals[0]]]
     for p in pvals:
-        if extents[-1][1] + NEGLOG10_PVAL_BIN_SIZE * 1.1 > p:
+        if extents[-1][1] + neglog10_pval_bin_size * 1.1 > p:
             extents[-1][1] = p
         else:
             extents.append([p,p])
@@ -103,23 +75,23 @@ def get_pvals_and_pval_extents(pvals):
             rv_pval_extents.append([start,end])
     return (rv_pvals, rv_pval_extents)
 
-def bin_variants(variants, binning_pval_threshold):
+def bin_variants(variants, bin_length, binning_pval_threshold, neglog10_pval_bin_size, neglog10_pval_bin_digits):
     bins = []
     unbinned_variants = []
+    exports = [["ref","ref"], ["alt","alt"], ["MAF","maf"],
+        ["BETA","beta"],["SEBETA","sebeta"]]
 
-    for variant in variants:
+    for variant in (v for v in variants if v):
         if variant.pval < binning_pval_threshold:
-            unbinned_variants.append({
+            rec = {
                 'chrom': variant.chrom,
                 'pos': variant.pos,
-                'ref': variant.ref,
-                'alt': variant.alt,
-                'maf': round_sig(variant.maf, 3),
-                'pval': round_sig(variant.pval, 2),
-                'beta': round_sig(variant.beta, 2),
-                'sebeta': round_sig(variant.sebeta, 2),
-            })
-
+                'pval': round_sig(variant.pval, 2)
+            }
+            for field, export_as in exports:
+                if field in variant.other:
+                    rec[export_as] = variant.other[field]
+            unbinned_variants.append(rec)
         else:
             if len(bins) == 0 or variant.chrom != bins[-1]['chrom']:
                 # We need a new bin, starting with this variant.
@@ -128,58 +100,164 @@ def bin_variants(variants, binning_pval_threshold):
                     'startpos': variant.pos,
                     'neglog10_pvals': set(),
                 })
-            elif variant.pos > bins[-1]['startpos'] + BIN_LENGTH:
+            elif variant.pos > bins[-1]['startpos'] + bin_length:
                 # We need a new bin following the last one.
                 bins.append({
                     'chrom': variant.chrom,
-                    'startpos': bins[-1]['startpos'] + BIN_LENGTH,
+                    'startpos': bins[-1]['startpos'] + bin_length,
                     'neglog10_pvals': set(),
                 })
-            bins[-1]['neglog10_pvals'].add(rounded_neglog10(variant.pval))
+            bins[-1]['neglog10_pvals'].add(rounded_neglog10(variant.pval, neglog10_pval_bin_size, neglog10_pval_bin_digits))
 
     bins = [b for b in bins if len(b['neglog10_pvals']) != 0]
     for b in bins:
-        b['neglog10_pvals'], b['neglog10_pval_extents'] = get_pvals_and_pval_extents(b['neglog10_pvals'])
-        b['pos'] = int(b['startpos'] + BIN_LENGTH/2)
+        b['neglog10_pvals'], b['neglog10_pval_extents'] = get_pvals_and_pval_extents(b['neglog10_pvals'], neglog10_pval_bin_size)
+        b['pos'] = int(b['startpos'] + bin_length/2)
         del b['startpos']
 
     return bins, unbinned_variants
 
+AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval other'.split())
+class AssocResultReader:
+    def __init__(self, path):
+        self.path = path
+        self.filecols = dict()
 
-epacts_filename = sys.argv[1]
-assert os.path.exists(epacts_filename)
-out_filename = sys.argv[2]
-assert os.path.exists(os.path.dirname(os.path.abspath(out_filename)))
+    def __enter__(self):
+        if self.path and self.path != "-":
+            if self.path.endswith(".gz"):
+                self.f = gzip.open(self.path)
+            else:
+                self.f = open(self.path)
+        else:
+            self.f = sys.stdin
+        return self
 
-import time
-def prog_printer(iterable, stepsize=int(1e6)):
-    t1 = time.time()
-    for i, it in enumerate(iterable):
-        if i % stepsize == 0:
-            t2 = time.time()
-            print('processed {:15,} in {:.2f} seconds'.format(i, t2-t1))
-            t1 = t2
-        yield it
-    print('processed {:15,} in {:.2f} seconds'.format(i, time.time()-t1))
+    def __exit__(self, type, value, traceback):
+        if self.f is not sys.stdin:
+            self.f.close()
 
-with gzip.open(epacts_filename) as f:
-    variants = get_variants(f)
-    variants = prog_printer(variants)
-    binning_pval_threshold = get_binning_pval_threshold(variants)
-    print('binning_pval_threshold:', binning_pval_threshold)
+    def __parseheader(self, line):
+        if line.startswith("#"):
+            line = line[1:]
+        header = line.rstrip().split()
+        if header[1] == "BEG":
+            header[1] = "BEGIN"
+        self.filecols = { x:i for i,x in enumerate(header)}
 
-with gzip.open(epacts_filename) as f:
-    variants = get_variants(f)
-    variants = prog_printer(variants)
-    variant_bins, unbinned_variants = bin_variants(variants, binning_pval_threshold)
+    def row_parser(self, row):
+        column_indices = self.filecols
+        v = row.rstrip().split('\t')
+        if v[column_indices["PVALUE"]] == 'NA':
+            return None
+        else:
+            chrom = v[column_indices["CHROM"]]
+            pos = int(v[column_indices["BEGIN"]])
+            pval = float(v[column_indices["PVALUE"]])
+            marker_id = v[column_indices["MARKER_ID"]]
+            other = { k: v[i] for k,i in column_indices.iteritems()};
+            match = _single_id_regex.match(marker_id)
+            if match:
+                chrom2, pos2, ref2, alt2, name2 = match.groups()
+                assert chrom == chrom2
+                assert pos == int(pos2)
+                other["ref"] = ref2
+                other["alt"] = alt2
+                if name2:
+                    other["label"] = name2
+            else:
+                match = _group_id_regex.match(marker_id)
+                if match:
+                    chrom2, begin2, end2, name2 = match.groups()
+                    other["start"] = begin2
+                    other["stop"] = end2
+                    if name2:
+                        other["label"] = name2
+            return AssocResult(chrom, pos, pval, other)
 
-rv = {
-    'variant_bins': variant_bins,
-    'unbinned_variants': unbinned_variants,
-}
-print('num unbinned:', len(unbinned_variants))
+    def __iter__(self):
+        self.itr = iter(self.f)
+        header = next(self.itr)
+        self.__parseheader(header)
+        return self
 
-# Avoid getting killed while writing dest_filename, to stay idempotent despite me frequently killing the program
-with open(out_filename, 'w') as f:
-    json.dump(rv, f, sort_keys=True, indent=0)
-print('{} -> {}'.format(epacts_filename, out_filename))
+    def __next__(self):
+        line = next(self.itr)
+        return self.row_parser(line)
+
+    next = __next__
+
+class JSONOutFile:
+    def __init__(self, path):
+        self.path = path
+
+    def __enter__(self):
+        if self.path:
+            assert os.path.exists(os.path.dirname(os.path.abspath(self.path)))
+            self.f = open(self.path, 'w')
+        else:
+            self.f = sys.stdout
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if self.f is not sys.stdout:
+            self.f.close()
+
+    def write(self, data):
+        json.dump(data, self.f, indent=0)
+
+def process_file(results, bin_length, bin_threshold, max_unbinned, neglog10_pval_bin_size, neglog10_pval_bin_digits):
+    import time
+    def prog_printer(iterable, stepsize=int(1e6)):
+        t1 = time.time()
+        for i, it in enumerate(iterable):
+            if i % stepsize == 0:
+                t2 = time.time()
+                print('processed {:15,} in {:.2f} seconds'.format(i, t2-t1))
+                t1 = t2
+            yield it
+        print('processed {:15,} in {:.2f} seconds'.format(i, time.time()-t1))
+
+    with results as f:
+        variants = f
+        variants = prog_printer(variants)
+        binning_pval_threshold = get_binning_pval_threshold(variants, bin_threshold, max_unbinned)
+        print('binning_pval_threshold:', binning_pval_threshold)
+
+    with results as f:
+        variants = f
+        variants = prog_printer(variants)
+        variant_bins, unbinned_variants = bin_variants(variants, bin_length, \
+            binning_pval_threshold, neglog10_pval_bin_size, neglog10_pval_bin_digits)
+
+    rv = {
+        'variant_bins': variant_bins,
+        'unbinned_variants': unbinned_variants,
+    }
+    print('num unbinned:', len(unbinned_variants))
+    return rv
+
+if __name__ == "__main__":
+    import argparse
+    argp = argparse.ArgumentParser(description='Create JSON file for manhattan plot.', \
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    argp.add_argument('--max-unbinned','-M', help="Maximum number of bins to return", 
+        type=int, default=5000)
+    argp.add_argument('--pval-round','-r', help="Number of digits to round p-value", 
+        type=int, default=2)
+    argp.add_argument('--pval-window','-p', help="Size of p-value bins", 
+        type=float, default = 0.05)
+    argp.add_argument('--sig-pvalue','-P', help="P-value significance threshold for binning", 
+        type=float, default = 1e-4)
+    argp.add_argument('--pos-window', '-w', help="Window size (in bases) to collapse peaks",
+        type=float, default = 3e6)
+    argp.add_argument('infile', help="Input file (use '-' for stdin)")
+    argp.add_argument('outfile', nargs='?', help="Output file (stdout if not specified)")
+    args = argp.parse_args()
+
+    with AssocResultReader(args.infile) as inf, JSONOutFile(args.outfile) as outf:
+        bins = process_file(inf, args.pos_window, args.sig_pvalue, args.max_unbinned, \
+            args.pval_window, args.pval_round)
+        outf.write(bins)
+
+    print('{} -> {}'.format(args.infile, args.outfile))

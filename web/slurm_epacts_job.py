@@ -99,7 +99,7 @@ class SlurmEpactsJob:
 
     def create_postprocessing_command(self, job_desc):
         cmd = "\n"
-        cmd += "if [-e output.epacts ! -e output.epacts.gz]; then\n" + \
+        cmd += "if [ -e output.epacts -a ! -e output.epacts.gz ]; then\n" + \
             "  awk 'NR<2{print;next}{print| \"sort -g -k1,1 -k2g,3\"}' output.epacts | " + \
             "/usr/cluster/bin/bgzip -c > output.epacts.gz\n" + \
             "  /usr/cluster/bin/tabix -p bed output.epacts.gz\n" + \

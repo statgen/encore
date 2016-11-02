@@ -9,10 +9,25 @@ function fmt(format) {
     });
 }
 
-function get_tooltip_template_data() {
-    return "<%= d.chrom %>:<%= d.pos.toLocaleString() %> <%= d.ref %> &gt; <%= d.alt %><br>" +
-    "pval: <%= d.pval %><br>" +
-    "MAF: <%= d.maf %><br>";
+function get_tooltip_template_data(data) {
+    d = data[0];
+    var lines = []
+    if (d && d.label) {
+        lines.push("<%= d.label %>")
+    }
+    if (d && d.chrom && d.pos) {
+        lines.push("<%= d.chrom %>:<%= d.pos.toLocaleString() %>")
+    }
+    if (d.ref && d.alt) {
+        lines.push("<%= d.ref %> &gt; <%= d.alt %>")
+    }
+    if (d && d.pval) {
+        lines.push("pval: <%= d.pval %>")
+    } 
+    if (d && d.maf) {
+        lines.push("MAF: <%= d.maf %>")
+    }
+    return lines.join("<br/>");
 }
 
 function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_click) {

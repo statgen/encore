@@ -79,7 +79,7 @@ def bin_variants(variants, bin_length, binning_pval_threshold, neglog10_pval_bin
     bins = []
     unbinned_variants = []
     exports = [["ref","ref"], ["alt","alt"], ["MAF","maf"],
-        ["BETA","beta"],["SEBETA","sebeta"]]
+        ["BETA","beta"],["SEBETA","sebeta"], ["label","label"]]
 
     for variant in (v for v in variants if v):
         if variant.pval < binning_pval_threshold:

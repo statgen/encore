@@ -98,7 +98,13 @@ class SlurmEpactsJob:
         return analysis_cmd
 
     def create_postprocessing_command(self, job_desc):
-        cmd =  "if [ $EXIT_STATUS == 0 ]; then\n" 
+        cmd = "\n"
+        cmd += "if [-e output.epacts ! -e output.epacts.gz]; then\n" + \
+            "  awk 'NR<2{print;next}{print| \"sort -g -k1,1 -k2g,3\"}' output.epacts | " + \
+            "/usr/cluster/bin/bgzip -c > output.epacts.gz\n" + \
+            "  /usr/cluster/bin/tabix -p bed output.epacts.gz\n" + \
+            "fi\n"
+        cmd +=  "if [ $EXIT_STATUS == 0 ]; then\n" 
         cmd += "  {} ./output.epacts.gz ./manhattan.json\n".format(self.config.get("MANHATTAN_BINARY", ""))
         cmd += "  {} ./output.epacts.gz ./qq.json\n".format(self.config.get("QQPLOT_BINARY", ""))
         if self.config.get("TOPHITS_BINARY"):

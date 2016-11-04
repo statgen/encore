@@ -9,6 +9,7 @@ import re
 import json
 import collections
 from bisect import bisect_right
+from extreme_collection import ExtremeCollection
 
 class NotSortedError(Exception):
     def __init___(self,dErrorArguments):
@@ -44,8 +45,12 @@ class BEDReader:
         return None
 
 
-AssocResult = collections.namedtuple('AssocResult', 'chrom pos ref alt pval name other'.split())
+AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval other'.split())
 class AssocResultReader:
+
+    _single_id_regex = re.compile(r'([^:]+):([0-9]+)_([-ATCG]+)\/([-ATCG]+)(?:_(.+))?')
+    _group_id_regex = re.compile(r'([^:]+):([0-9]+)-([0-9]+)(?:_(.+))?')
+
     def __init__(self, path):
         self.path = path
         self.filecols = dict()
@@ -58,6 +63,9 @@ class AssocResultReader:
                 self.f = open(self.path)
         else:
             self.f = sys.stdin
+        self.itr = iter(self.f)
+        header = next(self.itr)
+        self.__parseheader(header)
         return self
 
     def __exit__(self, type, value, traceback):
@@ -67,23 +75,42 @@ class AssocResultReader:
     def __parseheader(self, line):
         if line.startswith("#"):
             line = line[1:]
-        self.filecols = { x:i for i,x in enumerate(line.split())}
-
+        header = line.rstrip().split()
+        if header[1] == "BEG":
+            header[1] = "BEGIN"
+        self.filecols = { x:i for i,x in enumerate(header)}
 
     def row_parser(self, row):
-        cols = row.rstrip().split("\t")
-        marker_id = cols[self.filecols["MARKER_ID"]]
-        chrom, pos, ref, alt, name = re.match(r'([^:]+):([0-9]+)_([-ATCG]+)/([-ATCG]+)(?:_(.+))?', marker_id).groups()
-        pval = cols[self.filecols["PVALUE"]]
-        other = { k: cols[v] for k,v in self.filecols.iteritems()};
-        if pval=="NA":
-            pval="nan"
-        return AssocResult(chrom, int(pos), ref, alt, float(pval), name, other)
+        column_indices = self.filecols
+        v = row.rstrip().split('\t')
+        if v[column_indices["PVALUE"]] == 'NA':
+            return None
+        else:
+            chrom = v[column_indices["CHROM"]]
+            pos = int(v[column_indices["BEGIN"]])
+            pval = float(v[column_indices["PVALUE"]])
+            marker_id = v[column_indices["MARKER_ID"]]
+            other = { k: v[i] for k,i in column_indices.iteritems()};
+            match = AssocResultReader._single_id_regex.match(marker_id)
+            if match:
+                chrom2, pos2, ref2, alt2, name2 = match.groups()
+                assert chrom == chrom2
+                assert pos == int(pos2)
+                other["ref"] = ref2
+                other["alt"] = alt2
+                if name2:
+                    other["label"] = name2
+            else:
+                match = AssocResultReader._group_id_regex.match(marker_id)
+                if match:
+                    chrom2, begin2, end2, name2 = match.groups()
+                    other["start"] = begin2
+                    other["stop"] = end2
+                    if name2:
+                        other["label"] = name2
+            return AssocResult(chrom, pos, pval, other)
 
     def __iter__(self):
-        self.itr = iter(self.f)
-        header = next(self.itr)
-        self.__parseheader(header)
         return self
 
     def __next__(self):
@@ -98,6 +125,7 @@ class JSONOutFile:
 
     def __enter__(self):
         if self.path:
+            assert os.path.exists(os.path.dirname(os.path.abspath(self.path)))
             self.f = open(self.path, 'w')
         else:
             self.f = sys.stdout
@@ -119,38 +147,48 @@ def is_in_bin(rbin, result, window=3e6):
 def process_file(results, window=5e5, sig_pvalue=5e-8, max_sites = 5000, max_bins=500, nearest_gene=None):
     bins=[]
     last_pval = None
-    for result in results:
-        if last_pval is not None:
-            if result.pval < last_pval:
-                raise NotSortedError("input must be sorted by p-value")
-        last_pval = result.pval
-        for rbin in bins:
-            if is_in_bin(rbin, result, window=window):
-                rbin['assoc'].append(result)
-                break 
-        else:
-            if len(bins) >= max_bins:
-                break
-            newbin = dict(chrom = result.chrom,
-                pos = result.pos,
-                pval = result.pval,
-                start = int(result.pos-window), 
-                stop = int(result.pos+window),
-                other = result.other,
-                assoc = [result])
-            if result.name is not None:
-                newbin['name'] = result.name
+    best_results = ExtremeCollection(max_sites, results, lambda x: x.pval)
+    exported_cols = ["chrom","pos","pval","other"]
+    if nearest_gene is not None:
+        exported_cols += ["gene"]
+    if window>0:
+        for result in best_results:
+            if last_pval is not None:
+                if result.pval < last_pval:
+                    raise NotSortedError("input must be sorted by p-value")
+            last_pval = result.pval
+            for rbin in bins:
+                if is_in_bin(rbin, result, window=window):
+                    rbin['assoc'].append(result)
+                    break 
             else:
-                newbin['name'] = result.chrom + ":" + str(result.pos)
-            if nearest_gene is not None:
-                gene = nearest_gene.get_name(result.chrom, result.pos)
-                newbin['gene'] = gene
-            bins.append(newbin)
-    for rbin in bins:
-        rbin['sig_count'] = sum(x.pval < sig_pvalue for x in rbin['assoc'])
-        rbin['snp_count'] = len(rbin['assoc'])
-        del rbin['assoc']
-    return bins
+                if len(bins) >= max_bins:
+                    break
+                newbin = dict(chrom = result.chrom,
+                    start = int(result.pos-window), 
+                    stop = int(result.pos+window),
+                    assoc = [result])
+                bins.append(newbin)
+        for rbin in bins:
+            rbin['pos'] = rbin['assoc'][0].pos
+            rbin['pval'] = rbin['assoc'][0].pval
+            rbin['other'] = rbin['assoc'][0].other
+            rbin['sig_count'] = sum(x.pval < sig_pvalue for x in rbin['assoc'])
+            rbin['snp_count'] = len(rbin['assoc'])
+            del rbin['assoc']
+        exported_cols += ["sig_count","snp_count"]
+    else:
+        bins = [x._asdict() for x in best_results[:max_bins]]
+    for result in bins:
+        if nearest_gene is not None:
+            gene = nearest_gene.get_name(result["chrom"], result["pos"])
+            result["gene"] = gene
+        if "label" in result["other"]:
+            result["name"] = result["other"]["label"]
+        else:
+            result["name"] = result["chrom"] + ":" + str(result["pos"])
+    meta = {"cols": exported_cols}
+    return bins, meta
 
 if __name__ == "__main__":
     import argparse
@@ -174,5 +212,6 @@ if __name__ == "__main__":
         nearest_gene = None
 
     with AssocResultReader(args.infile) as inf, JSONOutFile(args.outfile) as outf:
-        bins = process_file(inf, args.window, args.sig_pvalue, args.sites, args.bins, nearest_gene)
-        outf.write(dict(data=bins))
+        bins, meta = process_file(inf, args.window, args.sig_pvalue, args.sites, args.bins, nearest_gene)
+        outf.write({"header": meta, "data": bins})
+

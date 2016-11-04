@@ -59,7 +59,14 @@ function init_tophits(job_id, selector, data_url) {
     selector = selector || "#tophits";
     data_url = data_url|| "/api/jobs/" + job_id + "/tables/top";
     $.getJSON(data_url).done(function(data) {
+        var header = data.header || {};
         data = data.data || data;
+        var cols;
+        if ( header.cols ) {
+            cols = header.cols;
+        } else {
+            cols = Object.keys(data[0]);
+        }
         var chrpos = {};
         var i=0;
         for(i=1; i<=22; i++) {
@@ -109,13 +116,23 @@ function init_tophits(job_id, selector, data_url) {
                     return data;
                 },
                 className: "dt-body-right"
-            },
-            {data: "sig_count", title:"# Significant",
-                className: "dt-body-center"
-            },
-            {data: "gene", title:"Nearest gene",
-                className: "dt-body-center"
-            },
+            }
+        ];
+        if (cols.indexOf("sig_count")>-1) {
+            datacols.push(
+                {data: "sig_count", title:"# Significant",
+                    className: "dt-body-center"
+                }
+            );
+        }
+        if (cols.indexOf("gene")>-1) {
+            datacols.push(
+                {data: "gene", title:"Nearest gene",
+                    className: "dt-body-center"
+                }
+            );
+        }
+        datacols.push(
             {data: "pos", title:"Plot",
                 render:function(data, type, row) {
                     var fn = "event.preventDefault();" + 
@@ -125,7 +142,7 @@ function init_tophits(job_id, selector, data_url) {
                 orderable: false,
                 className: "dt-body-center"
             }
-        ];
+        );
         $(selector).DataTable( {
             data: data,
             columns: datacols,
@@ -187,7 +204,7 @@ function bin_chunks_by_chr_and_age(chunks, now) {
         if (!(group in bins)) {
             bins[group] = {chrom: "chr" + chunk.chr, age: age,
                 vals: [{start: chunk.start, stop: chunk.stop, 
-                modified: chunk.modified}]};
+                    modified: chunk.modified}]};
         } else {
             var g = bins[group];
             binaryInsert(chunk, g.vals, startSort);

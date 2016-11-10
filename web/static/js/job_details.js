@@ -1,6 +1,7 @@
 
 /* eslint-env jquery */
 /* eslint no-unused-vars: ["error", { "vars": "local" }] */
+/* global create_gwas_plot, create_qq_plot, Ideogram */
 
 function init_job_tabs() {
     $("ul.tabs li").click(function()
@@ -34,7 +35,7 @@ function init_manhattan(job_id, selector) {
     selector = selector || "#tab1";
     $.getJSON("/api/jobs/" + job_id + "/plots/manhattan").done(function(variants)
     {
-        create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, function(chrom, pos, ref, alt)
+        create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, function(chrom, pos)
         {
             jumpToLocusZoom(job_id, chrom, pos);
         });
@@ -51,7 +52,20 @@ function init_qqplot(job_id, selector, data_url) {
          {
          $('.gc-control').append('<br>GC Lambda ' + d[0] + ': ' + d[1].toFixed(3));
          });*/
-        create_qq_plot("#tab2", data);
+        if (data.data) {
+            create_qq_plot("#tab2", data.data[0]);
+        } else {
+            //old style
+            var reformat = {layers:[]};
+            data.forEach(function(d) {
+                var layer = {"variant_bins": d.qq, "unbinned_variants": []};
+                layer.maf_range = d.maf_range;
+                layer.count = d.count;
+                reformat.layers.push(layer);
+
+            });
+            create_qq_plot("#tab2", reformat);
+        }
     });
 }
 

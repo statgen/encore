@@ -108,8 +108,8 @@ def make_qq(variants, max_unbinned, num_bins):
 
 
 def process_file_unbinned(results, max_unbinned, num_bins):
-   all = [{"qq":make_qq(results, max_unbinned, num_buns)["variant_bins"], "maf_range": [0, .5]}]
-   return all
+    plot = {"description": "Overall Results", "layers": [make_qq(results, max_unbinned, num_bins)]}
+    return plot
 
 def process_file_quartile_binned(results, max_unbinned, num_bins):
     maf_sorted = sorted((x for x in results if x is not None), key=lambda v: float(v.other["MAF"]))
@@ -123,16 +123,19 @@ def process_file_quartile_binned(results, max_unbinned, num_bins):
         start = ranges[i][0]
         stop = ranges[i][1]
         maf_range = [float(maf_sorted[start].other["MAF"]), float(maf_sorted[stop].other["MAF"])]
-        qq = make_qq(islice(maf_sorted, start, stop), max_unbinned, num_bins)
-        block = {"qq": qq["variant_bins"], "maf_range": maf_range, "count": qq["count"]}
+        block = make_qq(islice(maf_sorted, start, stop), max_unbinned, num_bins)
+        block["maf_range"] = maf_range 
+        block["level"] = "Q{}".format(i)
         blocks.append(block)
-    return blocks
+    plot = {"description": "MAF Stratified", "layers": [blocks]}
+    return plot
 
 def process_file(results, max_unbinned, num_bins):
     if "MAF" in results.filecols:
-        return process_file_quartile_binned(results, max_unbinned, num_bins)
+        plot = process_file_quartile_binned(results, max_unbinned, num_bins)
     else:
-        return process_file_unbinned(results, max_unbinned, num_bins)
+        plot = process_file_unbinned(results, max_unbinned, num_bins)
+    return {"data": [plot]} 
 
 AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval other'.split())
 class AssocResultReader:
@@ -233,7 +236,7 @@ if __name__ == "__main__":
     argp = argparse.ArgumentParser(description='Create JSON file for manhattan plot.', \
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     argp.add_argument('--max-unbinned','-M', help="Maximum number of variants to return", 
-        type=int, default=0)
+        type=int, default=50)
     argp.add_argument('--pval-bins','-b', help="Number of exp p-value bins", 
         type=int, default=1000)
     argp.add_argument("--maf-breaks", help="MAF breaks for stratified results",

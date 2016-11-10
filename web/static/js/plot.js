@@ -10,22 +10,25 @@ function fmt(format) {
 }
 
 function get_tooltip_template_data(data) {
-    d = data[0];
-    var lines = []
+    var d = data;
+    if (d instanceof Array) {
+        d = data[0];
+    }
+    var lines = [];
     if (d && d.label) {
-        lines.push("<%= d.label %>")
+        lines.push("<%= d.label %>");
     }
     if (d && d.chrom && d.pos) {
-        lines.push("<%= d.chrom %>:<%= d.pos.toLocaleString() %>")
+        lines.push("<%= d.chrom %>:<%= d.pos.toLocaleString() %>");
     }
     if (d.ref && d.alt) {
-        lines.push("<%= d.ref %> &gt; <%= d.alt %>")
+        lines.push("<%= d.ref %> &gt; <%= d.alt %>");
     }
     if (d && d.pval) {
-        lines.push("pval: <%= d.pval %>")
+        lines.push("pval: <%= d.pval %>");
     } 
     if (d && d.maf) {
-        lines.push("MAF: <%= d.maf %>")
+        lines.push("MAF: <%= d.maf %>");
     }
     return lines.join("<br/>");
 }
@@ -321,17 +324,19 @@ function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_
 }
 
 
-function create_qq_plot(selector, maf_ranges) {
-
-    maf_ranges.forEach(function(maf_range, i) {
-        maf_range.color = ["#e66101", "#fdb863", "#b2abd2", "#5e3c99"][i];
+function create_qq_plot(selector, qq_plot_data) {
+    var layers = qq_plot_data.layers;
+    layers.forEach(function(layer, i) {
+        if (!layer.color) {
+            layer.color = ["#e66101", "#fdb863", "#b2abd2", "#5e3c99"][i];
+        }
     });
     $(function() {
-
-        var exp_max = d3.max(maf_ranges, function(maf_range) { return d3.max(maf_range.qq, _.property(0)); });
-        var obs_max = d3.max(maf_ranges, function(maf_range) { return d3.max(maf_range.qq, _.property(1)); });
+        var firstdata = function(layer) {if (layer.unbinned_variants && layer.unbinned_variants.length) {return layer.unbinned_variants;} else {return layer.variant_bins;}};
+        var exp_max = d3.max(layers, function(layer) { return d3.max(firstdata(layer), _.property(0)); });
+        var obs_max = d3.max(layers, function(layer) { return d3.max(firstdata(layer), _.property(1)); });
         // Constrain obs_max in [exp_max, 9.01]. `9.01` preserves the tick `9`.
-        obs_max = Math.max(exp_max, Math.min(9.01, obs_max));
+        //obs_max = Math.max(exp_max, Math.min(9.01, obs_max));
 
         var svg_width = 600; //$(selector).width();
         var plot_margin = {
@@ -343,6 +348,9 @@ function create_qq_plot(selector, maf_ranges) {
         var plot_width = svg_width - plot_margin.left - plot_margin.right;
         // Size the plot to make things square.  This way, x_scale and y_scale should be exactly equivalent.
         var plot_height = plot_width / exp_max * obs_max;
+        if ( plot_height>600 ) {
+            plot_height = 600;
+        }
         var svg_height = plot_height + plot_margin.top + plot_margin.bottom;
 
         var qq_svg = d3.select(selector).append("svg")
@@ -364,7 +372,7 @@ function create_qq_plot(selector, maf_ranges) {
 
         // "trumpet" CI path
         // grab confidence intervals for largest set
-        var qq_ci_trumpet_points = maf_ranges.reduce(function(a,b) {
+        var qq_ci_trumpet_points = layers.reduce(function(a,b) {
             if (b.count>a.count && b.conf_int) {
                 return {count: b.count, points: b.conf_int};
             } else {
@@ -389,30 +397,64 @@ function create_qq_plot(selector, maf_ranges) {
         }
 
         // points
-        qq_plot.append("g")
+        var qqpoints = qq_plot.append("g")
             .selectAll("g.qq_points")
-            .data(maf_ranges)
+            .data(layers)
             .enter()
             .append("g")
-            .attr("class", "qq_points")
-            .selectAll("circle.qq_point")
-            .data(_.property("qq"))
+            .attr("class", "qq_points");
+        qqpoints
+            .selectAll("circle.qq_bins")
+            .data(_.property("variant_bins"))
             .enter()
             .append("circle")
             .attr("cx", function(d) { return x_scale(d[0]); })
             .attr("cy", function(d) { return y_scale(d[1]); })
             .attr("r", 1.5)
             .attr("fill", function (d, i, parent_index) {
-                return maf_ranges[parent_index].color;
+                return layers[parent_index].color;
             });
+        var tooltip_template;
+        if (layers[0].unbinned_variants && layers[0].unbinned_variants.length) {
+            var tooltip_template_data = get_tooltip_template_data(layers[0].unbinned_variants[0][2]);
+            tooltip_template  = _.template(tooltip_template_data);
+        } else {
+            tooltip_template = function() {return null;};
+        }
+        var point_tooltip = d3.tip()
+            .attr("class", "d3-tip")
+            .html(function(d) {
+                return tooltip_template({d:d[2]});
+            })
+            .style("background", "rgba(0, 0, 0, 0.7)")
+            .style("color", "#FFFFFF")
+            .style("padding", "5px")
+            .style("border", "1px solid #000000")
+            .style("border-radius", "3px")
+            .offset([-6,0]);
+        qq_plot.call(point_tooltip);
+        qqpoints
+            .selectAll("circle.qq_point")
+            .data(_.property("unbinned_variants"))
+            .enter()
+            .append("circle")
+            .attr("cx", function(d) { return x_scale(d[0]); })
+            .attr("cy", function(d) { return y_scale(d[1]); })
+            .attr("r", 3)
+            .attr("fill", function (d, i, parent_index) {
+                return layers[parent_index].color;
+            }).
+            on("mouseover", function(d) {point_tooltip.show(d, this);}).
+            on("mouseout", point_tooltip.hide);
 
+        if (layers.lenght > 1) {
         // Legend
-        qq_svg.append("g")
+            qq_svg.append("g")
             .attr("transform", fmt("translate({0},{1})",
                 plot_margin.left + plot_width,
                 plot_margin.top + plot_height + 70))
             .selectAll("text.legend-items")
-            .data(maf_ranges)
+            .data(layers)
             .enter()
             .append("text")
             .attr("text-anchor", "end")
@@ -429,6 +471,7 @@ function create_qq_plot(selector, maf_ranges) {
             .attr("fill", function(d) {
                 return d.color;
             });
+        }
 
         // Axes
         var xAxis = d3.svg.axis()

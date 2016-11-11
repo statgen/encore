@@ -146,7 +146,7 @@ def process_file_quartile_binned(results, max_unbinned, num_bins):
         block["maf_range"] = maf_range 
         block["level"] = "Q{}".format(i)
         blocks.append(block)
-    plot = {"description": "MAF Stratified", "layers": [blocks]}
+    plot = {"description": "MAF Stratified", "layers": blocks}
     return plot
 
 def process_file(results, max_unbinned, num_bins):

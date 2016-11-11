@@ -56,6 +56,23 @@ assert approx_equal(gc_value(0.6123), 0.5645607)
 def rounded(x):
     return round(x // NEGLOG10_PVAL_BIN_SIZE * NEGLOG10_PVAL_BIN_SIZE, NEGLOG10_PVAL_BIN_DIGITS)
 
+def get_conf_int(nvar):
+    slices = []
+    for x in range(0, int(math.ceil(math.log(nvar,2)))):
+        slices.append(2**x)
+    slices.append(nvar-1);
+    slices.reverse()
+
+    points = []
+    for slice in slices:
+        rv = scipy.stats.beta(slice, nvar-slice)
+        points.append((
+            round(-math.log10((slice-0.5)/nvar),2),
+            round(-math.log10(rv.ppf(0.05/2)),2), 
+            round(-math.log10(rv.ppf(1-(0.05/2))),2)
+        ))
+    return points
+
 def make_qq(variants, max_unbinned, num_bins):
     # smallest first
     sorted_variants = sorted((x for x in variants if x is not None), key=lambda x: x.pval)
@@ -103,8 +120,10 @@ def make_qq(variants, max_unbinned, num_bins):
     gc = {
         "50": round_sig(gc_value(median_pval),5) 
     }
+    conf_int = get_conf_int(count)
         
-    return {"variant_bins": binned_variants, "unbinned_variants": unbinned_variants, "gc": gc, "count": count} 
+    return {"variant_bins": binned_variants, "unbinned_variants": unbinned_variants, 
+        "gc": gc, "count": count, "conf_int": conf_int} 
 
 
 def process_file_unbinned(results, max_unbinned, num_bins):

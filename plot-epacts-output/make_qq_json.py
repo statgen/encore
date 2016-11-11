@@ -154,7 +154,7 @@ def process_file(results, max_unbinned, num_bins):
         plot = process_file_quartile_binned(results, max_unbinned, num_bins)
     else:
         plot = process_file_unbinned(results, max_unbinned, num_bins)
-    return {"data": [plot]} 
+    return {"header": {"variant_columns": results.filecols.keys()}, "data": [plot]} 
 
 AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval other'.split())
 class AssocResultReader:

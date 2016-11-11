@@ -9,26 +9,24 @@ function fmt(format) {
     });
 }
 
-function get_tooltip_template_data(data) {
-    var d = data;
-    if (d instanceof Array) {
-        d = data[0];
-    }
+function get_tooltip_text(d) {
     var lines = [];
-    if (d && d.label) {
-        lines.push("<%= d.label %>");
-    }
-    if (d && d.chrom && d.pos) {
-        lines.push("<%= d.chrom %>:<%= d.pos.toLocaleString() %>");
-    }
-    if (d.ref && d.alt) {
-        lines.push("<%= d.ref %> &gt; <%= d.alt %>");
-    }
-    if (d && d.pval) {
-        lines.push("pval: <%= d.pval %>");
-    } 
-    if (d && d.maf) {
-        lines.push("MAF: <%= d.maf %>");
+    if (d) {
+        if (d.label) {
+            lines.push(_.escape(d.label));
+        }
+        if (d.chrom && d.pos) {
+            lines.push(_.escape(d.chrom) + ":" + _.escape( d.pos.toLocaleString()));
+        }
+        if (d.ref && d.alt) {
+            lines.push(_.escape(d.ref) + " &gt; " + _.escape(d.alt));
+        }
+        if (d.pval) {
+            lines.push("pval: " + _.escape(d.pval));
+        } 
+        if (d.maf) {
+            lines.push("MAF: " + _.escape(d.maf));
+        }
     }
     return lines.join("<br/>");
 }
@@ -152,12 +150,10 @@ function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_
             .on("mouseout", significance_threshold_tooltip.hide);
 
         // Points & labels
-        var tooltip_template_data = get_tooltip_template_data(unbinned_variants);
-        var tooltip_template = _.template(tooltip_template_data);
         var point_tooltip = d3.tip()
             .attr("class", "d3-tip")
             .html(function(d) {
-                return tooltip_template({d: d});
+                return get_tooltip_text(d);
             })
             .style("background", "rgba(0, 0, 0, 0.7)")
             .style("color", "#FFFFFF")
@@ -414,17 +410,10 @@ function create_qq_plot(selector, qq_plot_data) {
             .attr("fill", function (d, i, parent_index) {
                 return layers[parent_index].color;
             });
-        var tooltip_template;
-        if (layers[0].unbinned_variants && layers[0].unbinned_variants.length) {
-            var tooltip_template_data = get_tooltip_template_data(layers[0].unbinned_variants[0][2]);
-            tooltip_template  = _.template(tooltip_template_data);
-        } else {
-            tooltip_template = function() {return null;};
-        }
         var point_tooltip = d3.tip()
             .attr("class", "d3-tip")
             .html(function(d) {
-                return tooltip_template({d:d[2]});
+                return get_tooltip_text(d[2]);
             })
             .style("background", "rgba(0, 0, 0, 0.7)")
             .style("color", "#FFFFFF")
@@ -493,8 +482,8 @@ function create_qq_plot(selector, qq_plot_data) {
             .innerTickSize(-plot_width)
             .outerTickSize(0)
             .tickPadding(7)
-            .tickFormat(d3.format("d")) //integers
-            .tickValues(_.range(obs_max)); //prevent unlabeled, non-integer ticks.
+            .tickFormat(d3.format("d")); //integers
+            //.tickValues(_.range(obs_max)); //prevent unlabeled, non-integer ticks.
         qq_plot.append("g")
             .attr("class", "y axis")
             .call(yAxis);

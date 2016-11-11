@@ -53,7 +53,7 @@ function init_qqplot(job_id, selector, data_url) {
          $('.gc-control').append('<br>GC Lambda ' + d[0] + ': ' + d[1].toFixed(3));
          });*/
         if (data.data) {
-            create_qq_plot("#tab2", data.data[0]);
+            create_qq_plot("#tab2", data.data[0], data.header || {});
         } else {
             //old style
             var reformat = {layers:[]};
@@ -64,7 +64,7 @@ function init_qqplot(job_id, selector, data_url) {
                 reformat.layers.push(layer);
 
             });
-            create_qq_plot("#tab2", reformat);
+            create_qq_plot("#tab2", reformat, {});
         }
     });
 }

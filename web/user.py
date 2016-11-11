@@ -24,6 +24,12 @@ class User(UserMixin):
     def is_admin(self):
         return self.email in current_app.config.get("ADMIN_USERS",[]) 
 
+    def log_login(self, db):
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = "UPDATE users SET last_login_date = NOW() WHERE id = %s"
+        cur.execute(sql, (self.rid, ))
+        db.commit()
+
     @staticmethod
     def from_email(email, db):
         cur = db.cursor(MySQLdb.cursors.DictCursor)

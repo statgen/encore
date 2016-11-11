@@ -9,8 +9,13 @@ googleinfo = urllib2.urlopen("https://accounts.google.com/.well-known/openid-con
 google_params = json.load(googleinfo)
 
 def load_user(email):
-    user = User.from_email(email, sql_pool.get_conn())
+    db = sql_pool.get_conn()
+    user = User.from_email(email, db)
     if user:
+        #try:
+        user.log_login(db) 
+        #except:
+        #    pass
         return user
     else:
         return None

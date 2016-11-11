@@ -73,3 +73,8 @@ ul.tabs li.active
     width: 100%;
     height: 100%;
 }
+
+#progress svg {
+	display: block;
+	margin: 0 auto;
+}

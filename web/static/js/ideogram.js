@@ -92,8 +92,8 @@ Ideogram.prototype.drawRegions = function(positions, regions, opts) {
             regions[i].chrom, 
             regions[i].start,
             regions[i].stop),
-        fill: regions[i].fill,
-        tooltip: regions[i].tooltip});
+            fill: regions[i].fill || opts.fill,
+            tooltip: regions[i].tooltip});
         hasToolTips |= !!(regions[i].tooltip);
     }
     var r = this.svg.select("g.chromosome").selectAll("polygon.region")
@@ -145,8 +145,8 @@ Ideogram.prototype.chrs_hg19 = [
 ];
 
 
-Ideogram.prototype.getLayout = function(chrs, options) {
-    options = options || {};
+Ideogram.prototype.getLayout = function(chrs, opts) {
+    opts = opts || {};
     var rows = [];
     var maxextent = 0;
     var lookup = {};

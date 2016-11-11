@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block header %}
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
+
+	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+
+<script type="text/javascript">
+		$(document).ready(function() {
+			$("#users-table").DataTable({
+				ajax: {url: "/api/users-all", dataSrc: ""},
+				order: [[0, "asc"]],
+				columns: [
+					{data: "id", title: "User ID"},
+					{data: "email", title: "User"},
+					{data: "creation_date", title: "Date Created"},
+					{data: "last_login_date", title: "Last Login"}
+				]
+			})
+		});
+	</script>
+{% endblock %}
+{% block content %}
+
+        <div class="section">
+            <div class="section-title">
+                <h2>Users</h2>
+            </div>
+            <table id="users-table"></table>
+        </div>
+
+{% endblock %}

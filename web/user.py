@@ -1,4 +1,5 @@
 import MySQLdb
+import sql_pool
 from flask import session, current_app
 from flask_login import UserMixin
 
@@ -45,3 +46,16 @@ class User(UserMixin):
         if sess_key not in session:
             return None
         return User.from_email(session[sess_key], db)
+
+    @staticmethod
+    def list_all(config=None):
+        db = sql_pool.get_conn()
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = """
+            SELECT id, email, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, DATE_FORMAT(last_login_date, '%Y-%m-%d %H:%i:%s') AS last_login_date
+            FROM users
+            ORDER BY id
+            """
+        cur.execute(sql)
+        results = cur.fetchall()
+        return results

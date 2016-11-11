@@ -14,6 +14,7 @@ import time
 from auth import access_job_page
 from genotype import Genotype
 from job import Job 
+from user import User
 from slurm_epacts_job import SlurmEpactsJob
 
 def get_home_view():
@@ -33,6 +34,10 @@ def get_jobs():
 def get_all_jobs():
     jobs = Job.list_all(current_app.config)
     return json_resp(jobs)
+
+def get_all_users():
+    users = User.list_all(current_app.config)
+    return json_resp(users)
 
 def get_job_chunks(job_id):
     job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
@@ -234,6 +239,9 @@ def get_models():
 
 def get_admin_main_page():
     return render_template("admin_main.html", githash=current_app.config.get("git-hash", None))
+
+def get_admin_user_page():
+    return render_template("admin_users.html")
 
 def json_resp(data):
     resp = Response(mimetype='application/json')

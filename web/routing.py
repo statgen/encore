@@ -211,6 +211,12 @@ def get_api_models():
 def get_admin_page():
     return job_handlers.get_admin_main_page()
 
+@app.route("/admin/users", methods=["GET"])
+@login_required
+@admin_required
+def get_admin_user_page():
+    return job_handlers.get_admin_user_page()
+
 @app.route("/admin/log/<job_id>/<log_name>", methods=["GET"])
 @login_required
 @admin_required
@@ -222,6 +228,12 @@ def get_job_log(job_id, log_name):
             mimetype="text/plain", tail=tail, head=head)
     else:
         return "Not Found", 404
+
+@app.route("/api/users-all", methods=["GET"])
+@login_required
+@admin_required
+def get_api_users_all():
+    return job_handlers.get_all_users()
 
 # @app.errorhandler(500)
 # def internal_error(exception):

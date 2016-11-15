@@ -83,7 +83,7 @@ $(document).ready(function() {
                 "extent": "state"
             },
             "y1": {
-                "label": "-log10 p-value",
+                "label": "-log\u2081\u2080 p-value",
                 "label_offset": 28
             },
             "y2": {

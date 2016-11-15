@@ -443,7 +443,7 @@ function create_qq_plot(selector, qq_plot_data) {
             on("mouseover", function(d) {point_tooltip.show(d, this);}).
             on("mouseout", point_tooltip.hide);
 
-        if (layers.lenght > 1) {
+        if (layers.length > 1) {
         // Legend
             qq_svg.append("g")
             .attr("transform", fmt("translate({0},{1})",

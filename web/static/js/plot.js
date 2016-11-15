@@ -124,7 +124,14 @@ function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_
                 });
             }
             return d3.max(variant_bins, function(bin) {
-                return d3.max(bin, _.property("neglog10_pval"));
+                var opts = [.01];
+                if (bin.neglog10_pval_extents && bin.neglog10_pval_extents.length) {
+                    opts.push(d3.max(_.flatten(bin.neglog10_pval_extents)));
+                }
+                if (bin.neglog10_pvals && bin.neglog10_pvals.length) {
+                    opts.push(d3.max(bin.neglog10_pvals));
+                }
+                return d3.max(opts);
             });
         })();
 

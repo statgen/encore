@@ -166,7 +166,7 @@ class SlurmEpactsJob:
            "#SBATCH --job-name=gasp_{}\n".format(self.job_id)  + \
            "#SBATCH --cpus-per-task={}\n".format(epm.cores_per_job)  + \
            "#SBATCH --workdir={}\n".format(self.job_directory) + \
-           "#SBATCH --mem-per-cpu=7000\n" + \
+           "#SBATCH --mem-per-cpu=6500\n" + \
            "#SBATCH --time=14-0\n" + \
            "#SBATCH --nodes=1\n"
 

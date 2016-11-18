@@ -1,4 +1,7 @@
-from pipes import quote # use shlex.quote(s) for python 3.3+
+import re
+
+def sanitize(x):
+    return re.sub(r'[^A-Za-z0-9._-]', "_", x)
 
 class ColumnFactory:
     @staticmethod
@@ -181,10 +184,10 @@ class PedWriter:
             taken = existing[:]
             uniqued = []
             for val in vals:
-                newval = quote(val)
+                newval = sanitize(val)
                 ind = 1
                 while newval in taken:
-                    newval = quote(val + "." + ind)
+                    newval = sanitize(val + "." + ind)
                 uniqued.append(newval)
             assert len(vals) == len(uniqued)
             return uniqued

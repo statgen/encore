@@ -18,9 +18,12 @@ class EpactsModel(object):
             opts.append("--inv-norm")
         return opts 
 
-    def get_ped_writer(self, model, pheno):
+    def get_ped_writer(self, model, geno, pheno):
         ped_writer = PedWriter(pheno.get_pheno_reader(), \
             model["response"], model.get("covariates",[])) 
+        if "genopheno" in model and len(model["genopheno"])>0:
+            ped_writer.merge_covar(geno.get_pheno_reader(), \
+                model["genopheno"])
         return ped_writer
 
     def get_analysis_command(self, model, geno, ped_path, ped_writer):
@@ -183,7 +186,7 @@ class SlurmEpactsJob:
             else:
                 raise Exception("No phenotype information in job")
 
-        ped_writer = epm.get_ped_writer(job_desc, pheno) 
+        ped_writer = epm.get_ped_writer(job_desc, geno, pheno) 
         ped_path = self.relative_path("pheno.ped")
         with open(ped_path,"w") as pedfile:
             ped_writer.write_to_file(pedfile)

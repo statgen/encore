@@ -253,15 +253,6 @@ class PhenoReader:
             for row in cvr:
                 yield row
 
-    def data_extractor(self, cols, noneColValue=0, skip_any_missing = True):
-        pos = self.get_column_indexes()
-        missing = self.get_column_missing_values()
-        for row in self.row_extractor():
-            vals = [row[pos[col]] if col else noneColValue for col in cols]
-            has_missing = any(( v == missing[col] for (v,col) in zip(vals, cols) if col))
-            if not skip_any_missing or not has_missing:
-                yield vals
-
     @staticmethod
     def get_file_type(file):
         p = subprocess.Popen(["file", "-b", file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -285,7 +276,7 @@ if __name__ == "__main__":
             with open(sys.argv[2]) as f:
                 meta = json.load(f)
             p = PhenoReader(sys.argv[1], meta)
-            print [x for x in p.data_extractor(["ID", None, "LDL"])]
+            print [x for x in p.row_extractor()]
         else:
             p = PhenoReader(sys.argv[1], meta)
             print json.dumps(p.meta, indent=2)

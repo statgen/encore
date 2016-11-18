@@ -54,6 +54,11 @@ def get_sign_in():
 def get_genotypes():
     return job_handlers.get_genotypes()
 
+@app.route("/api/geno/<geno_id>", methods=["GET"])
+@login_required
+def get_genotype(geno_id):
+    return job_handlers.get_genotype(geno_id)
+
 @app.route("/jobs", methods=["GET"])
 @login_required
 def get_jobs():

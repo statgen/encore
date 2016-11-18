@@ -2,6 +2,7 @@ import os
 import json
 import sql_pool
 import MySQLdb
+from pheno_reader import PhenoReader
 
 class Genotype:
     def __init__(self, geno_id, meta=None):
@@ -69,8 +70,42 @@ class Genotype:
             return stats
         return dict() 
 
+    def get_phenotypes(self):
+        if not "phenotypes" in self.meta:
+            return None
+        phenos = self.meta["phenotypes"]
+        if not isinstance(phenos, list):
+            phenos = [phenos]
+        result = []
+        for p in phenos:
+            pmeta = None
+            if "meta" in p:
+                with open(self.relative_path(p["meta"])) as f:
+                    pmeta = json.load(f)
+            result.append({"name": p.get("name","pheno"), "meta": pmeta})
+        return result
+
+    def get_pheno_reader(self, index=0):
+        if not "phenotypes" in self.meta:
+            return None
+        phenos = self.meta["phenotypes"]
+        if not isinstance(phenos, list):
+            phenos = [phenos]
+        p = phenos[index]
+        pmeta = None
+        if "meta" in p:
+            with open(self.relative_path(p["meta"])) as f:
+                pmeta = json.load(f)
+        return PhenoReader(self.relative_path(p["file"]), pmeta)
+
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))
+
+    def as_object(self):
+        obj = {"geno_id": self.geno_id, "name": self.name}
+        obj["stats"] = self.getStats()
+        obj["phenos"] = self.get_phenotypes()
+        return obj
 
     @staticmethod
     def get(geno_id, config):

@@ -177,6 +177,7 @@ def post_to_jobs():
     if form_data.get("response_invnorm", False):
         job_desc["response_invnorm"] = True
     job_desc["covariates"] =  form_data.getlist("covariates")
+    job_desc["genopheno"] =  form_data.getlist("genopheno")
     job_desc["type"] = form_data["model"]
     job_id = str(uuid.uuid4())
 
@@ -229,6 +230,10 @@ def get_genotypes():
         return s
     stats = [get_stats(x) for x in genos]
     return json_resp(stats)
+
+def get_genotype(geno_id):
+    g = Genotype.get(geno_id, current_app.config)
+    return json_resp(g.as_object())
 
 def get_model_build_view():
     return render_template("model_build.html")

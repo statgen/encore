@@ -12,9 +12,68 @@
 		var owner_id = {{job.user_id}};
 		var sharelist = {{ job.users|tojson() }};
 
+		function findDiffs(new_list, prev_list) {
+			new_list = new_list || $("#shares").val() || [];
+			prev_list = prev_list || sharelist.map(function(x) {return x.email;}) || [];
+			var to_add = [];
+			var to_drop = [];
+			new_list.forEach(function(x) {
+				var idx = prev_list.indexOf(x);
+				if (idx <0) {
+					to_add.push(x)
+				}
+			});
+			prev_list.forEach(function(x) {
+				var idx = new_list.indexOf(x);
+				if (idx <0) {
+					to_drop.push(x);
+				}
+			});
+			return {add: to_add, drop: to_drop};
+		};
+
+		function submitShares(e) {
+			e.preventDefault();
+			var form = $("#share-form");
+			form = form[0];
+			var diff = findDiffs();
+			var xhr = new XMLHttpRequest();
+			xhr.addEventListener("load", function () {
+				var resp;
+				if (xhr.status >= 200 && xhr.status < 300) {
+					try {
+						resp = JSON.parse(xhr.responseText);
+						if (resp.url_job) {
+							window.location = resp.url_job;
+						}
+					} catch (ex) {
+						console.warn(ex);
+					}
+					document.window.location = "/";
+				} else {
+					var message;
+					try {
+						resp = JSON.parse(xhr.responseText);
+						message = resp.error;
+					} catch (ex) {
+						message = xhr.responseText || xhr.statusText;
+					}
+					alert(message);
+				}
+			}.bind(this), false);
+			xhr.open("POST", form.action);
+			var fd = new FormData();
+			fd.append("add", diff.add);
+			fd.append("drop", diff.drop);
+			xhr.send(fd);
+		}
+
 		$(function() {
-			$("#shares").listblock({items: sharelist});
+			var emails = sharelist.filter(function(x) {return x.role != "owner";}).map(function(x) {return x.email;});
+			$("#shares").listblock({items: emails});
+			$("#share-form").on("submit", submitShares);
 		})
+
 	</script>
 	<style>
 		form div {width:500px}
@@ -71,11 +130,16 @@
 
 	<h1>Share with collaborators</h1>
         <div class="section">
-            <form class="form-horizontal vflex" method="post" action="/api/model" id="share-form">
+            <form class="form-horizontal vflex" method="post" action="/api/job/{{ job.job_id }}/share" id="share-form">
 				<div class="form-group">
 					<label for="phenotype" class="control-label col-xs-2">E-mail</label>
 					<div class="col-xs-10">
-						<select id="shares" name="shares" class="form-control"></select>
+						<select id="shares" name="shares" class="form-control" multiple="multiple"></select>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-xs-offset-2 col-xs-10">
+						<button class="btn-success">Update</button>
 					</div>
 				</div>
 			</form>

@@ -1,3 +1,4 @@
+/* eslint-env jquery */
 (function( $ ){
     $.fn.listblock = function(options) {
         var defaults = {};
@@ -7,23 +8,46 @@
             var $orig = $(this);
 
             function rawValToItems(x) {
-                return x.split(",").map(function(v) {return {email: v};});
+                return JSON.parse(x);
             }
 
             function itemsToRawVal(x) {
-                return JSON.stringify(x); 
+                return JSON.stringify(x.map(function(e) {return itemToRaw(e);})); 
             }
 
             function rawToItem(x) {
                 if (x) {
-                    return {email: x};
+                    return {value: x};
                 } else {
                     return null;
                 }
             }
 
+            function itemToRaw(x) {
+                return x.value;
+            }
+
             function itemToHTML(x) {
-                return x.email;
+                return x.value;
+            }
+
+            function setItemVal() {
+                var rawVal = itemsToRawVal(items);
+                if ($orig.is("select")) {
+                    $orig.empty();
+                    if ($orig.is("[multiple]")) {
+                        var keys = items.map(function(x) {return itemToRaw(x);});
+                        keys.forEach(function(x) {
+                            $orig.append($("<option>").text(x));
+                        });
+                        $orig.val(keys);
+                    } else {
+                        $orig.append($("<option>").text(rawVal));
+                        $orig.val(rawVal);
+                    }
+                } else {
+                    $orig.val(rawVal);
+                }
             }
 
             function addListElement(item, show) {
@@ -40,12 +64,12 @@
                 $del.click(function(e) {
                     removeListElement(item, $item);
                     e.preventDefault();
-                })
+                });
                 $item.append($del);
                 $list.append($item);
-                $orig.val(itemsToRawVal(items));
                 item._ele = $item;
                 items.push(item);
+                setItemVal();
                 return $item;
             }
 
@@ -54,12 +78,12 @@
                 if(idx>-1) {
                     items.splice(idx, 1);
                 }
-                $orig.val(itemsToRawVal(items));
+                setItemVal();
                 $item.removeClass("show");
                 setTimeout(function() {
                     $item.remove();
                 }, 500);
-            };
+            }
 
             function highlightListElement(item, $item) {
                 $item = item._ele;
@@ -73,13 +97,12 @@
             var items = [];
             var initItems =  settings.items || rawValToItems($orig.val());
             initItems.forEach(function(x) {
-                addListElement(x, true);
+                addListElement(rawToItem(x), true);
             });
         
             var $input = $("<input>", {type:"text"});
             $input.typeahead({hint: true},
                 {name: "contacts", source: function(query, sync) {
-                    console.log("hello");
                     sync( ["hello","goodbye"]);
                 }}
             );
@@ -88,7 +111,7 @@
                 if (e.key=="Enter") {
                     e.preventDefault();
                     $addbutton.trigger("click");
-                    console.log("error");
+                    //console.log("error");
                 }
             });
 
@@ -97,7 +120,7 @@
                 e.preventDefault();
                 var item = rawToItem($input.val());
                 if (item) {
-                    var existing = items.find(function(x) {return x.email==item.email});
+                    var existing = items.find(function(x) {return x.value==item.value;});
                     if (!existing) {
                         addListElement(item);
                     } else {
@@ -105,7 +128,7 @@
                     }
                 }
                 $input.val("");
-            })
+            });
             var $container = $("<div>", {class: "listblock"});
             $container.append($input).append($addbutton).append($list).insertAfter($orig);
 

@@ -3,6 +3,8 @@ import shutil
 import json
 import sql_pool
 import MySQLdb
+import sys
+from user import User
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date"]
@@ -143,3 +145,50 @@ class Job:
             return result
         else:
             return {"found": False}
+
+    @staticmethod
+    def share_add_email(job_id, email, current_user, role=0, config=None):
+        ex = None
+        db = sql_pool.get_conn()
+        user = User.from_email(email, db)
+        if user is None:
+            user = User.create(email, False, db)
+        try:
+            cur = db.cursor()
+            sql = """
+                INSERT INTO job_users (job_id, user_id, role_id, created_by)
+                VALUES (uuid_to_bin(%s), %s, %s, %s)
+                """
+            cur.execute(sql, (job_id,user.rid, role, current_user.rid))
+            db.commit()
+        except:
+            ex = sys.exc_info()[0]
+        finally:
+            cur.close()
+        if ex is not None:
+            raise ex
+        return True
+
+    @staticmethod
+    def share_drop_email(job_id, email, current_user, role=0, config=None):
+        ex = None
+        db = sql_pool.get_conn()
+        user = User.from_email(email, db)
+        if user is None:
+            return False
+        try:
+            cur = db.cursor()
+            sql = """
+                DELETE FROM job_users
+                WHERE job_id=uuid_to_bin(%s) AND user_id=%s
+                """
+            cur.execute(sql, (job_id, user.rid))
+            db.commit()
+            success = True
+        except:
+            ex = sys.exc_info()[0]
+        finally:
+            cur.close()
+        if ex is not None:
+            raise ex
+        return True

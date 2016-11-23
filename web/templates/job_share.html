@@ -11,10 +11,11 @@
 		var job_id = "{{ job.job_id }}";
 		var owner_id = {{job.user_id}};
 		var sharelist = {{ job.users|tojson() }};
+		var current_list = sharelist.filter(function(x) {return x.role != "owner";}).map(function(x) {return x.email;});
 
 		function findDiffs(new_list, prev_list) {
 			new_list = new_list || $("#shares").val() || [];
-			prev_list = prev_list || sharelist.map(function(x) {return x.email;}) || [];
+			prev_list = prev_list || current_list  || [];
 			var to_add = [];
 			var to_drop = [];
 			new_list.forEach(function(x) {
@@ -45,11 +46,12 @@
 						resp = JSON.parse(xhr.responseText);
 						if (resp.url_job) {
 							window.location = resp.url_job;
+						} else {
+							window.location = "/";
 						}
 					} catch (ex) {
 						console.warn(ex);
 					}
-					document.window.location = "/";
 				} else {
 					var message;
 					try {
@@ -69,8 +71,7 @@
 		}
 
 		$(function() {
-			var emails = sharelist.filter(function(x) {return x.role != "owner";}).map(function(x) {return x.email;});
-			$("#shares").listblock({items: emails});
+			$("#shares").listblock({items: current_list});
 			$("#share-form").on("submit", submitShares);
 		})
 
@@ -130,7 +131,7 @@
 
 	<h1>Share with collaborators</h1>
         <div class="section">
-            <form class="form-horizontal vflex" method="post" action="/api/job/{{ job.job_id }}/share" id="share-form">
+            <form class="form-horizontal vflex" method="post" action="/api/jobs/{{ job.job_id }}/share" id="share-form">
 				<div class="form-group">
 					<label for="phenotype" class="control-label col-xs-2">E-mail</label>
 					<div class="col-xs-10">

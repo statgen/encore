@@ -220,6 +220,17 @@ def post_to_jobs():
     # everything worked
     return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
 
+@access_job_page
+def post_to_share_job(job_id, job=None):
+    form_data = request.form
+    add = form_data["add"].split(",") 
+    drop = form_data["drop"].split(",") 
+    for address in (x for x in add if len(x)>0):
+        Job.share_add_email(job_id, address, current_user)
+    for address in (x for x in drop if len(x)>0):
+        Job.share_drop_email(job_id, address, current_user)
+    return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
+
 def get_genotypes():
     genos = Genotype.list_all()
     def get_stats(x):

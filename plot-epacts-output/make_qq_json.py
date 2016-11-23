@@ -19,7 +19,6 @@ import math
 import collections
 import scipy.stats
 from itertools import islice
-from extreme_collection import ExtremeCollection
 
 NEGLOG10_PVAL_BIN_SIZE = 0.05 # Use 0.05, 0.1, 0.15, etc
 NEGLOG10_PVAL_BIN_DIGITS = 2 # Then keep 2 digits after the decimal

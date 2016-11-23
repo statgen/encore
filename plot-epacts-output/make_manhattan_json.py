@@ -26,34 +26,8 @@ def round_sig(x, digits):
 assert round_sig(0.00123, 2) == 0.0012
 assert round_sig(1.59e-10, 2) == 1.6e-10
 
-def get_binning_pval_threshold(variants, default_bin_threshold, max_num_unbinned):
-    # If too many variants have p-values smaller than the default_bin_threshold, we want to make the threshold stricter (lower).
-    pvals = (v.pval for v in variants if v)
-    # similar to: sorted(pvals)[max_number_unbinned+1]
-    # Use +1 because the largest pval in this heap will get binned.
-    largest_of_MAX_NUM_UNBINNED_smallest_pvals = heapq.nsmallest(max_num_unbinned+1, pvals)[-1]
-    return min(default_bin_threshold, largest_of_MAX_NUM_UNBINNED_smallest_pvals)
-
 _single_id_regex = re.compile(r'([^:]+):([0-9]+)_([-ATCG]+)\/([-ATCG]+)(?:_(.+))?')
 _group_id_regex = re.compile(r'([^:]+):([0-9]+)-([0-9]+)(?:_(.+))?')
-
-def get_variants(f):
-    header = f.readline().rstrip('\r\n').split('\t')
-    if header[1] == "BEG":
-        header[1] = "BEGIN"
-    column_indices = {col_name: index for index, col_name in enumerate(header)}
-
-    previously_seen_chroms, prev_chrom, prev_pos = set(), None, -1
-    for variant_line in f:
-        v = parse_variant_line(variant_line.rstrip('\r\n'), column_indices)
-        if v is not None:
-            if v.chrom == prev_chrom:
-                assert v.pos >= prev_pos, (v.chrom, v.pos, prev_chrom, prev_pos)
-            else:
-                assert v.chrom not in previously_seen_chroms, (v.chrom, v.pos, prev_chrom, prev_pos)
-                previously_seen_chroms.add(v.chrom)
-            prev_chrom, prev_pos = v.chrom, v.pos
-            yield v
 
 def rounded_neglog10(pval, neglog10_pval_bin_size, neglog10_pval_bin_digits):
     return round(-math.log10(pval) // neglog10_pval_bin_size * neglog10_pval_bin_size, neglog10_pval_bin_digits)
@@ -75,47 +49,79 @@ def get_pvals_and_pval_extents(pvals, neglog10_pval_bin_size):
             rv_pval_extents.append([start,end])
     return (rv_pvals, rv_pval_extents)
 
-def bin_variants(variants, bin_length, binning_pval_threshold, neglog10_pval_bin_size, neglog10_pval_bin_digits):
-    bins = []
-    unbinned_variants = []
+def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglog10_pval_bin_size, neglog10_pval_bin_digits):
+    bins = {} 
+    unbinned_variant_heap = []
     exports = [["ref","ref"], ["alt","alt"], ["MAF","maf"],
-        ["BETA","beta"],["SEBETA","sebeta"], ["label","label"]]
+        ["BETA","beta"],["SEBETA","sebeta"], ["label","label"], ["NS","N"]]
+    chrom_order = {}
+    chrom_n_bins = {}
 
-    for variant in (v for v in variants if v):
-        if variant.pval < binning_pval_threshold:
-            rec = {
-                'chrom': variant.chrom,
-                'pos': variant.pos,
-                'pval': round_sig(variant.pval, 2)
-            }
-            for field, export_as in exports:
-                if field in variant.other:
-                    rec[export_as] = variant.other[field]
-            unbinned_variants.append(rec)
+    def box(x):
+        return (-x.pval, x)
+
+    def unbox(x):
+        return x[1]
+
+    def bin_variant(variant):
+        chrom = variant.chrom
+        if not chrom in chrom_order:
+            chrom_order[chrom] = len(chrom_order)
+        chrom_key = chrom_order[chrom]
+        pos_bin = variant.pos // bin_length
+        chrom_n_bins[chrom_key] = max(chrom_n_bins.get(chrom_key,0), pos_bin)
+        if (chrom_key, pos_bin) in bins:
+            bin = bins[(chrom_key, pos_bin)]
         else:
-            if len(bins) == 0 or variant.chrom != bins[-1]['chrom']:
-                # We need a new bin, starting with this variant.
-                bins.append({
-                    'chrom': variant.chrom,
-                    'startpos': variant.pos,
-                    'neglog10_pvals': set(),
-                })
-            elif variant.pos > bins[-1]['startpos'] + bin_length:
-                # We need a new bin following the last one.
-                bins.append({
-                    'chrom': variant.chrom,
-                    'startpos': bins[-1]['startpos'] + bin_length,
-                    'neglog10_pvals': set(),
-                })
-            bins[-1]['neglog10_pvals'].add(rounded_neglog10(variant.pval, neglog10_pval_bin_size, neglog10_pval_bin_digits))
+            bin = {"chrom": chrom, 
+                "startpos": pos_bin * bin_length,
+                "neglog10_pvals": set()}
+            bins[(chrom_key, pos_bin)] = bin
+        bin["neglog10_pvals"].add(rounded_neglog10(variant.pval, neglog10_pval_bin_size, neglog10_pval_bin_digits))
+        
+    variant_iterator = iter((v for v in variants if v)) 
+    # fill unbinned heap with first N values
+    for i in xrange(n_unbinned):
+        try:
+            variant = next(variant_iterator)
+            heapq.heappush(unbinned_variant_heap, box(variant))
+        except:
+            pass
 
-    bins = [b for b in bins if len(b['neglog10_pvals']) != 0]
-    for b in bins:
-        b['neglog10_pvals'], b['neglog10_pval_extents'] = get_pvals_and_pval_extents(b['neglog10_pvals'], neglog10_pval_bin_size)
-        b['pos'] = int(b['startpos'] + bin_length/2)
-        del b['startpos']
+    # loop over remaining values, keeping the most significant
+    # and binning the rest
+    for variant in variant_iterator:
+        if variant.pval > binning_pval_threshold:
+            bin_variant(variant)
+        else:
+            old = heapq.heappushpop(unbinned_variant_heap, box(variant))
+            bin_variant(unbox(old))
 
-    return bins, unbinned_variants
+    unbinned_variants = []
+    for variant in (unbox(x) for x in unbinned_variant_heap):
+        rec = {
+            'chrom': variant.chrom,
+            'pos': variant.pos,
+            'pval': round_sig(variant.pval, 2)
+        }
+        for field, export_as in exports:
+            if field in variant.other:
+                rec[export_as] = variant.other[field]
+        unbinned_variants.append(rec)
+
+
+    # unroll bins into simple array (preserving chromosomal order)
+    binned_variants = []
+    for chrom_key in sorted(chrom_order.values()):
+        for pos_key in xrange(int(1+chrom_n_bins[chrom_key])):
+            b = bins.get((chrom_key, pos_key), None)
+            if b and len(b['neglog10_pvals']) != 0:
+                b['neglog10_pvals'], b['neglog10_pval_extents'] = get_pvals_and_pval_extents(b['neglog10_pvals'], neglog10_pval_bin_size)
+                b['pos'] = int(b['startpos'] + bin_length/2)
+                del b['startpos']
+                binned_variants.append(b)
+
+    return binned_variants, unbinned_variants
 
 AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval other'.split())
 class AssocResultReader:
@@ -221,14 +227,8 @@ def process_file(results, bin_length, bin_threshold, max_unbinned, neglog10_pval
     with results as f:
         variants = f
         variants = prog_printer(variants)
-        binning_pval_threshold = get_binning_pval_threshold(variants, bin_threshold, max_unbinned)
-        print('binning_pval_threshold:', binning_pval_threshold)
-
-    with results as f:
-        variants = f
-        variants = prog_printer(variants)
         variant_bins, unbinned_variants = bin_variants(variants, bin_length, \
-            binning_pval_threshold, neglog10_pval_bin_size, neglog10_pval_bin_digits)
+            bin_threshold, max_unbinned, neglog10_pval_bin_size, neglog10_pval_bin_digits)
 
     rv = {
         'variant_bins': variant_bins,
@@ -242,13 +242,13 @@ if __name__ == "__main__":
     argp = argparse.ArgumentParser(description='Create JSON file for manhattan plot.', \
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     argp.add_argument('--max-unbinned','-M', help="Maximum number of bins to return", 
-        type=int, default=5000)
+        type=int, default=500)
     argp.add_argument('--pval-round','-r', help="Number of digits to round p-value", 
         type=int, default=2)
     argp.add_argument('--pval-window','-p', help="Size of p-value bins", 
         type=float, default = 0.05)
-    argp.add_argument('--sig-pvalue','-P', help="P-value significance threshold for binning", 
-        type=float, default = 1e-4)
+    argp.add_argument('--sig-pvalue','-P', help="P-value significance threshold for binning" + \
+        " (any p-value above this will automatically be binned)", type=float, default = 1)
     argp.add_argument('--pos-window', '-w', help="Window size (in bases) to collapse peaks",
         type=float, default = 3e6)
     argp.add_argument('infile', help="Input file (use '-' for stdin)")

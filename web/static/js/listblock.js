@@ -132,6 +132,9 @@
             var $container = $("<div>", {class: "listblock"});
             $container.append($input).append($addbutton).append($list).insertAfter($orig);
 
+            $orig.data("rawinput", $input);
+            $orig.data("addbutton", $addbutton);
+
             return $orig.hide();
         });
     };

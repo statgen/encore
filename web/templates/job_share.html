@@ -11,7 +11,10 @@
 		var job_id = "{{ job.job_id }}";
 		var owner_id = {{job.user_id}};
 		var sharelist = {{ job.users|tojson() }};
+		var cancel_url =  "{{ url_for("get_job", job_id=job.job_id)  }}";
 		var current_list = sharelist.filter(function(x) {return x.role != "owner";}).map(function(x) {return x.email;});
+		// from http://www.regular-expressions.info/email.html ...
+		var is_emailish = /^[A-Z0-9][A-Z0-9._%+-]{0,63}@(?:(?=[A-Z0-9-]{1,63}\.)[A-Z0-9]+(?:-[A-Z0-9]+)*\.){1,8}[A-Z]{2,63}$/i;
 
 		function findDiffs(new_list, prev_list) {
 			new_list = new_list || $("#shares").val() || [];
@@ -33,9 +36,30 @@
 			return {add: to_add, drop: to_drop};
 		};
 
+		function validateForm(form) {
+			var errors = [];
+			var $input = form.find("#shares");
+			var unadded = $input.data("rawinput").val();
+			if (unadded.length) {
+				$input.data("addbutton").click();
+			};
+			var diffs = findDiffs();
+			diffs.add.forEach(function(x) {
+				if (!is_emailish.test(x)) {
+					errors.push("'" + x + "' does not appear to be a valid e-mail address");
+				}
+			});
+			return errors;
+		};
+
 		function submitShares(e) {
 			e.preventDefault();
 			var form = $("#share-form");
+			var formErrors = validateForm(form);
+			if (formErrors.length) {
+				alert("Form Error:\n" + formErrors[0]);
+				return false;
+			}
 			form = form[0];
 			var diff = findDiffs();
 			var xhr = new XMLHttpRequest();
@@ -70,9 +94,21 @@
 			xhr.send(fd);
 		}
 
+		function cancelChanges() {
+			var diff = findDiffs();
+			if (diff.add.length || diff.drop.length) {
+				var ok = confirm("Are you sure you want to cancel these changes?")
+				if (!ok) {
+					return false;
+				}
+			};
+			window.location = cancel_url;
+		}
+
 		$(function() {
 			$("#shares").listblock({items: current_list});
 			$("#share-form").on("submit", submitShares);
+			$("#share-form").find(".btn-secondary").on("click", cancelChanges);
 		})
 
 	</script>
@@ -83,7 +119,7 @@
 		label .radio-desc {display: block; padding: 5px 0}
 
 		.listblock .glyphicon-plus-sign {color: white}
-		.listblock button {margin-left: .5em; background-color: #009933; border:0}
+		.listblock button {margin-left: .5em; background-color: #449d44; border:0}
 		.listblock input {
 			width: 90% 
 		}
@@ -131,7 +167,7 @@
 
 	<h1>Share with collaborators</h1>
         <div class="section">
-            <form class="form-horizontal vflex" method="post" action="/api/jobs/{{ job.job_id }}/share" id="share-form">
+            <form class="form-horizontal vflex" method="post" action="{{ url_for("post_api_job_share_request", job_id=job.job_id) }}" id="share-form">
 				<div class="form-group">
 					<label for="phenotype" class="control-label col-xs-2">E-mail</label>
 					<div class="col-xs-10">
@@ -140,7 +176,8 @@
 				</div>
 				<div class="form-group">
 					<div class="col-xs-offset-2 col-xs-10">
-						<button class="btn-success">Update</button>
+						<button class="btn-success">Update List</button>
+						<button class="btn-secondary">Cancel</button>
 					</div>
 				</div>
 			</form>

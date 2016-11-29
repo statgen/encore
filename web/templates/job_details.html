@@ -41,41 +41,14 @@
 {% block content %}
         <div class="section">
             <div class="section-title">
-                <h2>Job Details</h2>
+                <h2>{{ job.name }}</h2>
                 {% if job.status == "queued" or job.status == "started" %}
                 <button name="cancel_job">Cancel Job</button>
                 {% endif %}
             </div>
-            <table id="job_details_table">
-                <tr>
-                    <th>Job Name</th>
-                    <td>{{ job.name }}</td>
-                </tr>
-                <tr>
-                    <th>Status</th>
-                    <td>{{ job.status }}</td>
-                </tr>
-                {% if job.error_message %}
-                <tr>
-                    <th>Error Message</th>
-                    <td>{{ job.error_message }}</td>
-                </tr>
-                {% endif %}
-                <tr>
-                    <th>Date Created</th>
-                    <td>{{ job.creation_date }}</td>
-                </tr>
-                <tr>
-                    <th>Last Updated</th>
-                    <td>{{ job.modified_date }}</td>
-                </tr>
-            </table>
         </div>
 
         {% if job.status == "succeeded" %}
-        <form class="section" action="/jobs/{{ job.job_id }}/output">
-            <button type="submit">Download Output</button>
-        </form>
 
         <div class="section">
 
@@ -83,27 +56,83 @@
                 <li class="active" rel="tab1">Manhattan</li>
                 <li rel="tab2">QQPlot</li>
                 <li rel="tab3">Top Hits</li>
+                <li rel="tab4">Details</li>
             </ul>
             <div class="tab-container">
 
-                <div id="tab1" class="tab-content">
-                    <!--<object data="/jobs/{{ job.job_id }}/plots/tmp-manhattan" type="application/pdf" height="600px" width="100%">
-                        alt : <a href="/jobs/{{ job.job_id }}/plots/tmp-manhattan">manhattan.pdf</a>
-                    </object>-->
-
-                </div>
-                <div id="tab2" class="tab-content">
-                    <!--<object data="/jobs/{{ job.job_id }}/plots/tmp-qq" type="application/pdf" height="600px" width="100%">
-                        alt : <a href="/jobs/{{ job.job_id }}/plots/tmp-manhattan">qq.pdf</a>
-                    </object>-->
-                </div>
+                <div id="tab1" class="tab-content"> </div>
+                <div id="tab2" class="tab-content"> </div>
 				<div id="tab3" class="tab-content">
 					<table id="tophits" class="display"></table>
 				</div>
-
+				<div id="tab4" class="tab-content">
+					<table id="job_details_table">
+						<tr>
+							<th>Job Name</th>
+							<td>{{ job.name }}</td>
+						</tr>
+						<tr>
+							<th>Response</th>
+							<td>{{ job.details["response"] }}</td>
+						</tr>
+						<tr>
+							<th>Covariates</th>
+							<td>{{ ",".join(job.details.get("covariates",[]) + job.details.get("genopheno",[]) ) }}</td>
+						</tr>
+						<tr>
+							<th>Phenotype</th>
+							<td>{{ job.details.phenotype.name }}</td>
+						</tr>
+						<tr>
+							<th>Genotype</th>
+							<td>{{ job.details.genotype.name }}</td>
+						</tr>
+						<tr>
+							<th>Collaborators</th>
+							<td><a href="{{ url_for("get_job_share_page", job_id=job.job_id) }}">{{ job.users  | length}} user(s)</a></td>
+						</tr>
+						<tr>
+							<th>Status</th>
+							<td>{{ job.status }}</td>
+						</tr>
+						{% if job.error_message %}
+						<tr>
+							<th>Error Message</th>
+							<td>{{ job.error_message }}</td>
+						</tr>
+						{% endif %}
+						<tr>
+							<th>Date Created</th>
+							<td>{{ job.creation_date }}</td>
+						</tr>
+						<tr>
+							<th>Last Updated</th>
+							<td>{{ job.modified_date }}</td>
+						</tr>
+					</table>
+				</div>
             </div>
         </div>
+        <form class="section" action="/jobs/{{ job.job_id }}/output">
+            <button type="submit">Download Output</button>
+        </form>
+		{% else %}
+			<table id="job_details_table">
+				<tr>
+					<th>Status</th>
+					<td>{{ job.status }} ({{ job.modified_date }})</td>
+				</tr>
+				{% if job.error_message %}
+				<tr>
+					<th>Error Message</th>
+					<td>{{ job.error_message }}</td>
+				</tr>
+				{% endif %}
+				<tr>
+					<th>Date Created</th>
+					<td>{{ job.creation_date }}</td>
+				</tr>
+			</table>
+			<div id="progress"></div>
         {% endif %}
-		<div id="progress"></div>
-
 {% endblock %}

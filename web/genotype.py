@@ -126,10 +126,13 @@ class Genotype:
             """
         cur.execute(sql, (geno_id,))
         result = cur.fetchone()
-        g = Genotype(geno_id, meta)
-        g.name = result["name"]
-        g.creation_date = result["creation_date"]
-        g.root_path = geno_folder
+        if result is not None:
+            g = Genotype(geno_id, meta)
+            g.name = result["name"]
+            g.creation_date = result["creation_date"]
+            g.root_path = geno_folder
+        else:
+            g = None
         return g
         
     @staticmethod

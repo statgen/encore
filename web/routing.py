@@ -15,6 +15,7 @@ APP_STATIC_PATH = os.path.join(APP_ROOT_PATH, 'static')
 APP_TEMPLATES_PATH = os.path.join(APP_ROOT_PATH, 'templates')
 
 app = Flask(__name__)
+app.url_map.strict_slashes = False
 
 app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
 app.config["PROPAGATE_EXCEPTIONS"] = True

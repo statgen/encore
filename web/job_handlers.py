@@ -13,6 +13,7 @@ import re
 import time
 from auth import access_job_page
 from genotype import Genotype
+from phenotype import Phenotype
 from job import Job 
 from user import User
 from slurm_epacts_job import SlurmEpactsJob
@@ -89,7 +90,12 @@ def purge_job(job_id):
 
 @access_job_page
 def get_job_details_view(job_id, job=None):
-    return render_template("job_details.html", job=job.as_object())
+    pheno = Phenotype.get(job.meta.get("phenotype", ""), current_app.config)
+    geno = Genotype.get(job.meta.get("genotype", ""), current_app.config)
+    job = job.as_object()
+    job["details"]["phenotype"] = pheno.as_object()
+    job["details"]["genotype"] = geno.as_object()
+    return render_template("job_details.html", job=job)
 
 @access_job_page
 def get_job_locuszoom_plot(job_id, region, job=None):

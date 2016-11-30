@@ -38,6 +38,52 @@
 	</style>
 
 {% endblock %}
+{% macro detailtable(job) -%}
+	<table id="job_details_table">
+		<tr>
+			<th>Job Name</th>
+			<td>{{ job.name }}</td>
+		</tr>
+		<tr>
+			<th>Response</th>
+			<td>{{ job.details["response"] }}</td>
+		</tr>
+		<tr>
+			<th>Covariates</th>
+			<td>{{ ", ".join(job.details.get("covariates",[]) + job.details.get("genopheno",[]) ) }}</td>
+		</tr>
+		<tr>
+			<th>Phenotype</th>
+			<td>{{ job.details.phenotype.name }}</td>
+		</tr>
+		<tr>
+			<th>Genotype</th>
+			<td>{{ job.details.genotype.name }}</td>
+		</tr>
+		<tr>
+			<th>Collaborators</th>
+			<td><a href="{{ url_for("get_job_share_page", job_id=job.job_id) }}">{{ job.users  | length}} user(s)</a></td>
+		</tr>
+		<tr>
+			<th>Status</th>
+			<td>{{ job.status }}</td>
+		</tr>
+		{% if job.error_message %}
+		<tr>
+			<th>Error Message</th>
+			<td>{{ job.error_message }}</td>
+		</tr>
+		{% endif %}
+		<tr>
+			<th>Date Created</th>
+			<td>{{ job.creation_date }}</td>
+		</tr>
+		<tr>
+			<th>Last Updated</th>
+			<td>{{ job.modified_date }}</td>
+		</tr>
+	</table>
+{%- endmacro %}
 {% block content %}
         <div class="section">
             <div class="section-title">
@@ -66,73 +112,18 @@
 					<table id="tophits" class="display"></table>
 				</div>
 				<div id="tab4" class="tab-content">
-					<table id="job_details_table">
-						<tr>
-							<th>Job Name</th>
-							<td>{{ job.name }}</td>
-						</tr>
-						<tr>
-							<th>Response</th>
-							<td>{{ job.details["response"] }}</td>
-						</tr>
-						<tr>
-							<th>Covariates</th>
-							<td>{{ ",".join(job.details.get("covariates",[]) + job.details.get("genopheno",[]) ) }}</td>
-						</tr>
-						<tr>
-							<th>Phenotype</th>
-							<td>{{ job.details.phenotype.name }}</td>
-						</tr>
-						<tr>
-							<th>Genotype</th>
-							<td>{{ job.details.genotype.name }}</td>
-						</tr>
-						<tr>
-							<th>Collaborators</th>
-							<td><a href="{{ url_for("get_job_share_page", job_id=job.job_id) }}">{{ job.users  | length}} user(s)</a></td>
-						</tr>
-						<tr>
-							<th>Status</th>
-							<td>{{ job.status }}</td>
-						</tr>
-						{% if job.error_message %}
-						<tr>
-							<th>Error Message</th>
-							<td>{{ job.error_message }}</td>
-						</tr>
-						{% endif %}
-						<tr>
-							<th>Date Created</th>
-							<td>{{ job.creation_date }}</td>
-						</tr>
-						<tr>
-							<th>Last Updated</th>
-							<td>{{ job.modified_date }}</td>
-						</tr>
-					</table>
+					{{ detailtable(job) }}
 				</div>
             </div>
         </div>
-        <form class="section" action="/jobs/{{ job.job_id }}/output">
+        <form class="section" action="{{ url_for("get_job_output", job_id= job.job_id) }}">
             <button type="submit">Download Output</button>
         </form>
+
 		{% else %}
-			<table id="job_details_table">
-				<tr>
-					<th>Status</th>
-					<td>{{ job.status }} ({{ job.modified_date }})</td>
-				</tr>
-				{% if job.error_message %}
-				<tr>
-					<th>Error Message</th>
-					<td>{{ job.error_message }}</td>
-				</tr>
-				{% endif %}
-				<tr>
-					<th>Date Created</th>
-					<td>{{ job.creation_date }}</td>
-				</tr>
-			</table>
+
 			<div id="progress"></div>
+			{{ detailtable(job) }}
+
         {% endif %}
 {% endblock %}

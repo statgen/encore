@@ -93,8 +93,10 @@ def get_job_details_view(job_id, job=None):
     pheno = Phenotype.get(job.meta.get("phenotype", ""), current_app.config)
     geno = Genotype.get(job.meta.get("genotype", ""), current_app.config)
     job = job.as_object()
-    job["details"]["phenotype"] = pheno.as_object()
-    job["details"]["genotype"] = geno.as_object()
+    if pheno is not None:
+        job["details"]["phenotype"] = pheno.as_object()
+    if geno is not None:
+        job["details"]["genotype"] = geno.as_object()
     return render_template("job_details.html", job=job)
 
 @access_job_page
@@ -132,11 +134,18 @@ def get_job_zoom(job_id, job=None):
         header = f.readline().rstrip('\n').split('\t')
         if header[1] == "BEG":
             header[1] = "BEGIN"
+        if header[0] == "#CHROM":
+            header[0] = "CHROM"
     assert len(header) > 0
-    tb = tabix.open(epacts_filename)
     chrom = request.args.get("chrom", "")
     start_pos = int(request.args.get("start_pos", "0"))
     end_pos = int(request.args.get("end_pos", "0"))
+
+    if chrom == "":
+        return json_resp({"header": {"variant_columns": header}})
+
+    headerpos = {x:i for i,x in enumerate(header)}
+    tb = tabix.open(epacts_filename)
     results = tb.query(chrom, start_pos, end_pos)
     json_response_data = dict()
 
@@ -145,24 +154,25 @@ def get_job_zoom(job_id, job=None):
     json_response_data["END"] = []
     json_response_data["MARKER_ID"] = []
     json_response_data["NS"] = []
-    #json_response_data["AC"] = []
-    #json_response_data["CALLRATE"] = []
-    json_response_data["MAF"] = []
     json_response_data["PVALUE"] = []
-    json_response_data["BETA"] = []
+    if "MAF" in headerpos:
+        json_response_data["MAF"] = []
+    if "MAF" in headerpos:
+        json_response_data["BETA"] = []
     for r in results:
-        if r[header.index("PVALUE")] != "NA":
-            json_response_data["CHROM"].append(r[header.index("#CHROM")])
-            json_response_data["BEGIN"].append(r[header.index("BEGIN")])
-            json_response_data["END"].append(r[header.index("END")])
-            json_response_data["MARKER_ID"].append(r[header.index("MARKER_ID")])
+        if r[headerpos["PVALUE"]] != "NA":
+            json_response_data["CHROM"].append(r[headerpos["CHROM"]])
+            json_response_data["BEGIN"].append(r[headerpos["BEGIN"]])
+            json_response_data["END"].append(r[headerpos["END"]])
+            json_response_data["MARKER_ID"].append(r[headerpos["MARKER_ID"]])
+            json_response_data["PVALUE"].append(r[headerpos["PVALUE"]])
             json_response_data["NS"].append(r[4])
-            #json_response_data["AC"].append(r[5])
-            #json_response_data["CALLRATE"].append(r[6])
-            json_response_data["MAF"].append(r[header.index("MAF")])
-            json_response_data["PVALUE"].append(r[header.index("PVALUE")])
-            json_response_data["BETA"].append(r[header.index("BETA")])
-    return json_resp(json_response_data)
+            if "MAF" in headerpos:
+                json_response_data["MAF"].append(r[headerpos["MAF"]])
+            if "BETA" in headerpos:
+                json_response_data["BETA"].append(r[headerpos["BETA"]])
+    return json_resp({"header": {"variant_columns": json_response_data.keys()}, \
+        "data": json_response_data})
 
 @access_job_page
 def get_job_share_page(job_id, job=None):

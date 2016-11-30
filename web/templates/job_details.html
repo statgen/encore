@@ -44,6 +44,7 @@
 			<th>Job Name</th>
 			<td>{{ job.name }}</td>
 		</tr>
+		{% if job.details %}
 		<tr>
 			<th>Response</th>
 			<td>{{ job.details["response"] }}</td>
@@ -60,6 +61,7 @@
 			<th>Genotype</th>
 			<td>{{ job.details.genotype.name }}</td>
 		</tr>
+		{% endif %}
 		<tr>
 			<th>Collaborators</th>
 			<td><a href="{{ url_for("get_job_share_page", job_id=job.job_id) }}">{{ job.users  | length}} user(s)</a></td>

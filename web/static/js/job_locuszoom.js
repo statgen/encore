@@ -27,7 +27,7 @@ $(document).ready(function() {
       .add("ld", ["LDEP", apiBase + "ld-"])
       .add("gene", ["GeneLZ", { url: apiBase + "gene", params: {source: 2} }])
       .add("recomb", ["RecombLZ", { url: apiBase + "recomb", params: {source: 15} }])
-      .add("constraint", ["GeneConstraintLZ", { url: apiBase + "constraint" }])
+      .add("constraint", ["GeneConstraintLZ", { url: "http://exac.broadinstitute.org/api/constraint" }])
       .add("sig", ["StaticJSON", [{ "x": 0, "y": 4.522 }, { "x": 2881033286, "y": 4.522 }] ]);
 
     LocusZoom.TransformationFunctions.set("scinotation", function(x) {

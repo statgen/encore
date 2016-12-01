@@ -327,7 +327,7 @@ function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_
 }
 
 
-function create_qq_plot(selector, qq_plot_data) {
+function create_qq_plot(selector, qq_plot_data, qq_plot_meta, on_variant_click) {
     var layers = qq_plot_data.layers;
     layers.forEach(function(layer, i) {
         if (!layer.color) {
@@ -429,7 +429,7 @@ function create_qq_plot(selector, qq_plot_data) {
             .style("border-radius", "3px")
             .offset([-6,0]);
         qq_plot.call(point_tooltip);
-        qqpoints
+        qqpoints = qqpoints
             .selectAll("circle.qq_point")
             .data(_.property("unbinned_variants"))
             .enter()
@@ -442,6 +442,14 @@ function create_qq_plot(selector, qq_plot_data) {
             }).
             on("mouseover", function(d) {point_tooltip.show(d, this);}).
             on("mouseout", point_tooltip.hide);
+        if (on_variant_click) {
+            qqpoints.
+            style("cursor", "pointer").
+            on("click", function(d) {
+                var dat = d[2];
+                on_variant_click(dat.CHROM, dat.BEGIN);
+            });
+        }
 
         if (layers.length > 1) {
         // Legend

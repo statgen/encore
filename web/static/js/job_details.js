@@ -33,10 +33,8 @@ function init_job_cancel_button(job_id, selector) {
 
 function init_manhattan(job_id, selector) {
     selector = selector || "#tab1";
-    $.getJSON("/api/jobs/" + job_id + "/plots/manhattan").done(function(variants)
-    {
-        create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, function(chrom, pos)
-        {
+    $.getJSON("/api/jobs/" + job_id + "/plots/manhattan").done(function(variants) {
+        create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, function(chrom, pos) {
             jumpToLocusZoom(job_id, chrom, pos);
         });
 
@@ -53,7 +51,9 @@ function init_qqplot(job_id, selector, data_url) {
          $('.gc-control').append('<br>GC Lambda ' + d[0] + ': ' + d[1].toFixed(3));
          });*/
         if (data.data) {
-            create_qq_plot("#tab2", data.data[0], data.header || {});
+            create_qq_plot("#tab2", data.data[0], data.header || {}, function(chrom, pos) {
+                jumpToLocusZoom(job_id, chrom, pos)
+            });
         } else {
             //old style
             var reformat = {layers:[]};
@@ -288,6 +288,7 @@ function init_chunk_progress(job_id, selector) {
 
 function jumpToLocusZoom(job_id, chr, pos) {
     if (job_id && chr && pos) {
+        pos = parseInt(pos);
         var region = chr + ":" + (pos-100000) + "-" + (pos+100000);
         document.location.href = "/jobs/" + job_id + "/locuszoom/" + region;
     }

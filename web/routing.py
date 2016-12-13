@@ -179,6 +179,16 @@ def get_job_tmp_qq(job_id):
 def get_job_tmp_manhattan(job_id):
     return job_handlers.get_job_output(job_id, "output.epacts.mh.pdf", False)
 
+@app.route("/phenos", methods=["GET"])
+@login_required
+def get_pheno_list():
+    return pheno_handlers.get_pheno_list_view()
+
+@app.route("/phenos/<pheno_id>", methods=["GET"])
+@login_required
+def get_pheno(pheno_id):
+    return pheno_handlers.get_pheno_details_view(pheno_id)
+
 @app.route("/pheno-upload", methods=["GET"])
 @login_required
 def get_pheno_upload():

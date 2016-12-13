@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block header %}
+	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+
+	<style>
+		.home-nav-list li {padding: 10px 0}
+	</style>
+	<script type="text/javascript">
+		function init_pheno_table() {
+			$("#pheno-table").DataTable({
+				ajax: {url: "/api/pheno", dataSrc: ""},
+				order: [[1, "desc"]],
+				columns: [
+					{data: "name", title: "Name"},
+					{data: "creation_date", title: "Date Created"},
+					{title: "View", data: "id", render: function(data) {
+						return "<a href='/phenos/" + data + "'>View</a>" 
+					}, orderable: false}
+				]
+			})
+		};
+		$(document).ready(function() {
+			init_pheno_table();
+		});
+	</script>
+
+{% endblock %}
+{% block content %}
+        <div class="section">
+            <div class="section-title">
+                <h2>Phenotypes</h2>
+            </div>
+            <table id="pheno-table"></table>
+        </div>
+{% endblock %}

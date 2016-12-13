@@ -21,9 +21,6 @@ from slurm_epacts_job import SlurmEpactsJob
 def get_home_view():
     return render_template("home.html")
 
-def get_job_list_view():
-    return render_template("job_list.html")
-
 @access_job_page
 def get_job(job_id, job=None):
     return json_resp(job.as_object())

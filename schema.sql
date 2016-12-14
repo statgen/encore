@@ -46,11 +46,15 @@ CREATE TABLE IF NOT EXISTS `jobs` (
   `name` VARCHAR(128) NOT NULL,
   `error_message` VARCHAR(512) NULL,
   `status_id` INT UNSIGNED NOT NULL,
+  `geno_id` BINARY(16),
+  `pheno_id` BINARY(16),
   `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `fk_jobs_users_idx` (`user_id` ASC),
   INDEX `fk_jobs_statuses1_idx` (`status_id` ASC),
+  INDEX `fk_jobs_geno_idx` (`geno_id` ASC),
+  INDEX `fk_jobs_pheno_idx` (`pheno_id` ASC),
   CONSTRAINT `fk_jobs_users`
     FOREIGN KEY (`user_id`)
     REFERENCES `users` (`id`)
@@ -59,6 +63,16 @@ CREATE TABLE IF NOT EXISTS `jobs` (
   CONSTRAINT `fk_jobs_statuses1`
     FOREIGN KEY (`status_id`)
     REFERENCES `statuses` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION),
+  CONSTRAINT `fk_jobs_geno`
+    FOREIGN KEY (`geno_id`)
+    REFERENCES `genotypes` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION),
+  CONSTRAINT `fk_jobs_pheno`
+    FOREIGN KEY (`pheno_id`)
+    REFERENCES `phenotyes` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;

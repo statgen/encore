@@ -192,6 +192,7 @@ def post_to_jobs():
     job_desc["covariates"] =  form_data.getlist("covariates")
     job_desc["genopheno"] =  form_data.getlist("genopheno")
     job_desc["type"] = form_data["model"]
+    job_desc["user_id"] = current_user.rid
     job_id = str(uuid.uuid4())
 
     if not job_id:
@@ -219,13 +220,14 @@ def post_to_jobs():
         db = sql_pool.get_conn()
         cur = db.cursor()
         cur.execute("""
-            INSERT INTO jobs (id, name, user_id, status_id)
-            VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, (SELECT id FROM statuses WHERE name = 'queued'))
-            """, (job_id, job_desc["name"], current_user.rid))
+            INSERT INTO jobs (id, name, user_id, geno_id, pheno_id, status_id)
+            VALUES (uuid_to_bin(%s), %s, %s, uuid_to_bin(%s), uuid_to_bin(%s),
+            (SELECT id FROM statuses WHERE name = 'queued'))
+            """, (job_id, job_desc["name"], job_desc["user_id"], job_desc["genotype"], job_desc["phenotype"]))
         cur.execute("""
             INSERT INTO job_users(job_id, user_id, created_by, role_id)
             VALUES (uuid_to_bin(%s), %s, %s, (SELECT id FROM job_user_roles WHERE role_name = 'owner'))
-            """, (job_id, current_user.rid, current_user.rid))
+            """, (job_id, job_desc["user_id"], job_desc["user_id"]))
         db.commit()
     except:
         shutil.rmtree(job_directory)

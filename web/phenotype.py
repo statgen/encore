@@ -3,6 +3,7 @@ import shutil
 import json
 import sql_pool
 import MySQLdb
+from job import Job
 from pheno_reader import PhenoReader
 
 class Phenotype:
@@ -16,6 +17,7 @@ class Phenotype:
         self.user_id = None
         self.creation_date = None
         self.root_path = "" 
+        self.jobs = None 
         self.meta = meta
        
     def get_raw_path(self):
@@ -31,6 +33,7 @@ class Phenotype:
         obj = {key: getattr(self, key) for key in self.__dbfields if hasattr(self, key)} 
         obj["pheno_id"] = self.pheno_id
         obj["meta"] = self.meta
+        obj["jobs"] = self.jobs
         return obj
 
     @staticmethod
@@ -65,6 +68,7 @@ class Phenotype:
             p.root_path = pheno_folder
             map(lambda x: setattr(p, x, result[x]), \
                 (val for val in Phenotype.__dbfields if val in result))
+            p.jobs = Job.list_all_for_phenotype(pheno_id, config)
             return p
         else:
             return None

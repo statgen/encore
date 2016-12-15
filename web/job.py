@@ -102,6 +102,29 @@ class Job:
         return results 
 
     @staticmethod
+    def list_all_for_phenotype(pheno_id, config=None):
+        db = sql_pool.get_conn()
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = """
+            SELECT
+              bin_to_uuid(jobs.id) AS id,
+              jobs.name AS name,
+              jobs.user_id as owner_id, users.email as owner,
+              jobs.status_id as status_id, statuses.name AS status,
+              jobs.error_message AS error_message,
+              DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
+              DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
+            FROM jobs
+                LEFT JOIN users on users.id = jobs.user_id
+            LEFT JOIN statuses ON jobs.status_id = statuses.id
+            WHERE jobs.pheno_id = uuid_to_bin(%s)
+            ORDER BY creation_date DESC
+            """
+        cur.execute(sql, (pheno_id,))
+        results = cur.fetchall()
+        return results 
+
+    @staticmethod
     def list_all(config=None):
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)

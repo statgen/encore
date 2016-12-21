@@ -1,6 +1,6 @@
 /* eslint-env jquery */
 /* global _, d3 */
-/* eslint no-unused-vars: ["error", { "vars": "local" }] */
+/* eslint no-unused-vars: ["error", { "vars": "local" }], no-constant-condition: "off"*/
 
 function fmt(format) {
     var args = Array.prototype.slice.call(arguments, 1);
@@ -356,12 +356,15 @@ function create_qq_plot(selector, qq_plot_data, qq_plot_meta, on_variant_click) 
         }
         var svg_height = plot_height + plot_margin.top + plot_margin.bottom;
 
-        var qq_svg = d3.select(selector).append("svg")
+        var qq_container = d3.select(selector).append("div")
+            .style("text-align", "center")
+            .attr("height", svg_height)
+            .style("vertical-align", "middle");
+        var qq_svg =  qq_container.append("svg")
             .attr("id", "qq_svg")
             .attr("width", svg_width)
             .attr("height", svg_height)
-            .style("display", "block")
-            .style("margin", "auto");
+            .style("display", "inline-block");
         var qq_plot = qq_svg.append("g")
             .attr("id", "qq_plot")
             .attr("transform", fmt("translate({0},{1})", plot_margin.left, plot_margin.top));
@@ -452,29 +455,61 @@ function create_qq_plot(selector, qq_plot_data, qq_plot_meta, on_variant_click) 
         }
 
         if (layers.length > 1) {
-        // Legend
-            qq_svg.append("g")
-            .attr("transform", fmt("translate({0},{1})",
-                plot_margin.left + plot_width,
-                plot_margin.top + plot_height + 70))
-            .selectAll("text.legend-items")
-            .data(layers)
-            .enter()
-            .append("text")
-            .attr("text-anchor", "end")
-            .attr("y", function(d,i) {
-                return i + "em";
-            })
-            .text(function(d) {
-                return fmt("{0} \u2264 MAF < {1} ({2})",
-                    d.maf_range[0].toFixed(3),
-                    d.maf_range[1].toFixed(3),
-                    d.count);
-            })
-            .style("font-size","14px")
-            .attr("fill", function(d) {
-                return d.color;
-            });
+            if (false) {
+                // SVG Legend
+                qq_svg.append("g")
+                .attr("transform", fmt("translate({0},{1})",
+                    plot_margin.left + plot_width,
+                    plot_margin.top + plot_height + 70))
+                .selectAll("text.legend-items")
+                .data(layers)
+                .enter()
+                .append("text")
+                .attr("text-anchor", "end")
+                .attr("y", function(d,i) {
+                    return i + "em";
+                })
+                .text(function(d) {
+                    return fmt("{0} \u2264 MAF < {1} ({2})",
+                        d.maf_range[0].toFixed(3),
+                        d.maf_range[1].toFixed(3),
+                        d.count);
+                })
+                .style("font-size","14px")
+                .attr("fill", function(d) {
+                    return d.color;
+                });
+            } else {
+                //HTML Legend
+                var tbl = qq_container.append("table")
+                    .style("width","auto")
+                    .style("vertical-align", "top")
+                    .style("display","inline-block");
+                var tr = tbl.selectAll("tr")
+                    .data(layers).enter()
+                    .append("tr");
+                tr.append("td").append(function(d) {
+                    return d3.select(document.createElement("div"))   
+                        .style("width", "20px")
+                        .style("height", "20px")
+                        .style("background",  d.color)
+                        .node();
+                });
+                tr.append("td").text(function(d) {
+                    if (d.gc && d.gc["50"]) {
+                        return fmt("{0} \u2264 MAF < {1} (N={2}, \u03BB={3})",
+                            d.maf_range[0].toFixed(3),
+                            d.maf_range[1].toFixed(3),
+                            d.count,
+                            d.gc["50"].toFixed(3));
+                    } else {
+                        return fmt("{0} \u2264 MAF < {1} ({2})",
+                            d.maf_range[0].toFixed(3),
+                            d.maf_range[1].toFixed(3),
+                            d.count);
+                    }
+                });
+            }
         }
 
         // Axes

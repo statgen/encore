@@ -28,16 +28,6 @@ def round_sig(x, digits):
 assert round_sig(0.00123, 2) == 0.0012
 assert round_sig(1.59e-10, 2) == 1.6e-10
 
-def median(x):
-    """returns median assuming values are sorted"""
-    length = len(x)
-    middle = (length - 1) // 2
-
-    if (length %2):
-        return x[middle]
-    else:
-        return (x[middle] + x[middle+1]) / 2
-
 def approx_equal(a, b, tolerance=1e-4):
     return abs(a-b) <= max(abs(a), abs(b)) * tolerance
 assert approx_equal(42, 42.0000001)

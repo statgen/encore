@@ -1,7 +1,7 @@
 
 /* eslint-env jquery */
 /* eslint no-unused-vars: ["error", { "vars": "local" }] */
-/* global create_gwas_plot, create_qq_plot, Ideogram */
+/* global create_gwas_plot, create_qq_plot, Ideogram, api_url */
 
 function init_job_tabs() {
     $("ul.tabs li").click(function()
@@ -52,7 +52,7 @@ function init_qqplot(job_id, selector, data_url) {
          });*/
         if (data.data) {
             create_qq_plot("#tab2", data.data[0], data.header || {}, function(chrom, pos) {
-                jumpToLocusZoom(job_id, chrom, pos)
+                jumpToLocusZoom(job_id, chrom, pos);
             });
         } else {
             //old style
@@ -69,6 +69,89 @@ function init_qqplot(job_id, selector, data_url) {
     });
 }
 
+function getDataCols(cols, job_id) {
+    var datacols = [];
+    if (cols.indexOf("term")>-1) {
+        datacols.push({data: "term", title:"Lookup"});
+    }
+    if (cols.indexOf("chrom")>-1) {
+        datacols.push({data: null, title:"Chrom",
+            orderData: [0,1],
+            type: "num",
+            render: function(data, type) {
+                if (type=="sort"  && data.hasOwnProperty("chrom_sort")) {
+                    return data.chrom_sort;
+                }
+                return data.chrom;
+            },
+            className: "dt-body-right"
+        });
+    }
+    if (cols.indexOf("pos")>-1) {
+        datacols.push({data: "pos", title:"Position", 
+            render: function(data, type) {
+                if (type=="display") {
+                    if (data !== undefined && data !== null) {
+                        return data.toLocaleString();
+                    } else {
+                        return "";
+                    }
+                }
+                return data;
+            },
+            orderData: [0,1],
+            className: "dt-body-right"
+        });
+    }
+    if (cols.indexOf("name")>-1) {
+        datacols.push({data: "name", title:"Variant"});
+    }
+    if (cols.indexOf("pval")>-1) {
+        datacols.push({data: "pval", title:"Best P-Value", 
+            render: function(data, type) {
+                if (type=="display") {
+                    if (data !== undefined && data !== null) {
+                        return data.toExponential(2);
+                    } else {
+                        return "";
+                    }
+                }
+                return data;
+            },
+            className: "dt-body-right"
+        });
+    }
+    if (cols.indexOf("sig_count")>-1) {
+        datacols.push(
+            {data: "sig_count", title:"# Significant",
+                className: "dt-body-center"
+            }
+        );
+    }
+    if (cols.indexOf("gene")>-1) {
+        datacols.push(
+            {data: "gene", title:"Nearest gene",
+                className: "dt-body-center"
+            }
+        );
+    }
+    datacols.push(
+        {data: "pos", title:"Plot",
+            render:function(data, type, row) {
+                if (data !== undefined && data !== null) {
+                    var fn = "event.preventDefault();" + 
+                        "jumpToLocusZoom(\"" + job_id + "\",\"" + row.chrom + "\"," + data + ")";
+                    return "<a href='#' onclick='" + fn + "'>View</a>";
+                } else {
+                    return "";
+                }
+            },
+            orderable: false,
+            className: "dt-body-center"
+        }
+    );
+    return datacols;
+}
 function init_tophits(job_id, selector, data_url) {
     selector = selector || "#tophits";
     data_url = data_url|| "/api/jobs/" + job_id + "/tables/top";
@@ -99,64 +182,7 @@ function init_tophits(job_id, selector, data_url) {
                 data[j].chrom_sort = chrpos[chr] = i++;
             }
         }
-        var datacols = [
-            {data: null, title:"Chrom",
-                orderData: [0,1],
-                type: "num",
-                render: function(data, type) {
-                    if (type=="sort") {
-                        return data.chrom_sort;
-                    }
-                    return data.chrom;
-                },
-                className: "dt-body-right"
-            },
-            {data: "pos", title:"Position", 
-                render: function(data, type) {
-                    if (type=="display") {
-                        return data.toLocaleString();
-                    }
-                    return data;
-                },
-                orderData: [0,1],
-                className: "dt-body-right"
-            },
-            {data: "name", title:"Variant"},
-            {data: "pval", title:"Best P-Value", 
-                render: function(data, type) {
-                    if (type=="display") {
-                        return data.toExponential(2);
-                    }
-                    return data;
-                },
-                className: "dt-body-right"
-            }
-        ];
-        if (cols.indexOf("sig_count")>-1) {
-            datacols.push(
-                {data: "sig_count", title:"# Significant",
-                    className: "dt-body-center"
-                }
-            );
-        }
-        if (cols.indexOf("gene")>-1) {
-            datacols.push(
-                {data: "gene", title:"Nearest gene",
-                    className: "dt-body-center"
-                }
-            );
-        }
-        datacols.push(
-            {data: "pos", title:"Plot",
-                render:function(data, type, row) {
-                    var fn = "event.preventDefault();" + 
-                        "jumpToLocusZoom(\"" + job_id + "\",\"" + row.chrom + "\"," + data + ")";
-                    return "<a href='#' onclick='" + fn + "'>View</a>";
-                },
-                orderable: false,
-                className: "dt-body-center"
-            }
-        );
+        var datacols = getDataCols(cols, job_id);
         $(selector).DataTable( {
             data: data,
             columns: datacols,
@@ -286,6 +312,76 @@ function init_chunk_progress(job_id, selector) {
     });
 }
 
+function init_job_lookup(job_id) {
+    var $lf = $("#lookup_form");
+    var storageKey = job_id + "-lookups";
+    var results;
+    if (localStorage && localStorage.getItem(storageKey)) {
+        results = JSON.parse(localStorage.getItem(storageKey));
+    } else {
+        results = [];
+    }
+    var dt;
+    function drawResults() {
+        if (results.length>0) {
+            if (!dt) {
+                dt = $("<table></table>").css("margin-top",10).insertAfter($lf);
+                dt = dt.DataTable({
+                    data: results, 
+                    columns: getDataCols(Object.keys(results[0]), job_id),
+                    lengthChange: false,
+                    searching: false
+                });
+            } else {
+                dt.clear().draw();
+                dt.rows.add(results);
+                dt.columns.adjust().draw();
+            }
+        }
+    }
+    drawResults();
+    $lf.submit(function(e) {
+        e.preventDefault();
+        result_lookup($lf.find("#lookup").val()).then(function(resp) {
+            results.push(resp);
+            if (localStorage) {
+                localStorage.setItem(storageKey, JSON.stringify(results));
+            }
+            $lf.find("#lookup").val("");
+            drawResults();
+        });
+    });
+    return job_id + 1;
+}
+
+function result_lookup(term) {
+    var pterm = term.replace(/\s/g,"");
+    pterm = pterm.split(":");
+    var chrom = pterm[0].replace(/^chr/i,"");
+    var pos = parseInt(pterm[1].replace(/,/g,""));
+    var url = api_url + "?chrom=" + chrom + "&start_pos=" + pos + "&end_pos=" + (pos+1);
+    return $.getJSON(url).then(function(resp) {
+        if (resp.data.PVALUE && resp.data.PVALUE.length) {
+            //return smallest p-value
+            var min_pval = 1;
+            var min_index = -1;
+            for(var i=0; i<=resp.data.PVALUE.length; i++) {
+                if (resp.data.PVALUE[i]<min_pval) {
+                    min_pval = resp.data.PVALUE[i];
+                    min_index = i;
+                }
+            }
+            return {term: term, 
+                chrom: resp.data.CHROM[min_index],
+                pos: resp.data.BEGIN[min_index],
+                pval: parseFloat(resp.data.PVALUE[min_index])
+            };
+        }
+        //no results found
+        return {term: term, chrom: null, pos:null, pval: null};
+    });
+}
+
 function jumpToLocusZoom(job_id, chr, pos) {
     if (job_id && chr && pos) {
         pos = parseInt(pos);
@@ -293,5 +389,4 @@ function jumpToLocusZoom(job_id, chr, pos) {
         document.location.href = "/jobs/" + job_id + "/locuszoom/" + region;
     }
 }
-
 

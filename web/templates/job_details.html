@@ -20,10 +20,12 @@
 	<script type="text/javascript">
 		job_id = "{{ job.job_id }}"
 		job_status = "{{ job.status }}"
+		api_url = "{{ url_for("get_api_job_zoom", job_id = job.job_id) }}"
 		$(document).ready(function() {
 			init_job_tabs();
 			init_job_cancel_button(job_id);
 			if (job_status=="succeeded") {
+				init_job_lookup(job_id);
 				init_manhattan(job_id);
 				init_qqplot(job_id);
 				init_tophits(job_id);
@@ -104,7 +106,8 @@
                 <li class="active" rel="tab1">Manhattan</li>
                 <li rel="tab2">QQPlot</li>
                 <li rel="tab3">Top Hits</li>
-                <li rel="tab4">Details</li>
+                <li rel="tab4">Lookups</li>
+                <li rel="tab5">Details</li>
             </ul>
             <div class="tab-container">
 
@@ -113,7 +116,14 @@
 				<div id="tab3" class="tab-content">
 					<table id="tophits" class="display"></table>
 				</div>
-				<div id="tab4" class="tab-content">
+                <div id="tab4" class="tab-content">
+					<form id="lookup_form"><label for="lookup">Lookup Result:</label> 
+					<input id="lookup" size="30" type="text"/> 
+					<button>Find</button>
+					 (beta test: enter chr:position)
+					</form>
+				</div>
+				<div id="tab5" class="tab-content">
 					{{ detailtable(job) }}
 				</div>
             </div>

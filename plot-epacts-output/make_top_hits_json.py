@@ -148,7 +148,7 @@ def process_file(results, window=5e5, sig_pvalue=5e-8, max_sites = 5000, max_bin
     bins=[]
     last_pval = None
     best_results = ExtremeCollection(max_sites, results, lambda x: x.pval)
-    exported_cols = ["chrom","pos","pval","other"]
+    exported_cols = ["name","chrom","pos","pval","other"]
     if nearest_gene is not None:
         exported_cols += ["gene"]
     if window>0:

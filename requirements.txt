@@ -17,7 +17,7 @@ numpy==1.11.2
 pyasn1==0.1.9
 pycparser==2.14
 pyOpenSSL==16.1.0
-pytabix==0.1
+pytabix==0.0.2
 rauth==0.7.2
 requests==2.10.0
 scipy==0.18.1

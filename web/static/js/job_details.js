@@ -150,6 +150,18 @@ function getDataCols(cols, job_id) {
             className: "dt-body-center"
         }
     );
+    if (cols.indexOf("removeable")>-1) {
+        datacols.push(
+            {data: "term", title:"",
+                className: "dt-body-center",
+                render: function() {
+                    return "<button type=\"button\" class=\"btn btn-default remove\">" + 
+                        "<span class=\"glyphicon glyphicon-minus-sign\"></span></button>";
+                },
+                orderable: false
+            }
+        );
+    }
     return datacols;
 }
 function init_tophits(job_id, selector, data_url) {
@@ -314,27 +326,28 @@ function init_chunk_progress(job_id, selector) {
 
 function init_job_lookup(job_id) {
     var $lf = $("#lookup_form");
-    var storageKey = job_id + "-lookups";
-    var results;
-    if (localStorage && localStorage.getItem(storageKey)) {
-        results = JSON.parse(localStorage.getItem(storageKey));
-    } else {
-        results = [];
-    }
+    var results = new LocalLookups(job_id);
     var dt;
     function drawResults() {
-        if (results.length>0) {
-            if (!dt) {
-                dt = $("<table></table>").css("margin-top",10).insertAfter($lf);
-                dt = dt.DataTable({
-                    data: results, 
-                    columns: getDataCols(Object.keys(results[0]), job_id),
+        if ( results.count() > 0 ) {
+            if ( !dt ) {
+                var $table = $("<table></table>").css("margin-top",10).width("100%").insertAfter($lf);
+                dt = $table.DataTable({
+                    data: results.get_lookups(), 
+                    columns: getDataCols(results.get_columns() + ["removeable"], job_id),
                     lengthChange: false,
                     searching: false
                 });
+                $table.on("click", "button.remove", function() {
+                    var $tr = $(this).closest("tr");
+                    var row = dt.row($tr);
+                    results.remove_lookup(row.data());
+                    results.save_lookups();
+                    drawResults();
+                });
             } else {
                 dt.clear().draw();
-                dt.rows.add(results);
+                dt.rows.add(results.get_lookups());
                 dt.columns.adjust().draw();
             }
         }
@@ -343,16 +356,58 @@ function init_job_lookup(job_id) {
     $lf.submit(function(e) {
         e.preventDefault();
         result_lookup($lf.find("#lookup").val()).then(function(resp) {
-            results.push(resp);
-            if (localStorage) {
-                localStorage.setItem(storageKey, JSON.stringify(results));
-            }
+            results.add_lookup(resp);
+            results.save_lookups();
             $lf.find("#lookup").val("");
             drawResults();
         });
     });
     return job_id + 1;
 }
+
+function LocalLookups(job_id) {
+    this.storageKey = job_id + "-lookups";
+    if (!localStorage) {
+        throw("No local storage available!");
+    }
+    this.results = this.load_lookups();
+}
+
+LocalLookups.prototype.load_lookups = function() {
+    if (localStorage && localStorage.getItem(this.storageKey)) {
+        this.results =  JSON.parse(localStorage.getItem(this.storageKey));
+    } else {
+        this.results =  [];
+    }
+    return this.results;
+};
+
+LocalLookups.prototype.get_lookups = function() {
+    return this.results;
+};
+
+LocalLookups.prototype.save_lookups = function() {
+    if (localStorage) {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.results));
+    }
+};
+
+LocalLookups.prototype.add_lookup = function(result) {
+    this.results.push(result);
+};
+
+LocalLookups.prototype.remove_lookup = function(result) {
+    var idx = this.results.indexOf(result);
+    this.results.splice(idx,1);
+};
+
+LocalLookups.prototype.get_columns = function() {
+    return Object.keys(this.results[0]);
+};
+
+LocalLookups.prototype.count = function() {
+    return this.results.length;
+};
 
 function result_lookup(term) {
     var pterm = term.replace(/\s/g,"");

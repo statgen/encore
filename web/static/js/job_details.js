@@ -92,7 +92,7 @@ function getDataCols(cols, job_id) {
             render: function(data, type) {
                 if (type=="display") {
                     if (data !== undefined && data !== null) {
-                        return data.toLocaleString();
+                        return parseInt(data).toLocaleString();
                     } else {
                         return "";
                     }
@@ -336,14 +336,27 @@ function init_job_lookup(job_id) {
                     data: results.get_lookups(), 
                     columns: getDataCols(results.get_columns() + ["removeable"], job_id),
                     lengthChange: false,
-                    searching: false
+                    searching: false,
+                    createdRow: function(row, data) {
+                        if (!data.found) {
+                            var msg = data.message || "Not Found";
+                            var $tds = $("td", row);
+                            $tds.slice(1,$tds.length-1).remove();
+                            var $td = $("<td>").
+                                attr("colspan", $tds.length-2).
+                                text(msg);
+                            $tds.first().after($td);
+                        }
+                    }
                 });
                 $table.on("click", "button.remove", function() {
-                    var $tr = $(this).closest("tr");
-                    var row = dt.row($tr);
-                    results.remove_lookup(row.data());
-                    results.save_lookups();
-                    drawResults();
+                    if (confirm("Are you sure you want to delete this row?")) {
+                        var $tr = $(this).closest("tr");
+                        var row = dt.row($tr);
+                        results.remove_lookup(row.data());
+                        results.save_lookups();
+                        drawResults();
+                    }
                 });
             } else {
                 dt.clear().draw();
@@ -412,6 +425,10 @@ LocalLookups.prototype.count = function() {
 function result_lookup(term) {
     var pterm = term.replace(/\s/g,"");
     pterm = pterm.split(":");
+    if (pterm.length!=2) {
+        return $.when({term: term, chrom: null, pos:null, 
+            pval: null, found: 0, message: "Unrecognized search term"});
+    }
     var chrom = pterm[0].replace(/^chr/i,"");
     var pos = parseInt(pterm[1].replace(/,/g,""));
     var url = api_url + "?chrom=" + chrom + "&start_pos=" + pos + "&end_pos=" + (pos+1);
@@ -429,11 +446,12 @@ function result_lookup(term) {
             return {term: term, 
                 chrom: resp.data.CHROM[min_index],
                 pos: resp.data.BEGIN[min_index],
-                pval: parseFloat(resp.data.PVALUE[min_index])
+                pval: parseFloat(resp.data.PVALUE[min_index]),
+                found: 1
             };
         }
         //no results found
-        return {term: term, chrom: null, pos:null, pval: null};
+        return {term: term, chrom: null, pos:null, pval: null, found: 0};
     });
 }
 

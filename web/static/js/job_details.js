@@ -1,7 +1,7 @@
 
 /* eslint-env jquery */
 /* eslint no-unused-vars: ["error", { "vars": "local" }] */
-/* global create_gwas_plot, create_qq_plot, Ideogram, api_url */
+/* global create_gwas_plot, create_qq_plot, Ideogram, api_url, genome_build */
 
 function init_job_tabs() {
     $("ul.tabs li").click(function()
@@ -459,7 +459,11 @@ function single_lookup(x) {
 }
 function result_lookup(term) {
     var position_url = "http://portaldev.sph.umich.edu/api_internal_dev/v1/annotation/omnisearch/";
-    return $.getJSON(position_url, {q: term, build: "grch37"}).then(function(x) {
+    var req = {
+        q: term,
+        build: genome_build
+    };
+    return $.getJSON(position_url, req).then(function(x) {
         if (x.data && x.data.length) {
             var lookups = x.data.map(single_lookup);
             return $.when.apply($, lookups).then(function() {

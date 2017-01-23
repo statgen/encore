@@ -249,9 +249,10 @@ def post_to_share_job(job_id, job=None):
 def get_genotypes():
     genos = Genotype.list_all()
     def get_stats(x):
-        s = Genotype.get(x["id"],current_app.config).getStats() 
+        s = Genotype.get(x["id"],current_app.config).get_stats() 
         s["name"] = x["name"]
         s["creation_date"] = x["creation_date"]
+        s["build"] = x["build"]
         s["id"] = x["id"]
         return s
     stats = [get_stats(x) for x in genos]

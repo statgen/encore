@@ -9,6 +9,7 @@ class Genotype:
         self.geno_id = geno_id
         self.meta = meta
         self.name = None
+        self.build = None
         self.creation_date = None
         self.root_path = ""
        
@@ -58,7 +59,7 @@ class Genotype:
             return None
         return kinship_path
 
-    def getStats(self):
+    def get_stats(self):
         if "stats" in self.meta:
            return self.meta["stats"] 
         elif "stats_path" in self.meta:
@@ -102,8 +103,8 @@ class Genotype:
         return os.path.expanduser(os.path.join(self.root_path, *args))
 
     def as_object(self):
-        obj = {"geno_id": self.geno_id, "name": self.name}
-        obj["stats"] = self.getStats()
+        obj = {"geno_id": self.geno_id, "name": self.name, "build": self.build}
+        obj["stats"] = self.get_stats()
         obj["phenos"] = self.get_phenotypes()
         return obj
 
@@ -119,7 +120,7 @@ class Genotype:
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
-            SELECT bin_to_uuid(id) AS id, name, 
+            SELECT bin_to_uuid(id) AS id, name, build, 
             DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
             FROM genotypes
             WHERE id = uuid_to_bin(%s)
@@ -129,6 +130,7 @@ class Genotype:
         if result is not None:
             g = Genotype(geno_id, meta)
             g.name = result["name"]
+            g.build = result["build"]
             g.creation_date = result["creation_date"]
             g.root_path = geno_folder
         else:
@@ -140,7 +142,7 @@ class Genotype:
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
-            SELECT bin_to_uuid(id) AS id, name, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date 
+            SELECT bin_to_uuid(id) AS id, name, build, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date 
             FROM genotypes 
             ORDER BY creation_date DESC
             """

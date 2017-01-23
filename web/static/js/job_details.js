@@ -368,12 +368,15 @@ function init_job_lookup(job_id) {
     drawResults();
     $lf.submit(function(e) {
         e.preventDefault();
-        result_lookup($lf.find("#lookup").val()).then(function(resp) {
-            results.add_lookup(resp);
-            results.save_lookups();
-            $lf.find("#lookup").val("");
-            drawResults();
-        });
+        var term = $lf.find("#lookup").val();
+        if(term && term.length) {
+            result_lookup(term).then(function(resps) {
+                resps.forEach(function(x) {results.add_lookup(x);});
+                results.save_lookups();
+                $lf.find("#lookup").val("");
+                drawResults();
+            });
+        }
     });
     return job_id + 1;
 }
@@ -422,17 +425,16 @@ LocalLookups.prototype.count = function() {
     return this.results.length;
 };
 
-function result_lookup(term) {
-    var pterm = term.replace(/\s/g,"");
-    pterm = pterm.split(":");
-    if (pterm.length!=2) {
-        return $.when({term: term, chrom: null, pos:null, 
-            pval: null, found: 0, message: "Unrecognized search term"});
+function single_lookup(x) {
+    var msg = {chrom: x.chrom,
+        start_pos: x.start,
+        end_pos: x.end +1
+    };
+    if (x.error) {
+        return $.when({term: x.term, chrom: null, pos: null, 
+            pval: null, found: 0, message: x.error});
     }
-    var chrom = pterm[0].replace(/^chr/i,"");
-    var pos = parseInt(pterm[1].replace(/,/g,""));
-    var url = api_url + "?chrom=" + chrom + "&start_pos=" + pos + "&end_pos=" + (pos+1);
-    return $.getJSON(url).then(function(resp) {
+    return $.getJSON(api_url, msg).then(function(resp) {
         if (resp.data.PVALUE && resp.data.PVALUE.length) {
             //return smallest p-value
             var min_pval = 1;
@@ -443,7 +445,7 @@ function result_lookup(term) {
                     min_index = i;
                 }
             }
-            return {term: term, 
+            return {term: x.term, 
                 chrom: resp.data.CHROM[min_index],
                 pos: resp.data.BEGIN[min_index],
                 pval: parseFloat(resp.data.PVALUE[min_index]),
@@ -451,7 +453,23 @@ function result_lookup(term) {
             };
         }
         //no results found
-        return {term: term, chrom: null, pos:null, pval: null, found: 0};
+        return {term: x.term, chrom: null, pos:null, pval: null, 
+            found: 0, message: "No p-value in range"};
+    });
+}
+function result_lookup(term) {
+    var position_url = "http://portaldev.sph.umich.edu/api_internal_dev/v1/annotation/omnisearch/";
+    return $.getJSON(position_url, {q: term, build: "grch37"}).then(function(x) {
+        if (x.data && x.data.length) {
+            var lookups = x.data.map(single_lookup);
+            return $.when.apply($, lookups).then(function() {
+                var lookups = Array.prototype.slice.call(arguments);
+                return lookups;
+            });
+        } else {
+            alert("Position lookup failed");
+            return $.when([]);
+        }
     });
 }
 

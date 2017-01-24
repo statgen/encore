@@ -458,7 +458,7 @@ function single_lookup(x) {
     });
 }
 function result_lookup(term) {
-    var position_url = "http://portaldev.sph.umich.edu/api_internal_dev/v1/annotation/omnisearch/";
+    var position_url = "//portaldev.sph.umich.edu/api_internal_dev/v1/annotation/omnisearch/";
     var req = {
         q: term,
         build: genome_build

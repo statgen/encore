@@ -16,7 +16,7 @@
 					{data: "creation_date", title: "Date Created"},
 					{title: "View", data: "id", render: function(data) {
 						return "<a href='/phenos/" + data + "'>View</a>" 
-					}, orderable: false}
+					}, orderable: false, className: "dt-body-center"}
 				]
 			})
 		};
@@ -31,6 +31,6 @@
             <div class="section-title">
                 <h2>Phenotypes</h2>
             </div>
-            <table id="pheno-table"></table>
+            <table id="pheno-table" width="100%"></table>
         </div>
 {% endblock %}

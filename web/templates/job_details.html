@@ -59,7 +59,8 @@
 		</tr>
 		<tr>
 			<th>Phenotype</th>
-			<td>{{ job.details.phenotype.name }}</td>
+			<td><a href={{url_for("get_pheno", pheno_id=job.details.phenotype.pheno_id) }}>
+			{{ job.details.phenotype.name }}</a></td>
 		</tr>
 		<tr>
 			<th>Genotype</th>

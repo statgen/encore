@@ -20,7 +20,7 @@
 					{data: "status", title: "Status"},
 					{title: "Job", data: "id", render: function(data) {
 						return "<a href='/jobs/" + data + "'>View</a>" 
-					}, orderable: false}
+					}, orderable: false, className: "dt-body-center"}
 				]
 			})
 		};
@@ -78,6 +78,6 @@
             <div class="section-title">
                 <h2>Jobs</h2>
             </div>
-            <table id="jobs-table"></table>
+            <table id="jobs-table" width="100%"></table>
         </div>
 {% endblock %}

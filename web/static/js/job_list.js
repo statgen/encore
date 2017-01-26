@@ -1,3 +1,4 @@
+/* eslint-env jquery */
 
 var dropped_files = [];
 

@@ -152,6 +152,7 @@ class PedWriter:
         for row in phenoreader.row_extractor():
             for col in self.allcols:
                 col.append(row)
+        self.expand_columns()
 
     def merge_covar(self, phenoreader=None, covar=None):
         datacols =  [ColumnFactory.get_by_name(x, phenoreader) for x in covar]
@@ -177,6 +178,7 @@ class PedWriter:
 
         self.covarcols += datacols
         self.allcols += datacols
+        self.expand_columns()
 
     def expand_columns(self):
 

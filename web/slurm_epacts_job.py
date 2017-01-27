@@ -193,6 +193,19 @@ class SlurmEpactsJob:
 
         return epm.get_analysis_command(job_desc, geno, ped_path, ped_writer)
 
+    def create_reproducible_command(self, job_desc):
+        epm = EpactsModel.get(job_desc.get("type", None), {})
+        geno = Genotype(None)
+    
+        if "phenotype" in job_desc:
+            pheno = Phenotype.get(job_desc["phenotype"], self.config)
+        else:
+            raise Exception("No phenotype information in job")
+
+        ped_writer = epm.get_ped_writer(job_desc, geno, pheno) 
+
+        return epm.get_analysis_command(job_desc, geno, ped_path="pheno.ped", ped_writer=ped_writer)
+
     def create_postprocessing_command(self, epm):
         cmd =  "if [ $EXIT_STATUS == 0 ]; then\n" 
         cmd += epm.get_postprocessing_command() 

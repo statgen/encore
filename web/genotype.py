@@ -7,7 +7,10 @@ from pheno_reader import PhenoReader
 class Genotype:
     def __init__(self, geno_id, meta=None):
         self.geno_id = geno_id
-        self.meta = meta
+        if meta is None:
+            self.meta = {}
+        else:
+            self.meta = meta
         self.name = None
         self.build = None
         self.creation_date = None

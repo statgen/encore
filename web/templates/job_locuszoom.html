@@ -18,6 +18,9 @@
 		#locuszoom svg .lz-mouse_guide rect {
 			display: none;
 		}
+		.control-buttons {
+			text-align: right;
+		}
 	</style>
 
 	<script type="text/javascript">
@@ -30,8 +33,16 @@
         {% if job.status == "succeeded" %}
 
 		<p>Region: {{ region }}</p>
+		<div class="control-buttons">
+			Move:
+			<button type="button" class="btn btn-default pan-left"><span class="glyphicon glyphicon-arrow-left"></span></button>
+			<button type="button" class="btn btn-default pan-right"><span class="glyphicon glyphicon-arrow-right"></span></button>
+			Zoom:
+			<button type="button" class="btn btn-default zoom-in"><span class="glyphicon glyphicon-zoom-in"></span></button>
+			<button type="button" class="btn btn-default zoom-out"><span class="glyphicon glyphicon-zoom-out"></span></button>
+		</div>
 
-        <div id="locuszoom" data-region="{{ region }}" class="lz-container-responsive" style="cursor:pointer">
+        <div id="locuszoom" data-region="{{ region }}" class="lz-container-responsive">
 
         </div>
 		{% else %}

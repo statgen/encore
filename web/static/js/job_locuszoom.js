@@ -123,7 +123,7 @@ $(document).ready(function() {
                     "drag_x_ticks_to_scale": true,
                     "drag_y1_ticks_to_scale": true,
                     "drag_y2_ticks_to_scale": false,
-                    "scroll_to_zoom": true,
+                    "scroll_to_zoom": false,
                     "x_linked": true
                 },
                 "data_layers": [{
@@ -269,6 +269,42 @@ $(document).ready(function() {
         };
     }
 
+    function move(plot, direction) {
+        // 1 means right, -1 means left.
+        var start = plot.state.start;
+        var end = plot.state.end;
+        var shift = Math.floor((end - start) / 2) * direction;
+        plot.applyState({
+            chr: plot.state.chr,
+            start: start + shift,
+            end: end + shift
+        });
+    }
+
+    function zoom(plot, growth_factor){
+        // 2 means bigger view, 0.5 means zoom in.
+        growth_factor = parseFloat(growth_factor);
+        var delta = (plot.state.end - plot.state.start) * (growth_factor - 1) / 2;
+        var new_start = Math.max(Math.round(plot.state.start - delta), 1);
+        var new_end   = Math.round(plot.state.end + delta);
+        if (new_start == new_end){ new_end++; }
+        var new_state = {
+            start: new_start,
+            end: new_end
+        };
+        if (new_state.end - new_state.start > plot.layout.max_region_scale){
+            delta = Math.round(((new_state.end - new_state.start) - plot.layout.max_region_scale) / 2);
+            new_state.start += delta;
+            new_state.end -= delta;
+        }
+        if (new_state.end - new_state.start < plot.layout.min_region_scale){
+            delta = Math.round((plot.layout.min_region_scale - (new_state.end - new_state.start)) / 2);
+            new_state.start -= delta;
+            new_state.end += delta;
+        }
+        plot.applyState(new_state);
+    }
+
     LocusZoom.createCORSPromise("GET",api_url).then(function(x) {
         x = JSON.parse(x);
         var cols = [];
@@ -277,6 +313,11 @@ $(document).ready(function() {
         }
         var layout = getlayout(cols);
         lzplot = LocusZoom.populate("#locuszoom", data_sources, layout);
+
+        $(".control-buttons .pan-left").on("click", function() {move(lzplot, -0.5);});
+        $(".control-buttons .pan-right").on("click", function() {move(lzplot, 0.5);});
+        $(".control-buttons .zoom-in").on("click", function() {zoom(lzplot, 1/1.5);});
+        $(".control-buttons .zoom-out").on("click", function() {zoom(lzplot, 1.5);});
     });
 
 });

@@ -11,7 +11,7 @@ import gzip
 import glob
 import re
 import time
-from auth import access_job_page
+from auth import check_view_job, check_edit_job
 from genotype import Genotype
 from phenotype import Phenotype
 from job import Job 
@@ -21,7 +21,7 @@ from slurm_epacts_job import SlurmEpactsJob
 def get_home_view():
     return render_template("home.html")
 
-@access_job_page
+@check_view_job
 def get_job(job_id, job=None):
     return json_resp(job.as_object())
 
@@ -85,7 +85,15 @@ def purge_job(job_id):
     else:
         return json_resp(result), 404
 
-@access_job_page
+@check_edit_job
+def update_job(job_id, job=None):
+    result = Job.update(job_id, request.values)
+    if result.get("updated", False):
+        return json_resp(result)
+    else:
+        return json_resp(result), 450
+
+@check_view_job
 def get_job_details_view(job_id, job=None):
     pheno = Phenotype.get(job.meta.get("phenotype", ""), current_app.config)
     geno = Genotype.get(job.meta.get("genotype", ""), current_app.config)
@@ -96,11 +104,11 @@ def get_job_details_view(job_id, job=None):
         job["details"]["genotype"] = geno.as_object()
     return render_template("job_details.html", job=job)
 
-@access_job_page
+@check_view_job
 def get_job_locuszoom_plot(job_id, region, job=None):
     return render_template("job_locuszoom.html", job=job.as_object(), region=region)
 
-@access_job_page
+@check_view_job
 def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, head=None, job=None):
     try:
         output_file = job.relative_path(filename)
@@ -123,7 +131,7 @@ def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, 
         print e
         return "File Not Found", 404
 
-@access_job_page
+@check_view_job
 def get_job_zoom(job_id, job=None):
     header = []
     epacts_filename = job.relative_path("output.epacts.gz")
@@ -171,7 +179,7 @@ def get_job_zoom(job_id, job=None):
     return json_resp({"header": {"variant_columns": json_response_data.keys()}, \
         "data": json_response_data})
 
-@access_job_page
+@check_edit_job
 def get_job_share_page(job_id, job=None):
     return render_template("job_share.html", job=job)
 
@@ -235,7 +243,7 @@ def post_to_jobs():
     # everything worked
     return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
 
-@access_job_page
+@check_edit_job
 def post_to_share_job(job_id, job=None):
     form_data = request.form
     add = form_data["add"].split(",") 

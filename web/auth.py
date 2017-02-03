@@ -7,9 +7,12 @@ from flask_login import current_user
 
 #most of these are helper function
 #there are the dectorators you should use
-# - access_job_page (needs job_id and job=None parameters)
+# - check_view_job (needs job_id and job=None parameters)
 #      will inject job parameter if None
 #      checks if current user has access to job data
+# - check_edit_job (needs job_id and job=None parameters)
+#      will inject job parameter if None
+#      checks if current user can update job data
 # - access_pheno_page (needs pheno_id and pheno=None parameters)
 #      will inject pheno parameter if None
 #      checks if current user has access to phenotype data
@@ -21,6 +24,16 @@ def can_user_view_job(user, job):
     if user_id == job.user_id:
         return True
     if user_id in (x["user_id"] for x in job.users):
+        return True
+    if user.is_admin():
+        return True
+    return False
+
+def can_user_edit_job(user, job):
+    if not user or not job:
+        return False
+    user_id = user.rid
+    if user_id == job.user_id:
         return True
     if user.is_admin():
         return True
@@ -57,7 +70,7 @@ def inject_job(f):
         return f(**kwargs)
     return inner
 
-def can_view_job_page(f):
+def can_view_job(f):
     @wraps(f)
     def inner(*args, **kwargs):
         if len(args):
@@ -73,8 +86,27 @@ def can_view_job_page(f):
             return "Job not found", 404
     return inner
 
-def access_job_page(f):
-    return splat_args(inject_job(can_view_job_page(f)), f)
+def check_view_job(f):
+    return splat_args(inject_job(can_view_job(f)), f)
+
+def can_edit_job(f):
+    @wraps(f)
+    def inner(*args, **kwargs):
+        if len(args):
+            raise Exception("unnamed args")
+        job = kwargs["job"]
+        user = current_user
+        if job is not None:
+            if can_user_view_job(user, job):
+                return f(**kwargs)
+            else:
+                return "Unauthorized", 403
+        else:
+            return "Job not found", 404
+    return inner
+
+def check_edit_job(f):
+    return splat_args(inject_job(can_edit_job(f)), f)
 
 def inject_pheno(f):
     @wraps(f)

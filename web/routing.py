@@ -116,6 +116,11 @@ def get_api_job(job_id):
 def delete_api_job(job_id):
     return job_handlers.purge_job(job_id)
 
+@app.route("/api/jobs/<job_id>", methods=["POST"])
+@login_required
+def update_api_job(job_id):
+    return job_handlers.update_job(job_id)
+
 @app.route("/api/jobs/<job_id>/share", methods=["POST"])
 @login_required
 def post_api_job_share_request(job_id):

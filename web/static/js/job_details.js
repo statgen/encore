@@ -195,10 +195,11 @@ function init_tophits(job_id, selector, data_url) {
             }
         }
         var datacols = getDataCols(cols, job_id);
+        var pvalcol = datacols.findIndex(function(x) {return x.data=="pval";});
         $(selector).DataTable( {
             data: data,
             columns: datacols,
-            order: [[3, "asc"]],
+            order: [[pvalcol, "asc"]],
             lengthChange: false,
             searching: false,
             dom: "rtip"

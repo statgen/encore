@@ -20,6 +20,7 @@
 	<script type="text/javascript">
 		job_id = "{{ job.job_id }}"
 		job_status = "{{ job.status }}"
+		job_can_edit = {{ job.can_edit|tojson }}
 		genome_build = "{{ job.details.genotype.build }}"
 		job_api_url = "{{url_for("get_api_job", job_id=job.job_id) }}"
 		zoom_api_url = "{{ url_for("get_api_job_zoom", job_id = job.job_id) }}"
@@ -31,6 +32,8 @@
 				init_manhattan(job_id);
 				init_qqplot(job_id);
 				init_tophits(job_id);
+			}
+			if (job_can_edit) {
 				init_editform(job_id, job_api_url);
 			}
 			if (job_status=="started") {

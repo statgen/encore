@@ -97,7 +97,7 @@ def can_edit_job(f):
         job = kwargs["job"]
         user = current_user
         if job is not None:
-            if can_user_view_job(user, job):
+            if can_user_edit_job(user, job):
                 return f(**kwargs)
             else:
                 return "Unauthorized", 403

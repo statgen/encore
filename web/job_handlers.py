@@ -11,7 +11,7 @@ import gzip
 import glob
 import re
 import time
-from auth import check_view_job, check_edit_job
+from auth import check_view_job, check_edit_job, can_user_edit_job
 from genotype import Genotype
 from phenotype import Phenotype
 from job import Job 
@@ -97,12 +97,14 @@ def update_job(job_id, job=None):
 def get_job_details_view(job_id, job=None):
     pheno = Phenotype.get(job.meta.get("phenotype", ""), current_app.config)
     geno = Genotype.get(job.meta.get("genotype", ""), current_app.config)
-    job = job.as_object()
+    job_obj = job.as_object()
     if pheno is not None:
-        job["details"]["phenotype"] = pheno.as_object()
+        job_obj["details"]["phenotype"] = pheno.as_object()
     if geno is not None:
-        job["details"]["genotype"] = geno.as_object()
-    return render_template("job_details.html", job=job)
+        job_obj["details"]["genotype"] = geno.as_object()
+    if can_user_edit_job(current_user, job):
+        job_obj["can_edit"] = True
+    return render_template("job_details.html", job=job_obj)
 
 @check_view_job
 def get_job_locuszoom_plot(job_id, region, job=None):

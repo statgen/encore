@@ -21,7 +21,8 @@
 		job_id = "{{ job.job_id }}"
 		job_status = "{{ job.status }}"
 		genome_build = "{{ job.details.genotype.build }}"
-		api_url = "{{ url_for("get_api_job_zoom", job_id = job.job_id) }}"
+		job_api_url = "{{url_for("get_api_job", job_id=job.job_id) }}"
+		zoom_api_url = "{{ url_for("get_api_job_zoom", job_id = job.job_id) }}"
 		$(document).ready(function() {
 			init_job_tabs();
 			init_job_cancel_button(job_id);
@@ -30,6 +31,7 @@
 				init_manhattan(job_id);
 				init_qqplot(job_id);
 				init_tophits(job_id);
+				init_editform(job_id, job_api_url);
 			}
 			if (job_status=="started") {
 				init_chunk_progress(job_id);
@@ -39,6 +41,9 @@
 	<style>
 		svg .variant_points a {cursor: pointer}
 		button.remove:hover { color: red; }
+		.label-edit {color: #c4c4c4; font-size:65%; }
+		.label-edit:hover {color: black; backgroud-color: #c4c4c4; }
+		a.edit-job-modal {text-decoration: none; color:inherit; cursor: pointer}
 	</style>
 
 {% endblock %}
@@ -94,7 +99,7 @@
 {% block content %}
         <div class="section">
             <div class="section-title">
-                <h2>{{ job.name }}</h2>
+                <h2 id="job_name_title">{{ job.name }}</h2>
                 {% if job.status == "queued" or job.status == "started" %}
                 <button name="cancel_job">Cancel Job</button>
                 {% endif %}
@@ -141,4 +146,27 @@
 			{{ detailtable(job) }}
 
         {% endif %}
+		<div class="modal fade" id="editModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Edit Job Details</h4>
+					</div>
+					<div class="modal-body">
+						<form class="form-horizonal">
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="job_name">Name</label>
+							<div class="col-sm-10"><input type="text" class="form-control" id="job_name"/></div>
+						</div>
+						&nbsp;
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-success edit-job-save" >Save</button>
+					</div>
+				</div>
+			</div>
+		</div>
 {% endblock %}

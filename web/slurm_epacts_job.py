@@ -238,6 +238,23 @@ class SlurmEpactsJob:
             except OSError:
                 raise Exception("Could not find sbatch")
         return True
+
+    def cancel_job(self):
+        scancel = self.config.get("CANCEL_JOB_BINARY", "scancel")
+        batch_output_path = self.relative_path("batch_script_output.txt")
+        try:
+            with open(batch_output_path, 'r') as f:
+                slurm_job_id = f.readline()
+            slurm_job_id = [s for s in slurm_job_id.split() if s.isdigit()][0]
+        except:
+            raise Exception("Could not find job queue id ({})".format(self.job_id))
+        try:
+            subprocess.check_call([scancel, slurm_job_id])
+        except subprocess.CalledProcessError:
+            raise Exception("Could not scancel job") 
+        except OSError:
+            raise Exception("Could not find scancel")
+        return True
  
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.job_directory, *args))

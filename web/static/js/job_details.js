@@ -1,4 +1,3 @@
-
 /* eslint-env jquery */
 /* eslint no-unused-vars: ["error", { "vars": "local" }] */
 /* global create_gwas_plot, create_qq_plot, Ideogram, zoom_api_url, genome_build */
@@ -17,17 +16,20 @@ function init_job_tabs() {
 
 function init_job_cancel_button(job_id, selector) {
     selector = selector || "button[name=cancel_job]";
-    $(selector).click(function()
+    $(selector).click(function(evt)
     {
-        var xhr = new XMLHttpRequest();
-        xhr.addEventListener("load", function()
-        {
-            location.reload();
-        }, false);
-
-        xhr.addEventListener("error", function() { alert("Request Failed"); }, false);
-        xhr.open("POST", "/api/jobs/" + job_id + "/cancel_request");
-        xhr.send();
+        evt.preventDefault();
+        var url = "/api/jobs/" + job_id + "/cancel_request";
+        $.post(url).done( function() {
+            alert("Cancellation in progress..."); 
+            document.location = "../";
+        }).fail(function(resp) {
+            var msg = "Cancellation Failed";
+            if(resp && resp.responseJSON && resp.responseJSON.error) {
+                msg += " (" + resp.responseJSON.error + ")";
+            }
+            alert(msg); 
+        });
     });
 }
 

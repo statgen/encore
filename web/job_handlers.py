@@ -56,27 +56,18 @@ def get_job_chunks(job_id):
     else:
         return {"data":[], "now": now} 
 
-def cancel_job(job_id):
-    db = sql_pool.get_conn()
-    resp = Response(mimetype='application/json')
-
-    cur = db.cursor(MySQLdb.cursors.DictCursor)
-    sql = "SELECT id FROM jobs WHERE id = uuid_to_bin(%s) AND user_id = %s"
-    cur.execute(sql, (job_id, current_user.rid))
-    db.commit()
-    if cur.rowcount == 0:
-        resp.status_code = 404
-        resp.status = "JOB NOT FOUND"
+@check_edit_job
+def cancel_job(job_id, job=None):
+    if job is None:
+        return json_resp({"error": "JOB NOT FOUND"}), 404
     else:
-        job_id_path = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id, "/batch_script_output.txt")
-
-        with open(job_id_path, 'r') as f:
-            slurm_job_id = f.readline()
-
-        if subprocess.call("scancel " + slurm_job_id):
-            resp.status_code = 500
-            resp.status = "JOB CANCELLATION FAILED"
-    return resp
+        slurmjob = SlurmEpactsJob(job_id, job.root_path, current_app.config) 
+        try:
+            slurmjob.cancel_job()
+        except Exception as exception:
+            print exception
+            return json_resp({"error": "COULD NOT CANCEL JOB"}), 500 
+    return json_resp({"message": "Job canceled"})
 
 def purge_job(job_id):
     result = Job.purge(job_id, current_app.config)

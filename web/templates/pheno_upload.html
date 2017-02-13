@@ -8,13 +8,31 @@
 		$(function() {
 			var um = new UploadManager("form.ubox");
 			um.onupload = function(resp) {
-				if (resp.url_model) {
-					document.location.href = resp.url_model;
-				} else {
-					window.alert("Upload Successful");
-				}
-				console.log(resp);
+				showPhenoResult(resp)
 			}
+			function showPhenoResult(pheno) {
+				var $modal = $("#messageModal")
+				if (pheno.existing)  {
+					$modal.find(".modal-message").text("This data has been previously uploaded as " +
+					pheno.name + " on " + pheno.creation_date + ".")
+				} else {
+					$modal.find(".modal-message").text("Phenotype successfully uploaded")
+				}
+				function linkButton($button, url) {
+					if (url) {
+						$button.click(function(evt) {
+							evt.preventDefault()
+							document.location.href = url;
+						});
+					} else {
+						$button.hide();
+					}
+
+				}
+				linkButton($modal.find("button.model-build"), pheno.url_model);
+				linkButton($modal.find("button.pheno-review"), pheno.url_view);
+				$modal.modal();
+			};
 		})
 	</script>
 {% endblock %}
@@ -44,5 +62,22 @@
 				<li>It must have at least two columns: the sample ID 
 					used for sequencing and phenotype values</li>
 			</ul>
+		</div>
+		<div class="modal fade" id="messageModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Phenotype Upload</h4>
+					</div>
+					<div class="modal-body">
+					<p class="modal-message"></p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default pheno-review">Review phenotypes</button>
+						<button type="button" class="btn btn-success model-build">Build model</button>
+					</div>
+				</div>
+			</div>
 		</div>
 {% endblock %}

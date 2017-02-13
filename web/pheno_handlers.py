@@ -52,10 +52,14 @@ def post_to_pheno():
     # file has been saved to server
     existing_pheno = Phenotype.get_by_hash_user(md5, user.rid, current_app.config)
     if existing_pheno:
-        # TODO: give warning here if has different file name
         shutil.rmtree(pheno_directory)
         pheno_id = existing_pheno.pheno_id
-        return json_resp({"id": pheno_id, "url_model": url_for("get_model_build", pheno=pheno_id)})
+        pheno_dict = existing_pheno.as_object()
+        pheno_dict["id"] = pheno_id
+        pheno_dict["url_model"] = url_for("get_model_build", pheno=pheno_id)
+        pheno_dict["url_view"] = url_for("get_pheno", pheno_id=pheno_id)
+        pheno_dict["existing"] = True
+        return json_resp(pheno_dict)
     # file has not been uploaded before
     istext, filetype, mimetype = PhenoReader.is_text_file(pheno_file_path)
     if not istext:
@@ -81,7 +85,9 @@ def post_to_pheno():
     meta = pheno.infer_meta()
     with open(pheno_meta_path, "w") as f:
         json.dump(meta, f)
-    return json_resp({"id": pheno_id, "url_model": url_for("get_model_build", pheno=pheno_id)})
+    return json_resp({"id": pheno_id,  \
+        "url_model": url_for("get_model_build", pheno=pheno_id), \
+        "url_view": url_for("get_pheno", pheno_id=pheno_id)})
 
 def purge_pheno(pheno_id):
     result = Phenotype.purge(pheno_id, current_app.config)

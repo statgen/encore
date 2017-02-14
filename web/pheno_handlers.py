@@ -4,7 +4,7 @@ from flask import render_template, request, Response, json, current_app, url_for
 from flask_login import current_user
 from phenotype import Phenotype
 from pheno_reader import PhenoReader
-from auth import access_pheno_page, check_edit_pheno
+from auth import access_pheno_page, check_edit_pheno, can_user_edit_pheno
 import sql_pool
 import MySQLdb
 import hashlib
@@ -23,7 +23,10 @@ def get_pheno_list_view():
 
 @access_pheno_page
 def get_pheno_details_view(pheno_id, pheno=None):
-    return render_template("pheno_details.html", pheno=pheno.as_object())
+    pheno_obj = pheno.as_object()
+    if can_user_edit_pheno(current_user, pheno):
+        pheno_obj["can_edit"] = True
+    return render_template("pheno_details.html", pheno=pheno_obj)
 
 def get_pheno_upload_view():
     return render_template("pheno_upload.html")

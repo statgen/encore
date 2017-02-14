@@ -8,11 +8,17 @@
 
 	<style>
 		.home-nav-list li {padding: 10px 0}
+		#carousel h3 {
+			color: rgb(1, 45, 107);
+			font-weight: bold;
+			font-size: .75em;
+			margin: 5px 10px;
+		}
 	</style>
 	<script type="text/javascript">
-		function init_job_table() {
+		function init_job_table(url) {
 			$("#jobs-table").DataTable({
-				ajax: {url: "/api/jobs", dataSrc: ""},
+				ajax: {url: url, dataSrc: ""},
 				order: [[1, "desc"]],
 				columns: [
 					{data: "name", title: "Job Name"},
@@ -25,8 +31,8 @@
 			})
 		};
 		$(document).ready(function() {
-			init_job_table();
-			init_vcf_stats();
+			init_job_table("{{ url_for("get_api_jobs") }}");
+			init_vcf_stats("{{ url_for("get_genotypes") }}");
 		});
 	</script>
 
@@ -41,8 +47,9 @@
 				</ul>
 			</div>
             <div id="carousel" class="col-sm-6" style="text-align: center">
+				<h3 class="name">Dataset</h3>
                 <table>
-                    <tr class="genotype-stats">
+                    <tr class="genotype_count">
                         <td>
                             0
                         </td>
@@ -50,7 +57,7 @@
                             &nbsp;Genotypes
                         </td>
                     </tr>
-                    <tr class="marker-stats">
+                    <tr class="record_count">
                         <td>
                             0
                         </td>
@@ -58,7 +65,7 @@
                             &nbsp;Markers
                         </td>
                     </tr>
-                    <tr class="sample-stats">
+                    <tr class="sample_count">
                         <td>
                             0
                         </td>
@@ -70,9 +77,6 @@
                 <b style="color: rgb(1, 45, 107);">Ready For Analysis!</b>
             </div>
         </div>
-
-        <br/>
-
 
         <div class="section">
             <div class="section-title">

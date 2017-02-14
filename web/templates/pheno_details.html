@@ -7,7 +7,12 @@
 	<script type="text/javascript">
 		pheno_id = "{{ pheno.pheno_id }}"
 		$(document).ready(function() {
-			//placeholder
+			$(".link-button").click(function() {
+				var url = $(this).data("url");
+				if (url) {
+					document.location = url;
+				}
+			});
 		});
 	</script>
 	<style>
@@ -37,6 +42,10 @@
 					<td>{{ pheno.creation_date }}</td>
 				</tr>
 			</table>
+        </div>
+
+        <div class="section">
+			<button type="button" class="btn btn-success link-button" data-url="{{url_for("get_model_build", pheno=pheno.pheno_id)}}">Build new model</button>
         </div>
 
         <div class="section">

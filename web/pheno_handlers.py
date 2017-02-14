@@ -4,7 +4,7 @@ from flask import render_template, request, Response, json, current_app, url_for
 from flask_login import current_user
 from phenotype import Phenotype
 from pheno_reader import PhenoReader
-from auth import access_pheno_page
+from auth import access_pheno_page, check_edit_pheno
 import sql_pool
 import MySQLdb
 import hashlib
@@ -102,6 +102,14 @@ def purge_pheno(pheno_id):
     else:
         return json_resp(result), 404
     
+@check_edit_pheno
+def update_pheno(pheno_id, pheno=None):
+    result = Phenotype.update(pheno_id, request.values)
+    if result.get("updated", False):
+        return json_resp(result)
+    else:
+        return json_resp(result), 450
+
 def json_resp(data):
     resp = Response(mimetype='application/json')
     resp.set_data(json.dumps(data))

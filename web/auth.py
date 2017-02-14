@@ -16,6 +16,7 @@ from flask_login import current_user
 # - access_pheno_page (needs pheno_id and pheno=None parameters)
 #      will inject pheno parameter if None
 #      checks if current user has access to phenotype data
+# - check_edit_pheno (needs pheno_id and pheno=None)
 
 def can_user_view_job(user, job):
     if not user or not job:
@@ -40,6 +41,16 @@ def can_user_edit_job(user, job):
     return False
 
 def can_user_view_pheno(user, pheno):
+    if not user or not pheno:
+        return False
+    user_id = user.rid
+    if user_id == pheno.user_id:
+        return True
+    if user.is_admin():
+        return True
+    return False
+
+def can_user_edit_pheno(user, pheno):
     if not user or not pheno:
         return False
     user_id = user.rid
@@ -138,3 +149,22 @@ def can_view_pheno_page(f):
 
 def access_pheno_page(f):
     return splat_args(inject_pheno(can_view_pheno_page(f)), f)
+
+def can_edit_pheno(f):
+    @wraps(f)
+    def inner(*args, **kwargs):
+        if len(args):
+            raise Exception("unnamed args")
+        pheno = kwargs["pheno"]
+        user = current_user
+        if pheno is not None:
+            if can_user_edit_pheno(user, pheno):
+                return f(**kwargs)
+            else:
+                return "Unauthorized", 403
+        else:
+            return "Phenotype not found", 404
+    return inner
+
+def check_edit_pheno(f):
+    return splat_args(inject_pheno(can_edit_pheno(f)), f)

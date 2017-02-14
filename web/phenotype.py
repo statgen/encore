@@ -90,6 +90,28 @@ class Phenotype:
         return results
 
     @staticmethod
+    def update(pheno_id, new_values):
+        updateable_fields = ["name"]
+        fields = new_values.keys() 
+        values = new_values.values()
+        bad_fields = [x for x in fields if x not in updateable_fields]
+        try:
+            if len(bad_fields)>0:
+                raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
+            sql = "UPDATE phenotypes SET "+ \
+                ", ".join(("{}=%s".format(k) for k in fields)) + \
+                "WHERE id = uuid_to_bin(%s)"
+            db = sql_pool.get_conn()
+            cur = db.cursor()
+            cur.execute(sql, values + [pheno_id])
+            affected = cur.rowcount
+            db.commit()
+            result = {"updated": True}
+        except Exception as e:
+            result = {"updated": False, "error": str(e)}
+        return result
+
+    @staticmethod
     def purge(pheno_id, config=None):
         pheno = Phenotype.get(pheno_id, config)
         result = {}

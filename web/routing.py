@@ -209,6 +209,11 @@ def get_api_pheno_list():
 def get_api_pheno_detail(pheno_id):
     return pheno_handlers.get_pheno(pheno_id)
 
+@app.route("/api/pheno/<pheno_id>", methods=["POST"])
+@login_required
+def update_api_pheno(pheno_id):
+    return pheno_handlers.update_pheno(pheno_id)
+
 @app.route("/api/pheno/<pheno_id>", methods=["DELETE"])
 @login_required
 @admin_required

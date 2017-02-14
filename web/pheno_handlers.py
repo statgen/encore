@@ -28,6 +28,11 @@ def get_pheno_details_view(pheno_id, pheno=None):
 def get_pheno_upload_view():
     return render_template("pheno_upload.html")
 
+def suggest_pheno_name(filename):
+    base, ext = os.path.splitext(os.path.basename(filename))
+    base = base.replace("_", " ")
+    return base
+
 def post_to_pheno():
     user = current_user
     if request.method != 'POST':
@@ -39,6 +44,7 @@ def post_to_pheno():
         return json_resp({"error": "COULD NOT GENERATE PHENO ID"}), 500
     pheno_file = request.files["pheno_file"]
     orig_file_name = pheno_file.filename
+    pheno_name = suggest_pheno_name(orig_file_name)
     pheno_directory = os.path.join(current_app.config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
     try:
         os.mkdir(pheno_directory)
@@ -74,7 +80,7 @@ def post_to_pheno():
             INSERT INTO phenotypes (id, user_id, name, orig_file_name, md5sum)
             VALUES (UNHEX(REPLACE(%s,'-','')), %s, %s, %s, %s)
             """
-        cur.execute(sql, (pheno_id, user.rid, orig_file_name, orig_file_name, md5))
+        cur.execute(sql, (pheno_id, user.rid, pheno_name, orig_file_name, md5))
         db.commit()
     except Exception as e:
         print "Databse error: %s" % e

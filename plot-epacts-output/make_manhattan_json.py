@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
 
-# TODO: use a single-pass instead of two passes by getting the pval-threshold while making the QQ plot.
-
 '''
 This script takes two arguments:
 - an input filename (the output of epacts with a single phenotype)
@@ -73,29 +71,22 @@ def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglo
         if (chrom_key, pos_bin) in bins:
             bin = bins[(chrom_key, pos_bin)]
         else:
-            bin = {"chrom": chrom, 
-                "startpos": pos_bin * bin_length,
-                "neglog10_pvals": set()}
+            bin = {"chrom": chrom,
+                   "startpos": pos_bin * bin_length,
+                   "neglog10_pvals": set()}
             bins[(chrom_key, pos_bin)] = bin
         bin["neglog10_pvals"].add(rounded_neglog10(variant.pval, neglog10_pval_bin_size, neglog10_pval_bin_digits))
         
     variant_iterator = iter((v for v in variants if v)) 
-    # fill unbinned heap with first N values
-    for i in xrange(n_unbinned):
-        try:
-            variant = next(variant_iterator)
-            heapq.heappush(unbinned_variant_heap, box(variant))
-        except:
-            pass
-
-    # loop over remaining values, keeping the most significant
-    # and binning the rest
+    # put the most-significant variants into the heap and bin the rest
     for variant in variant_iterator:
         if variant.pval > binning_pval_threshold:
             bin_variant(variant)
         else:
-            old = heapq.heappushpop(unbinned_variant_heap, box(variant))
-            bin_variant(unbox(old))
+            heapq.heappush(unbinned_variant_heap, box(variant))
+            if len(unbinned_variant_heap) > n_unbinned:
+                old = heapq.heappop(unbinned_variant_heap)
+                bin_variant(unbox(old))
 
     unbinned_variants = []
     for variant in (unbox(x) for x in unbinned_variant_heap):
@@ -241,9 +232,9 @@ if __name__ == "__main__":
     import argparse
     argp = argparse.ArgumentParser(description='Create JSON file for manhattan plot.', \
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    argp.add_argument('--max-unbinned','-M', help="Maximum number of bins to return", 
+    argp.add_argument('--max-unbinned','-M', help="Maximum number of unbinned variants to return", 
         type=int, default=500)
-    argp.add_argument('--pval-round','-r', help="Number of digits to round p-value", 
+    argp.add_argument('--pval-round','-r', help="Number of digits to round binned p-values", 
         type=int, default=2)
     argp.add_argument('--pval-window','-p', help="Size of p-value bins", 
         type=float, default = 0.05)

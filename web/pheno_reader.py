@@ -249,7 +249,7 @@ class PhenoReader:
                 csvfile.seek(0)
             if skip>0:
                 [csvfile.readline() for i in xrange(skip)]
-            cvr = csv.reader(csvfile, dialect)
+            cvr = csv.reader((row for row in csvfile if not row.startswith("#")), dialect)
             for row in cvr:
                 yield row
 

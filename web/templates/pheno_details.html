@@ -38,6 +38,12 @@
 
         <div class="section">
 			<table id="pheno_details_table">
+				{% if pheno.meta.records %}
+				<tr>
+					<th>Records</th>
+					<td>{{ pheno.meta.records }}</td>
+				</tr>
+				{% endif %}
 				<tr>
 					<th>Original File Name</th>
 					<td>{{ pheno.orig_file_name }}</td>

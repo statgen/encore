@@ -91,7 +91,12 @@ def post_to_pheno():
         return json_resp({"error": "COULD NOT SAVE TO DATABASE"}), 500
     # file has been saved to DB
     pheno = PhenoReader(pheno_file_path)
-    meta = pheno.infer_meta()
+    if pheno.meta:
+        meta = pheno.meta
+    else:
+        meta = pheno.infer_meta()
+    line_count = sum(1 for _ in pheno.row_extractor()) 
+    meta["records"] = line_count
     with open(pheno_meta_path, "w") as f:
         json.dump(meta, f)
     return json_resp({"id": pheno_id,  \

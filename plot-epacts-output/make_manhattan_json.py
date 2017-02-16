@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
 
-# TODO: use a single-pass instead of two passes by getting the pval-threshold while making the QQ plot.
-
 '''
 This script takes two arguments:
 - an input filename (the output of epacts with a single phenotype)
@@ -19,7 +17,34 @@ import re
 import json
 import math
 import collections
-import heapq
+import bisect
+import blist
+
+
+class Heap():
+    '''A priority queue in which the items with the largest priorities get removed first'''
+    def __init__(self):
+        self._q = blist.blist()
+        self._items = {}
+        self._idx = 0 # Handle uncomparable items
+
+    def add(self, item, priority):
+        idx = self._idx
+        self._idx += 1
+        bisect.insort(self._q, (-priority, idx))
+        self._items[idx] = item
+
+    def pop(self):
+        priority, idx = self._q.pop(0)
+        return self._items.pop(idx)
+
+    def __len__(self):
+        return len(self._q)
+
+    def __iter__(self):
+        while self._q:
+            yield self.pop()
+
 
 def round_sig(x, digits):
     return 0 if x==0 else round(x, digits-1-int(math.floor(math.log10(abs(x)))))
@@ -50,18 +75,12 @@ def get_pvals_and_pval_extents(pvals, neglog10_pval_bin_size):
     return (rv_pvals, rv_pval_extents)
 
 def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglog10_pval_bin_size, neglog10_pval_bin_digits):
-    bins = {} 
-    unbinned_variant_heap = []
+    bins = {}
+    unbinned_variant_heap = Heap()
     exports = [["ref","ref"], ["alt","alt"], ["MAF","maf"],
         ["BETA","beta"],["SEBETA","sebeta"], ["label","label"], ["NS","N"]]
     chrom_order = {}
     chrom_n_bins = {}
-
-    def box(x):
-        return (-x.pval, x)
-
-    def unbox(x):
-        return x[1]
 
     def bin_variant(variant):
         chrom = variant.chrom
@@ -73,32 +92,25 @@ def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglo
         if (chrom_key, pos_bin) in bins:
             bin = bins[(chrom_key, pos_bin)]
         else:
-            bin = {"chrom": chrom, 
-                "startpos": pos_bin * bin_length,
-                "neglog10_pvals": set()}
+            bin = {"chrom": chrom,
+                   "startpos": pos_bin * bin_length,
+                   "neglog10_pvals": set()}
             bins[(chrom_key, pos_bin)] = bin
         bin["neglog10_pvals"].add(rounded_neglog10(variant.pval, neglog10_pval_bin_size, neglog10_pval_bin_digits))
         
     variant_iterator = iter((v for v in variants if v)) 
-    # fill unbinned heap with first N values
-    for i in xrange(n_unbinned):
-        try:
-            variant = next(variant_iterator)
-            heapq.heappush(unbinned_variant_heap, box(variant))
-        except:
-            pass
-
-    # loop over remaining values, keeping the most significant
-    # and binning the rest
+    # put the most-significant variants into the heap and bin the rest
     for variant in variant_iterator:
         if variant.pval > binning_pval_threshold:
             bin_variant(variant)
         else:
-            old = heapq.heappushpop(unbinned_variant_heap, box(variant))
-            bin_variant(unbox(old))
+            unbinned_variant_heap.add(variant, variant.pval)
+            if len(unbinned_variant_heap) > n_unbinned:
+                old = unbinned_variant_heap.pop()
+                bin_variant(old)
 
     unbinned_variants = []
-    for variant in (unbox(x) for x in unbinned_variant_heap):
+    for variant in unbinned_variant_heap:
         rec = {
             'chrom': variant.chrom,
             'pos': variant.pos,
@@ -241,9 +253,9 @@ if __name__ == "__main__":
     import argparse
     argp = argparse.ArgumentParser(description='Create JSON file for manhattan plot.', \
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    argp.add_argument('--max-unbinned','-M', help="Maximum number of bins to return", 
+    argp.add_argument('--max-unbinned','-M', help="Maximum number of unbinned variants to return", 
         type=int, default=500)
-    argp.add_argument('--pval-round','-r', help="Number of digits to round p-value", 
+    argp.add_argument('--pval-round','-r', help="Number of digits to round binned p-values", 
         type=int, default=2)
     argp.add_argument('--pval-window','-p', help="Size of p-value bins", 
         type=float, default = 0.05)

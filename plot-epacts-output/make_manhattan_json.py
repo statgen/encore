@@ -17,7 +17,34 @@ import re
 import json
 import math
 import collections
-import heapq
+import bisect
+import blist
+
+
+class Heap():
+    '''A priority queue in which the items with the largest priorities get removed first'''
+    def __init__(self):
+        self._q = blist.blist()
+        self._items = {}
+        self._idx = 0 # Handle uncomparable items
+
+    def add(self, item, priority):
+        idx = self._idx
+        self._idx += 1
+        bisect.insort(self._q, (-priority, idx))
+        self._items[idx] = item
+
+    def pop(self):
+        priority, idx = self._q.pop(0)
+        return self._items.pop(idx)
+
+    def __len__(self):
+        return len(self._q)
+
+    def __iter__(self):
+        while self._q:
+            yield self.pop()
+
 
 def round_sig(x, digits):
     return 0 if x==0 else round(x, digits-1-int(math.floor(math.log10(abs(x)))))
@@ -48,18 +75,12 @@ def get_pvals_and_pval_extents(pvals, neglog10_pval_bin_size):
     return (rv_pvals, rv_pval_extents)
 
 def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglog10_pval_bin_size, neglog10_pval_bin_digits):
-    bins = {} 
-    unbinned_variant_heap = []
+    bins = {}
+    unbinned_variant_heap = Heap()
     exports = [["ref","ref"], ["alt","alt"], ["MAF","maf"],
         ["BETA","beta"],["SEBETA","sebeta"], ["label","label"], ["NS","N"]]
     chrom_order = {}
     chrom_n_bins = {}
-
-    def box(x):
-        return (-x.pval, x)
-
-    def unbox(x):
-        return x[1]
 
     def bin_variant(variant):
         chrom = variant.chrom
@@ -83,13 +104,13 @@ def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglo
         if variant.pval > binning_pval_threshold:
             bin_variant(variant)
         else:
-            heapq.heappush(unbinned_variant_heap, box(variant))
+            unbinned_variant_heap.add(variant, variant.pval)
             if len(unbinned_variant_heap) > n_unbinned:
-                old = heapq.heappop(unbinned_variant_heap)
-                bin_variant(unbox(old))
+                old = unbinned_variant_heap.pop()
+                bin_variant(old)
 
     unbinned_variants = []
-    for variant in (unbox(x) for x in unbinned_variant_heap):
+    for variant in unbinned_variant_heap:
         rec = {
             'chrom': variant.chrom,
             'pos': variant.pos,

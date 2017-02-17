@@ -95,6 +95,8 @@ def get_job_details_view(job_id, job=None):
         job_obj["details"]["genotype"] = geno.as_object()
     if can_user_edit_job(current_user, job):
         job_obj["can_edit"] = True
+    else:
+        job_obj["can_edit"] = False
     return render_template("job_details.html", job=job_obj)
 
 @check_view_job

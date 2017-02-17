@@ -72,6 +72,12 @@ def guess_column_class(colinfo):
         ci = guess_atomic_column_class(best_type, vals)
         ci["missing"] = colinfo["str"].keys()[0]
         return ci
+    # finally let's just make it a string
+    best_type = "str"
+    vals = Counter()
+    for r in col.values():
+        vals += r
+    return guess_atomic_column_class(best_type, vals)
     return None
 
 def strip_comments(item, token="#"):

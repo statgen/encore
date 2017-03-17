@@ -232,8 +232,11 @@ class SlurmEpactsJob:
             f.write(self.create_launch_script(job_desc))
         with open(batch_output_path, "w") as f:
             try:
-                subprocess.call([sbatch, batch_script_path], stdout=f)
-            except subprocess.CalledProcessError:
+                subprocess.check_call([sbatch, batch_script_path], stdout=f)
+            except subprocess.CalledProcessError as e:
+                # log to server log
+                print "SBATCH ERROR"
+                print e
                 raise Exception("Could not queue job") 
             except OSError:
                 raise Exception("Could not find sbatch")

@@ -43,7 +43,7 @@ def guess_atomic_column_class(rawtype, obs):
 
 def guess_column_class(colinfo):
     # colinfo is dict (types) of counters (values)
-    has_empty = "_empty_" in colinfo
+    has_empty = "_empty_" in colinfo and len(colinfo["_empty_"])==1
     col = {k: v for k,v in colinfo.iteritems() if k != "_empty_"}
     n_vals = Counter({k: sum(v.values()) for k, v in col.iteritems()})
     n_uniq_vals = Counter({k: len(v) for k, v in col.iteritems()})
@@ -53,12 +53,18 @@ def guess_column_class(colinfo):
     if len(col)==1:
         # all same type
         best_type = n_vals.most_common(1)[0][0]
-        return guess_atomic_column_class(best_type, col[best_type])
+        ci = guess_atomic_column_class(best_type, col[best_type])
+        if has_empty:
+            ci["missing"] = colinfo["_empty_"].keys()[0]
+        return ci
     if len(col)==2 and "int" in col and "float" in col:
         #promote to float
         best_type = "float"
         vals = col["int"] + col["float"]
-        return guess_atomic_column_class(best_type, vals)
+        ci =  guess_atomic_column_class(best_type, vals)
+        if has_empty:
+            ci["missing"] = colinfo["_empty_"].keys()[0]
+        return ci
     if len(col)==2 and (n_uniq_vals["str"]==1):
         # likely a single type with a missing indicator
         best_type = [x[0] for x in n_vals.most_common(2) if x[0] != "str"][0]

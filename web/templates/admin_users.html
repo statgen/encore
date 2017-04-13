@@ -10,10 +10,12 @@
 		$(document).ready(function() {
 			$("#users-table").DataTable({
 				ajax: {url: "/api/users-all", dataSrc: ""},
-				order: [[0, "asc"]],
+				order: [[5, "desc"]],
 				columns: [
 					{data: "id", title: "User ID"},
-					{data: "email", title: "User"},
+					{data: "email", title: "Account"},
+					{data: "full_name", title: "Name"},
+					{data: "affiliation", title: "Affiliation"},
 					{data: "creation_date", title: "Date Created"},
 					{data: "last_login_date", title: "Last Login"}
 				]

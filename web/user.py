@@ -61,7 +61,7 @@ class User(UserMixin):
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
-            SELECT id, email, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, DATE_FORMAT(last_login_date, '%Y-%m-%d %H:%i:%s') AS last_login_date
+            SELECT id, email, full_name, affiliation, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, DATE_FORMAT(last_login_date, '%Y-%m-%d %H:%i:%s') AS last_login_date
             FROM users
             ORDER BY id
             """

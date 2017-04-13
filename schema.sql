@@ -19,6 +19,8 @@ USE `encore` ;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `email` VARCHAR(256) NOT NULL,
+  `full_name` VARCHAR(150),
+  `affiliation` VARCHAR(150),
   `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_login_date` DATETIME,
   `can_analyze` bool DEFAULT 0,

@@ -265,6 +265,19 @@ def get_job_log(job_id, log_name):
 def get_api_users_all():
     return job_handlers.get_all_users()
 
+@app.context_processor
+def template_helpers():
+    def guess_tab(path):
+        if path.startswith("/geno"):
+            return "geno"
+        elif path.startswith("/pheno"):
+            return "pheno"
+        elif path.startswith("/jobs") or path == "/":
+            return "job"
+        else:
+            return ""
+    return dict(guess_tab = guess_tab)
+
 # @app.errorhandler(500)
 # def internal_error(exception):
 #     return render_template('500.html'), 500

@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+{% set active_tab = active_tab|default(guess_tab(request.path)) -%}
+{% set navigation_links = [
+	("job", "Jobs", url_for("get_jobs") ),
+	("pheno", "Phenotypes", url_for("get_pheno_list")),
+	("geno", "Genotypes", "/")
+] -%}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -29,9 +35,9 @@
 	<nav class="navbar navbar-default navbar-sections">
         <div class="container-fluid">
 			<ul class="nav navbar-nav">
-				<li class="active"><a href="#">Jobs</a></li>
-				<li><a href="#">Phenotypes</a></li>
-				<li><a href="#">Genotypes</a></li>
+			{% for key, disp, url in navigation_links %}
+			    <li{% if key == active_tab %} class="active"{% endif %}><a href="{{ url|e }}">{{ disp|e }}</a></li>
+			{% endfor %} 
 			</ul>
 		</div>
 

@@ -7,6 +7,30 @@ body
     color: #333333;
 }
 
+.app-header {background: rgb(1, 45, 107); color: #F0F0F0; border-radius: 0px; margin-bottom: 0px;}
+.app-desc {margin-right: 7px;}
+.navbar-brand, .navbar-text {color: #F0F0F0;}
+.navbar-brand:hover, .navbar-brand:visited {color: #F0F0F0;}
+.navbar-header .navbar-brand img {display: inline; margin-top: -5px; padding-right: 10px;} 
+.navbar-sections .navbar-nav > li > a {
+	padding-top:6px !important; padding-bottom:0 !important;
+	height: 32px;
+}
+.navbar-sections {min-height:32px !important;}
+.nav-tabs > li > a {padding: 5px 10px; background: #f8f8f8; border-color: #e7e7e7}
+#footer {
+    width: 100%;
+    height: 70px;
+	margin: 15px 0px 0px 0px;
+	padding: 1px;
+    background: rgb(1, 45, 107);
+}
+
+#footer .csg-logo {
+	content: url("/static/img/csg-banner.png");
+    margin: 10px 5px;
+    height: 50px;
+}
 body
 {
     display: flex;
@@ -153,7 +177,7 @@ button[disabled]
 
 #content
 {
-    margin: 50px 75px;
+    margin: 15px 75px;
     flex: 1;
 }
 
@@ -232,8 +256,7 @@ button[disabled]
 
 #back_arrow
 {
-    position: absolute;
-    margin: 15px;
+    margin: 0px 15px;
     fill: #BBBBBB;
     height: 40px;
     width: 40px;

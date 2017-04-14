@@ -1,6 +1,6 @@
 import os
 from flask import request, Response, Flask, render_template, session, send_from_directory, redirect, send_file, url_for
-from flask_login import LoginManager, login_required, current_user
+from flask_login import LoginManager, login_required, current_user, logout_user
 import job_handlers
 import pheno_handlers
 import sign_in_handler
@@ -49,6 +49,11 @@ def index():
 @login_manager.unauthorized_handler
 def get_sign_in():
     return sign_in_handler.get_sign_in_view("sign-in") 
+
+@app.route("/sign-out", methods=["GET"])
+def sign_out():
+    logout_user()
+    return redirect(url_for("index"))
 
 @app.route("/api/geno", methods=["GET"])
 @login_required
@@ -290,7 +295,7 @@ def template_helpers():
         else:
             links["left"].append(("job", "Jobs", url_for("index")))
             links["left"].append(("pheno", "Phenotypes", url_for("get_pheno_list")))
-        #links["right"].append(("logout","Logout",url_for("sign_out")))
+        links["right"].append(("logout","Logout",url_for("sign_out")))
         return links
 
     return dict(guess_tab = guess_tab, 

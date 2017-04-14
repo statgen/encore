@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 {% set active_tab = active_tab|default(guess_tab(request.path)) -%}
-{% set navigation_links = navigation_links | default(get_navigation_links(request.path)) -%}
+{% set navigation_links = navigation_links | default(get_navigation_links(request.path, current_user)) -%}
+{% macro link(text, url) -%}
+	{% if url %}<a href="{{ url|e }}"> {{ text|e }}</a>{% else %} {{text|e}} {% endif %}
+{%- endmacro %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -33,12 +36,12 @@
         <div class="container-fluid">
 			<ul class="nav navbar-nav">
 			{% for key, disp, url in navigation_links.left %}
-			    <li{% if key == active_tab %} class="active"{% endif %}><a href="{{ url|e }}">{{ disp|e }}</a></li>
+			    <li{% if key == active_tab %} class="active"{% endif %}>{{ link(disp, url) }}</li>
 			{% endfor %} 
 			</ul>
 			<ul class="nav navbar-nav navbar-right">
 			{% for key, disp, url in navigation_links.right %}
-			    <li{% if key == active_tab %} class="active"{% endif %}><a href="{{ url|e }}">{{ disp|e }}</a></li>
+			    <li{% if key == active_tab %} class="active"{% endif %}>{{ link(disp, url) }}</li>
 			{% endfor %} 
 			</ul>
 		</div>

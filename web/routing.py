@@ -295,7 +295,9 @@ def template_helpers():
         else:
             links["left"].append(("job", "Jobs", url_for("index")))
             links["left"].append(("pheno", "Phenotypes", url_for("get_pheno_list")))
-        links["right"].append(("logout","Logout",url_for("sign_out")))
+            if (user is not None) & user.is_admin():
+                links["right"].append(("admin","Admin", url_for("get_admin_page")))
+        links["right"].append(("logout","Logout", url_for("sign_out")))
         return links
 
     return dict(guess_tab = guess_tab, 

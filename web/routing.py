@@ -274,9 +274,28 @@ def template_helpers():
             return "pheno"
         elif path.startswith("/jobs") or path == "/":
             return "job"
+        elif path == "/admin":
+            return "job"
+        elif path.startswith("/admin/user"):
+            return "user"
         else:
             return ""
-    return dict(guess_tab = guess_tab)
+
+    def get_navigation_links(path, user=None):
+        links = {"left": [], "right":[]}
+        if path.startswith("/admin"):
+            links["left"].append(("job", "Jobs", url_for("get_admin_page")))
+            links["left"].append(("user", "Users", url_for("get_admin_user_page")))
+            links["right"].append(("return","Return to App", url_for("index")))
+        else:
+            links["left"].append(("job", "Jobs", url_for("index")))
+            links["left"].append(("pheno", "Phenotypes", url_for("get_pheno_list")))
+        #links["right"].append(("logout","Logout",url_for("sign_out")))
+        return links
+
+    return dict(guess_tab = guess_tab, 
+        get_navigation_links = get_navigation_links)
+
 
 # @app.errorhandler(500)
 # def internal_error(exception):

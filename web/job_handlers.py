@@ -180,6 +180,8 @@ def get_job_share_page(job_id, job=None):
 
 def post_to_jobs():
     user = current_user
+    if not user.can_analyze():
+        return "User Action Not Allowed", 403
     job_desc = dict()
     if request.method != 'POST':
         return json_resp({"error": "NOT A POST REQUEST"}), 405
@@ -266,7 +268,10 @@ def get_genotype(geno_id):
     return json_resp(g.as_object())
 
 def get_model_build_view():
-    return render_template("model_build.html")
+    if current_user.can_analyze():
+        return render_template("model_build.html")
+    else:
+        return render_template("not_authorized_to_analyze.html")
 
 def get_models():
     models = SlurmEpactsJob.available_models()

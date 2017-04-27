@@ -29,7 +29,10 @@ def get_pheno_details_view(pheno_id, pheno=None):
     return render_template("pheno_details.html", pheno=pheno_obj)
 
 def get_pheno_upload_view():
-    return render_template("pheno_upload.html")
+    if current_user.can_analyze():
+        return render_template("pheno_upload.html")
+    else:
+        return render_template("not_authorized_to_analyze.html")
 
 def suggest_pheno_name(filename):
     base, ext = os.path.splitext(os.path.basename(filename))
@@ -38,6 +41,8 @@ def suggest_pheno_name(filename):
 
 def post_to_pheno():
     user = current_user
+    if not user.can_analyze():
+        return "User Action Not Allowed", 403
     if request.method != 'POST':
         return json_resp({"error": "NOT A POST REQUEST"}), 405
     if "pheno_file" not in request.files:

@@ -6,9 +6,10 @@ from flask_login import UserMixin
 
 class User(UserMixin):
 
-    def __init__(self, email, rid):
+    def __init__(self, email, rid, can_analyze):
         self.email = email
         self.rid = rid
+        self._can_analyze = can_analyze
 
     def get_id(self):
         return self.email
@@ -25,6 +26,9 @@ class User(UserMixin):
     def is_admin(self):
         return self.email in current_app.config.get("ADMIN_USERS",[]) 
 
+    def can_analyze(self):
+        return self._can_analyze
+
     def log_login(self, db):
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = "UPDATE users SET last_login_date = NOW() WHERE id = %s"
@@ -34,11 +38,11 @@ class User(UserMixin):
     @staticmethod
     def from_email(email, db):
         cur = db.cursor(MySQLdb.cursors.DictCursor)
-        cur.execute("SELECT id, email FROM users WHERE email=%s", (email,))
+        cur.execute("SELECT id, email, can_analyze FROM users WHERE email=%s", (email,))
         if cur.rowcount == 0:
             return None
         res = cur.fetchone()
-        return User(res["email"], res["id"])
+        return User(res["email"], res["id"], res["can_analyze"])
     
     @staticmethod
     def create(email, can_analyze, db):
@@ -48,7 +52,7 @@ class User(UserMixin):
         new_id = cur.lastrowid
         cur.execute("SELECT id, email FROM users WHERE id=%s", (new_id,))
         res = cur.fetchone()
-        return User(res["email"], res["id"])
+        return User(res["email"], res["id"], res["can_analyze"])
 
     @staticmethod
     def from_session_key(sess_key, db):

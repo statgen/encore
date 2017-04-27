@@ -41,10 +41,14 @@
         <div class="section row">
 			<div class="col-sm-6">
 				<h2>Welcome</h2>
+				{% if current_user.can_analyze() %}
 				<ul class="home-nav-list">
 					<li><a href="{{ url_for("get_pheno_upload") }}">Upload New Phenotype File</a></li>
 					<li><a href="{{ url_for("get_model_build") }}">Create New Job from Existing Phenotypes</a></li>
 				</ul>
+				{% else %}
+				<p>Browse available jobs below</p>
+				{% endif %}
 			</div>
             <div id="carousel" class="col-sm-6" style="text-align: center">
 				<h3 class="name">Dataset</h3>

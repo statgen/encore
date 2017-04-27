@@ -1,0 +1,12 @@
+{% set backlink = "/" %}
+{% extends "layout.html" %}
+{% block content %}
+	<h1>Unauthorized</h1>
+	<p>Your account it not currently set up to be able to create
+	new analyses; you can only view results that have been shared
+	with you by others.</p>
+	{% if config.HELP_EMAIL %}
+	<p>If you need access to start your own analyses, please contact
+	<a href="mailto:{{config.HELP_EMAIL}}">{{ config.HELP_EMAIL}}</a>.</p>
+	{% endif %}
+{% endblock %}

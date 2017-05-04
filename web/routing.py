@@ -154,6 +154,11 @@ def get_api_job_manhattan(job_id):
 def get_api_job_zoom(job_id):
     return job_handlers.get_job_zoom(job_id)
 
+@app.route("/api/jobs/<job_id>/plots/pheno/<variant_id>", methods=["GET"])
+@login_required
+def get_api_job_pheno(job_id, variant_id):
+    return job_handlers.get_job_variant_pheno(job_id, variant_id)
+
 @app.route("/api/jobs/<job_id>/tables/top", methods=["GET"])
 @login_required
 def get_api_job_tophits(job_id):

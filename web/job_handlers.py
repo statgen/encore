@@ -6,11 +6,13 @@ import sql_pool
 import MySQLdb
 import uuid
 import subprocess
+import collections
 import tabix
 import gzip
 import glob
 import re
 import time
+import numpy as np
 from auth import check_view_job, check_edit_job, can_user_edit_job
 from genotype import Genotype
 from phenotype import Phenotype
@@ -173,6 +175,35 @@ def get_job_zoom(job_id, job=None):
                 json_response_data["BETA"].append(r[headerpos["BETA"]])
     return json_resp({"header": {"variant_columns": json_response_data.keys()}, \
         "data": json_response_data})
+
+@check_view_job
+def get_job_variant_pheno(job_id, variant_id, job=None):
+    geno = Genotype.get(job.meta["genotype"], current_app.config)
+    reader = geno.get_geno_reader(current_app.config)
+    parts = re.match(r"(\w+):(\d+)", variant_id)
+    chrom = parts.group(1)
+    pos = int(parts.group(2))
+    variant = reader.get_variant(chrom, pos)
+    calls = variant["GENOS"]
+    del variant["GENOS"]
+    phenos = job.get_adjusted_phenotypes()
+    call_pheno = collections.defaultdict(list) 
+    for sample, value in phenos.iteritems():
+        sample_geno = calls[sample]
+        call_pheno[sample_geno].append(value)
+    summary = {}
+    for genotype, observations in call_pheno.iteritems():
+        obs_array = np.array(observations)
+        summary[genotype] = {
+            "min": np.amin(obs_array),
+            "q1": np.percentile(obs_array, 25),
+            "mean": obs_array.mean(),
+            "q3": np.percentile(obs_array, 75),
+            "max": np.amin(obs_array),
+            "n":  obs_array.size
+        }
+    return json_resp({"header": variant,
+        "data": summary})
 
 @check_edit_job
 def get_job_share_page(job_id, job=None):

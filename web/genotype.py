@@ -3,6 +3,7 @@ import json
 import sql_pool
 import MySQLdb
 from pheno_reader import PhenoReader
+from geno_reader import GenoReader
 
 class Genotype:
     def __init__(self, geno_id, meta=None):
@@ -101,6 +102,9 @@ class Genotype:
             with open(self.relative_path(p["meta"])) as f:
                 pmeta = json.load(f)
         return PhenoReader(self.relative_path(p["file"]), pmeta)
+
+    def get_geno_reader(self, config):
+        return GenoReader(self, config)
 
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))

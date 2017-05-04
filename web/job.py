@@ -17,6 +17,15 @@ class Job:
         self.users = []
         self.meta = meta
 
+    def get_adjusted_phenotypes(self):
+        phe_file = self.relative_path("output.phe")
+        phenos = {}
+        with open(phe_file) as f:
+            for line in f:
+                (sample, val) = line.split()
+                phenos[sample] = float(val)
+        return phenos
+
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))
 

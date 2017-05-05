@@ -1,0 +1,149 @@
+{% set backlink = "/jobs/" + job.job_id %}
+{% extends "layout.html" %}
+{% block header %}
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/job_details.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/d3.box.css') }}">
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/d3.box.js') }}"></script>
+
+	<style>
+	</style>
+
+	<script type="text/javascript">
+		job_id = "{{ job.job_id }}";
+		variant_id = "{{ variant_id }}";
+		api_pheno_url = "{{ url_for("get_api_job_variant_pheno", job_id = job.job_id, 
+			variant_id=variant_id)  | safe}}"
+		api_assoc_url = "{{ url_for("get_api_job_zoom", job_id=job.job_id, 
+			chrom = chrom, start_pos=pos, end_pos=pos+1) | safe }}"
+
+		function csstranslate(x, y) { return "translate(" + x + "," + y + ")"; }
+		function cssrotate(x) { return "rotate(" + x + ")"; }
+		function draw_box_plot(data) {
+			var margin = {top: 10, right:50, bottom:50, left:50};
+			var width = 500 - margin.left - margin.right;
+			var height = 350 - margin.top - margin.bottom;
+
+			var plotdata = [];
+
+			var min=Infinity, max=-Infinity, geno_count=0;
+			$.each(data.data, function(geno, stats) {
+				if (stats.min<min) {min=stats.min;}
+				if (stats.max>max) {max=stats.max;}
+				geno_count += 1;
+				plotdata.push({g: geno + " (n=" + stats.n + ")", 
+					stats:[stats.min, stats.q1, stats.mean, stats.q3, stats.max]});
+			})
+
+			var chart = d3.box()
+				.height(height)
+				.domain([min, max])
+				.value(function(d) {return d.stats})
+				.whiskers(function(d) {return [0,4]})
+				.quartiles(function(d) {return d.slice(1,4)})
+				.showLabels(false);
+
+			var svg = d3.select("#genopheno").append("svg")
+				.attr("width", width + margin.left + margin.right)
+				.attr("height", height + margin.top + margin.bottom)
+				.attr("class", "box")
+				.append("g")
+				.attr("transform", csstranslate(margin.left, margin.top))
+
+			var x = d3.scale.ordinal()
+				.domain(plotdata.map(function(d) {return d.g;}))
+				.rangeRoundBands([0, width], 0.7,  0.3);
+			var xAxis = d3.svg.axis().scale(x).orient("bottom");
+
+			var y = d3.scale.linear()
+				.domain([min, max])
+				.range([height+margin.top, 0+margin.top]);
+			var yAxis = d3.svg.axis()
+				.scale(y)
+				.orient("left");
+
+			svg.selectAll(".box")
+				.data(plotdata)
+				.enter().append("g")
+				.attr("transform", function(d, i) { return csstranslate(x(d.g),0); } )
+				.call(chart.width(x.rangeBand())); 
+
+			svg.append("g")
+				.attr("class", "y axis")
+				.call(yAxis)
+				.append("text")
+				.attr("transform", cssrotate(-90))
+				.attr("y", 0-margin.left)
+				.attr("x", 0-(height)/3)
+				.attr("dy", ".71em")
+				.style("text-anchor", "end")
+				.text("Adjusted Phenotype");
+
+			svg.append("g")
+				.attr("class", "x axis")
+				.attr("transform", csstranslate(0, height + margin.top + 10))
+				.call(xAxis);
+		}
+		function draw_summary_table(data) {
+			var div = d3.select("#variantinfo");
+			var tabledata = $.map(data.header, function(val, key) {
+				if (key=="INFO") {
+					val = val.replace(/;/g, "<br/>");
+				}
+				return {key: key, val:val};
+			})
+
+			div.append("h3").html("Variant Stats");
+			var table = div.append("table");
+			console.log(tabledata);
+
+			var tr = table.selectAll("tr")
+				.data(tabledata).enter()
+				.append("tr")
+			tr.append("td").html(function(d) {return d.key});
+			tr.append("td").html(function(d) {return d.val});
+
+		}
+		function draw_assoc_table(data) {
+			var div = d3.select("#associnfo")
+			var cols = data.header.variant_columns;
+			var tabledata = $.map(cols, function(key) {
+				return {key: key, val:data.data[key][0]};
+			})
+
+			div.append("h3").html("Association Stats");
+			var table = div.append("table");
+
+			var tr = table.selectAll("tr")
+				.data(tabledata).enter()
+				.append("tr")
+			tr.append("td").html(function(d) {return d.key});
+			tr.append("td").html(function(d) {return d.val});
+
+		}
+		$(function() {
+			$.getJSON(api_pheno_url, function(data) {
+				draw_box_plot(data);
+				draw_summary_table(data);
+			});
+			$.getJSON(api_assoc_url, function(data) {
+				draw_assoc_table(data)
+			});
+		});
+	</script>
+{% endblock %}
+{% block content %}
+
+        {% if job.status == "succeeded" %}
+        <div id="genopheno"></div>
+        <div id="associnfo"></div>
+        <div id="variantinfo"></div>
+		{% else %}
+
+		<p>Plots only available for jobs that are successful (Job status: {{ job.status }})</p>
+
+        {% endif %}
+
+{% endblock %}

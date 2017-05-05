@@ -88,6 +88,10 @@ def get_job_output(job_id):
 def get_job_locuszoom_plot(job_id, region):
     return job_handlers.get_job_locuszoom_plot(job_id, region)
 
+@app.route("/jobs/<job_id>/variant/<variant_id>", methods=["GET"])
+@login_required
+def get_job_variant_page(job_id, variant_id):
+    return job_handlers.get_job_variant_page(job_id, variant_id)
 
 @app.route("/jobs/<job_id>/share", methods=["GET"])
 @login_required
@@ -156,7 +160,7 @@ def get_api_job_zoom(job_id):
 
 @app.route("/api/jobs/<job_id>/plots/pheno/<variant_id>", methods=["GET"])
 @login_required
-def get_api_job_pheno(job_id, variant_id):
+def get_api_job_variant_pheno(job_id, variant_id):
     return job_handlers.get_job_variant_pheno(job_id, variant_id)
 
 @app.route("/api/jobs/<job_id>/tables/top", methods=["GET"])

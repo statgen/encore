@@ -106,6 +106,14 @@ def get_job_locuszoom_plot(job_id, region, job=None):
     return render_template("job_locuszoom.html", job=job.as_object(), region=region)
 
 @check_view_job
+def get_job_variant_page(job_id, variant_id, job=None):
+    parts = re.match(r"(\w+):(\d+)", variant_id)
+    chrom = parts.group(1)
+    pos = int(parts.group(2))
+    return render_template("job_variant.html", job=job.as_object(), 
+        variant_id=variant_id, chrom=chrom, pos=pos)
+
+@check_view_job
 def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, head=None, job=None):
     try:
         output_file = job.relative_path(filename)
@@ -198,8 +206,9 @@ def get_job_variant_pheno(job_id, variant_id, job=None):
             "min": np.amin(obs_array),
             "q1": np.percentile(obs_array, 25),
             "mean": obs_array.mean(),
+            "q2": np.percentile(obs_array, 50),
             "q3": np.percentile(obs_array, 75),
-            "max": np.amin(obs_array),
+            "max": np.amax(obs_array),
             "n":  obs_array.size
         }
     return json_resp({"header": variant,

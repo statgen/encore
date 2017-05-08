@@ -202,14 +202,23 @@ def get_job_variant_pheno(job_id, variant_id, job=None):
     summary = {}
     for genotype, observations in call_pheno.iteritems():
         obs_array = np.array(observations)
+        q1 = np.percentile(obs_array, 25)
+        q3 = np.percentile(obs_array, 75)
+        iqr = (q3-q1)*1.5
+        outliers = [x for x in obs_array if x<q1-iqr or x>q3+iqr]
+        upper_whisker = obs_array[obs_array<=q3+iqr].max()
+        lower_whisker = obs_array[obs_array>=q1-iqr].min()
         summary[genotype] = {
             "min": np.amin(obs_array),
-            "q1": np.percentile(obs_array, 25),
+            "w1": lower_whisker,
+            "q1": q1,
             "mean": obs_array.mean(),
             "q2": np.percentile(obs_array, 50),
-            "q3": np.percentile(obs_array, 75),
+            "q3": q3,
+            "w3": upper_whisker,
             "max": np.amax(obs_array),
-            "n":  obs_array.size
+            "n":  obs_array.size,
+            "outliers": outliers
         }
     return json_resp({"header": variant,
         "data": summary})

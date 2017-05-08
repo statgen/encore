@@ -9,6 +9,10 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/d3.box.js') }}"></script>
 
 	<style>
+		.box .outlier {
+			fill: #000;
+			stroke-width: 0; 
+		}
 	</style>
 
 	<script type="text/javascript">
@@ -34,15 +38,23 @@
 				if (stats.max>max) {max=stats.max;}
 				geno_count += 1;
 				plotdata.push({g: geno + " (n=" + stats.n + ")", 
-					stats:[stats.min, stats.q1, stats.mean, stats.q3, stats.max]});
+					stats: stats});
 			})
 
 			var chart = d3.box()
 				.height(height)
-				.domain([min, max])
 				.value(function(d) {return d.stats})
-				.whiskers(function(d) {return [0,4]})
-				.quartiles(function(d) {return d.slice(1,4)})
+				.boxstats(function(d) {
+					var stats = d.stats;
+					return {
+						min: stats.min,
+						max: stats.max,
+						n: stats.n,
+						whiskers: [stats.w1, stats.w3],
+						outliers: stats.outliers,
+						quartiles: [stats.q1, stats.q2, stats.q3]
+					};
+				})
 				.showLabels(false);
 
 			var svg = d3.select("#genopheno").append("svg")
@@ -97,7 +109,6 @@
 
 			div.append("h3").html("Variant Stats");
 			var table = div.append("table");
-			console.log(tabledata);
 
 			var tr = table.selectAll("tr")
 				.data(tabledata).enter()

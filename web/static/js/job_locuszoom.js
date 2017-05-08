@@ -87,7 +87,7 @@ $(document).ready(function() {
                     },
                     behaviors: {"onclick": [{
                         action: "link",
-                        href: "../variant/{{epacts:CHROM}}:{{epacts:BEGIN}}"
+                        href: "../variant?chrom={{epacts:CHROM}}&pos={{epacts:BEGIN}}&variant_id={{epacts:MARKER_ID|urlencode}}"
                     }]}
                 })
             ]

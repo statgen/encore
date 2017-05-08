@@ -106,10 +106,10 @@ def get_job_locuszoom_plot(job_id, region, job=None):
     return render_template("job_locuszoom.html", job=job.as_object(), region=region)
 
 @check_view_job
-def get_job_variant_page(job_id, variant_id, job=None):
-    parts = re.match(r"(\w+):(\d+)", variant_id)
-    chrom = parts.group(1)
-    pos = int(parts.group(2))
+def get_job_variant_page(job_id, job=None):
+    chrom = request.args.get("chrom", None)
+    pos = int(request.args.get("pos", None))
+    variant_id = request.args.get("variant_id", None)
     return render_template("job_variant.html", job=job.as_object(), 
         variant_id=variant_id, chrom=chrom, pos=pos)
 
@@ -185,13 +185,16 @@ def get_job_zoom(job_id, job=None):
         "data": json_response_data})
 
 @check_view_job
-def get_job_variant_pheno(job_id, variant_id, job=None):
+def get_job_variant_pheno(job_id, job=None):
+    chrom = request.args.get("chrom", None)
+    pos = request.args.get("pos", None)
+    variant_id = request.args.get("variant_id", None)
+    if (chrom is None or pos is None):
+        return json_resp({"error": "MISSING REQUIRED PARAMETER (chrom, pos)"}), 405
+    pos = int(pos)
     geno = Genotype.get(job.meta["genotype"], current_app.config)
     reader = geno.get_geno_reader(current_app.config)
-    parts = re.match(r"(\w+):(\d+)", variant_id)
-    chrom = parts.group(1)
-    pos = int(parts.group(2))
-    variant = reader.get_variant(chrom, pos)
+    variant = reader.get_variant(chrom, pos, variant_id)
     calls = variant["GENOS"]
     del variant["GENOS"]
     phenos = job.get_adjusted_phenotypes()

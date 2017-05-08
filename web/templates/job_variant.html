@@ -19,9 +19,9 @@
 		job_id = "{{ job.job_id }}";
 		variant_id = "{{ variant_id }}";
 		api_pheno_url = "{{ url_for("get_api_job_variant_pheno", job_id = job.job_id, 
-			variant_id=variant_id)  | safe}}"
+			chrom = chrom, pos=pos, variant_id=variant_id)  | safe}}"
 		api_assoc_url = "{{ url_for("get_api_job_zoom", job_id=job.job_id, 
-			chrom = chrom, start_pos=pos, end_pos=pos+1) | safe }}"
+			chrom = chrom, start_pos=pos, end_pos=pos+1, variant_id=variant_id) | safe }}"
 
 		function csstranslate(x, y) { return "translate(" + x + "," + y + ")"; }
 		function cssrotate(x) { return "rotate(" + x + ")"; }

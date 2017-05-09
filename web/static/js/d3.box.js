@@ -41,6 +41,56 @@
       // and other elements are variable, so we need to exit them! Variable
       // elements also fade in and out.
 
+                g.style("pointer-events", "all");
+                //rect to capture mouse events
+                g.append("rect")
+                  .style("visibility", "hidden")
+                  .attr("x", 0)
+                  .attr("y", 0)
+                  .attr("width", width)
+                  .attr("height", height);
+                var tooltip = (function(x1) {
+                    var valLabel = g.append("text")
+                      .style("display", "none")
+                      .attr("class", "qtip")
+                      .attr("dx", 6)
+                      .attr("x", width)
+                      .attr("y", 0)
+                      .attr("alignment-baseline", "central")
+                      .attr("text-anchor", "start");
+                    function show(at) {
+                        valLabel
+                          .text(d3.format(".2f")(at))
+                          .attr("y", x1(at))
+                          .style("display", "block");
+                    }
+                    function hide() {
+                        valLabel.style("display", "none");
+                    }
+                    return {
+                        show: show,
+                        hide: hide
+                    };
+                })(x1);
+                g.on("mousemove", function() {
+                    var mouse_y = d3.mouse(this)[1];
+                    var labelable = stats.quartiles.concat(stats.whiskers);
+                    var q_y = labelable.map(x1);
+                    var best_match = 0;
+                    var min_dist = Math.abs(q_y[0]-mouse_y);
+                    for(var i=1; i<q_y.length; i++) {
+                        var dist = Math.abs(q_y[i]-mouse_y);
+                        if (dist < min_dist) {
+                            min_dist = dist;
+                            best_match = i;
+                        }
+                    }
+                    if (min_dist<8) {
+                        tooltip.show(labelable[best_match]);
+                    } else {
+                        tooltip.hide();
+                    }
+                }).on("mouseout", function() {tooltip.hide();});
                 // Update center line: the vertical line spanning the whiskers.
                 var center = g.selectAll("line.center")
                   .data(stats.whiskers ? [stats.whiskers] : []);
@@ -91,6 +141,7 @@
                   .duration(duration)
                   .attr("y", function(d) { return x1(d[2]); })
                   .attr("height", function(d) { return x1(d[0]) - x1(d[2]); });
+
 
                 // Update median line.
                 var medianLine = g.selectAll("line.median")

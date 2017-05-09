@@ -13,6 +13,9 @@
 			fill: #000;
 			stroke-width: 0; 
 		}
+		.box .qtip {
+			font-size: 12px;
+		}
 	</style>
 
 	<script type="text/javascript">
@@ -44,6 +47,7 @@
 			var chart = d3.box()
 				.height(height)
 				.value(function(d) {return d.stats})
+				.domain([min, max])
 				.boxstats(function(d) {
 					var stats = d.stats;
 					return {

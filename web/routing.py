@@ -65,6 +65,11 @@ def get_genotypes():
 def get_genotype(geno_id):
     return job_handlers.get_genotype(geno_id)
 
+@app.route("/api/geno/<geno_id>/info", methods=["GET"])
+@login_required
+def get_genotype_info_stats(geno_id):
+    return job_handlers.get_genotype_info_stats(geno_id)
+
 @app.route("/jobs", methods=["GET"])
 @login_required
 def get_jobs():

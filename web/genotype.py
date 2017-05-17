@@ -75,6 +75,16 @@ class Genotype:
             return stats
         return dict() 
 
+    def get_info_stats(self):
+        if "info_stats_path" in self.meta:
+            stats_stub = self.meta.get("info_stats_path", "info.json")
+            stats_path = self.relative_path(stats_stub)
+            with open(stats_path) as infile:
+                stats = json.load(infile)
+            return stats
+        else:
+            return dict()
+
     def get_phenotypes(self):
         if not "phenotypes" in self.meta:
             return None

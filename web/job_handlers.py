@@ -184,6 +184,19 @@ def get_job_zoom(job_id, job=None):
     return json_resp({"header": {"variant_columns": json_response_data.keys()}, \
         "data": json_response_data})
 
+def merge_info_stats(info, info_stats):
+    info_extract = re.compile(r'([A-Z0-9_]+)(?:=([^;]+))?(?:;|$)')
+    matches = info_extract.findall(info)
+    merged = {".fieldorder": info_stats["fields"]}
+    for match in matches:
+        field = match[0]
+        value = match[1]
+        if field in info_stats["desc"]:
+            stats = dict(info_stats["desc"][field])
+            stats["value"] = value
+            merged[field] = stats
+    return merged
+
 @check_view_job
 def get_job_variant_pheno(job_id, job=None):
     chrom = request.args.get("chrom", None)
@@ -195,8 +208,11 @@ def get_job_variant_pheno(job_id, job=None):
     geno = Genotype.get(job.meta["genotype"], current_app.config)
     reader = geno.get_geno_reader(current_app.config)
     variant = reader.get_variant(chrom, pos, variant_id)
+    info_stats = geno.get_info_stats()
+    info = variant["INFO"]
     calls = variant["GENOS"]
     del variant["GENOS"]
+    variant["INFO"] = merge_info_stats(info, info_stats)
     phenos = job.get_adjusted_phenotypes()
     call_pheno = collections.defaultdict(list) 
     for sample, value in phenos.iteritems():
@@ -318,6 +334,10 @@ def get_genotypes():
 def get_genotype(geno_id):
     g = Genotype.get(geno_id, current_app.config)
     return json_resp(g.as_object())
+
+def get_genotype_info_stats(geno_id):
+    g = Genotype.get(geno_id, current_app.config)
+    return json_resp(g.get_info_stats())
 
 def get_model_build_view():
     if current_user.can_analyze():

@@ -16,6 +16,16 @@
 		.box .qtip {
 			font-size: 12px;
 		}
+		.spark-line {
+			margin: 0 5px;
+		}
+		.spark-line path {
+			stroke: #666666;
+			fill: #cccccc;
+		}
+		.spark-line .value {
+			stroke: red;
+		}
 	</style>
 
 	<script type="text/javascript">
@@ -102,23 +112,103 @@
 				.attr("transform", csstranslate(0, height + margin.top + 10))
 				.call(xAxis);
 		}
+		function draw_spark_lines(data) {
+			var infodata = data && data["header"] && data["header"]["INFO"];
+			if (!infodata) {
+				return null;
+			};
+			d3.selectAll(".info-spark").each(function() {
+				var div = d3.select(this);
+				var field = div.attr("data-field");
+				var dendata;
+				if (dendata = infodata[field] && infodata[field]["density"]) {
+					var xv = dendata.x;
+					var hv = dendata.heights;
+					var graph = div.append("svg")
+						.attr("class", "spark-line")
+						.attr("width", 150)
+						.attr("height", 20)
+						.append("g")
+						.attr("transform", csstranslate(1,1));
+					var x = d3.scale.linear().domain([0, xv.length]).range([0,150-2])
+					var y = d3.scale.linear().domain(d3.extent(hv)).range([20-2,0])
+					var curve = d3.svg.area()
+						.x(function(d,i) {
+							return x(i);
+						})
+						.y1(function(d) {
+							return y(d);
+						})
+						.y0(function() {
+							return y(0);
+						});
+					graph.append("path").attr("d", curve(hv));
+					var infoval = infodata[field] && infodata[field]["value"]
+					if (infoval) {
+						var x2 = d3.scale.linear().domain(d3.extent(xv)).range([0,150-2])
+						graph.append("line")
+							.attr("class", "value")
+							.attr("x1", function(d,i) {return x2(infoval)})
+							.attr("x2", function(d,i) {return x2(infoval)})
+							.attr("y1", function() {return y(0)})
+							.attr("y2", function() {return y(y.domain()[1])})
+					}
+				}
+			});
+		}
+		function draw_summary_info_table(place, info) {
+			var order = info[".fieldorder"];
+			var tabledata = $.map(order, function(val) {
+				if (info.hasOwnProperty(val) & val!="ANN") {
+					var x = info[val];
+					x["field"] = val;
+					return x;
+				} else {
+					return null;
+				}
+			});
+			var table = place.append("table");
+			var tbody = table.selectAll("tbody")
+				.data(tabledata).enter()
+				.append("tbody");
+			tbody.append("tr")
+				.append("td").text(function(d) {
+					return d.desc + " (" + d.field + ")";
+				});
+			tbody.append("tr")
+				.append("td").text(function(d) {
+					return d.value;
+				}).append("span")
+				.attr("class", "info-spark")
+				.attr("data-field", function(d) {
+					return d.field
+				});
+		}
 		function draw_summary_table(data) {
 			var div = d3.select("#variantinfo");
-			var tabledata = $.map(data.header, function(val, key) {
-				if (key=="INFO") {
-					val = val.replace(/;/g, "<br/>");
+			var cols = ["CHROM","POS","REF","ALT","FILTER","QUAL","INFO"];
+			var tabledata = $.map(cols, function(key) {
+				if (data.header.hasOwnProperty(key)) {
+					return {key: key, val: data.header[key]};
+				} else {
+					return null;
 				}
-				return {key: key, val:val};
-			})
-
-			div.append("h3").html("Variant Stats");
+			});
+			div.append("h3").text("Variant Statistics");
 			var table = div.append("table");
 
 			var tr = table.selectAll("tr")
 				.data(tabledata).enter()
 				.append("tr")
-			tr.append("td").html(function(d) {return d.key});
-			tr.append("td").html(function(d) {return d.val});
+			tr.append("td").text(function(d) {return d.key});
+			tr.append("td").each(function(d) {
+				var td = d3.select(this)
+				if (d.key == "INFO") {
+					draw_summary_info_table(td, d.val);
+				} else {
+					td.text(d.val);
+				}
+			}) ;
 
 		}
 		function draw_assoc_table(data) {
@@ -128,20 +218,21 @@
 				return {key: key, val:data.data[key][0]};
 			})
 
-			div.append("h3").html("Association Stats");
+			div.append("h3").text("Association Statistics");
 			var table = div.append("table");
 
 			var tr = table.selectAll("tr")
 				.data(tabledata).enter()
 				.append("tr")
-			tr.append("td").html(function(d) {return d.key});
-			tr.append("td").html(function(d) {return d.val});
+			tr.append("td").text(function(d) {return d.key});
+			tr.append("td").text(function(d) {return d.val});
 
 		}
 		$(function() {
 			$.getJSON(api_pheno_url, function(data) {
 				draw_box_plot(data);
 				draw_summary_table(data);
+				draw_spark_lines(data);
 			});
 			$.getJSON(api_assoc_url, function(data) {
 				draw_assoc_table(data)

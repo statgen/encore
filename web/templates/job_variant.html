@@ -36,6 +36,20 @@
 		api_assoc_url = "{{ url_for("get_api_job_zoom", job_id=job.job_id, 
 			chrom = chrom, start_pos=pos, end_pos=pos+1, variant_id=variant_id) | safe }}"
 
+		function with_ordinal_suffix(i) {
+			var j = i % 10,
+				k = i % 100;
+			if (j == 1 && k != 11) {
+				return i + "st";
+			}
+			if (j == 2 && k != 12) {
+				return i + "nd";
+			}
+			if (j == 3 && k != 13) {
+				return i + "rd";
+			}
+			return i + "th";
+		}
 		function csstranslate(x, y) { return "translate(" + x + "," + y + ")"; }
 		function cssrotate(x) { return "rotate(" + x + ")"; }
 		function draw_box_plot(data) {
@@ -112,49 +126,76 @@
 				.attr("transform", csstranslate(0, height + margin.top + 10))
 				.call(xAxis);
 		}
-		function draw_spark_lines(data) {
-			var infodata = data && data["header"] && data["header"]["INFO"];
-			if (!infodata) {
-				return null;
-			};
-			d3.selectAll(".info-spark").each(function() {
-				var div = d3.select(this);
-				var field = div.attr("data-field");
-				var dendata;
-				if (dendata = infodata[field] && infodata[field]["density"]) {
-					var xv = dendata.x;
-					var hv = dendata.heights;
-					var graph = div.append("svg")
-						.attr("class", "spark-line")
-						.attr("width", 150)
-						.attr("height", 20)
-						.append("g")
-						.attr("transform", csstranslate(1,1));
-					var x = d3.scale.linear().domain([0, xv.length]).range([0,150-2])
-					var y = d3.scale.linear().domain(d3.extent(hv)).range([20-2,0])
-					var curve = d3.svg.area()
-						.x(function(d,i) {
-							return x(i);
-						})
-						.y1(function(d) {
-							return y(d);
-						})
-						.y0(function() {
-							return y(0);
-						});
-					graph.append("path").attr("d", curve(hv));
-					var infoval = infodata[field] && infodata[field]["value"]
-					if (infoval) {
-						var x2 = d3.scale.linear().domain(d3.extent(xv)).range([0,150-2])
-						graph.append("line")
-							.attr("class", "value")
-							.attr("x1", function(d,i) {return x2(infoval)})
-							.attr("x2", function(d,i) {return x2(infoval)})
-							.attr("y1", function() {return y(0)})
-							.attr("y2", function() {return y(y.domain()[1])})
-					}
+		function draw_percentile_spark(div, infofield) {
+			if (!infofield) {return;}
+			var percdata = infofield["percentile"];
+			if (percdata) {
+				var infoval = infofield["value"]
+				var i=0;
+				while (infoval >= percdata[i] && i < percdata.length) {
+					i++;
 				}
-			});
+				//div.append("span").text(" (" + with_ordinal_suffix(i) + " Percentile)");
+				var graph = div.append("svg")
+					.attr("class", "spark-line")
+					.attr("width", 150)
+					.attr("height", 20)
+					.style("border", "1px solid #ccc")
+					.append("g")
+					.attr("transform", csstranslate(1,1))
+				graph.append("title")
+					.text(with_ordinal_suffix(i) + " Percentile");
+				var x = d3.scale.linear().domain([0, 100]).range([0,148-2]);
+				x.clamp(true);
+				var y = d3.scale.linear().domain([0, 1]).range([20-4,0]);
+
+				graph.selectAll("line.value")
+					.data([i])
+					.enter().append("line")
+					.attr("class", "value")
+					.attr("x1", function(d) {return x(d)})
+					.attr("x2", function(d) {return x(d)})
+					.attr("y1", function() {return y(0)})
+					.attr("y2", function() {return y(y.domain()[1])})
+			
+			}
+		}
+		function draw_density_spark(div, infofield) {
+			if (!infofield) {return;}
+			var dendata = infofield["density"];
+			if (dendata) {
+				var xv = dendata.x;
+				var hv = dendata.heights;
+				var graph = div.append("svg")
+					.attr("class", "spark-line")
+					.attr("width", 150)
+					.attr("height", 20)
+					.append("g")
+					.attr("transform", csstranslate(1,1));
+				var x = d3.scale.linear().domain([0, xv.length]).range([0,150-2])
+				var y = d3.scale.linear().domain(d3.extent(hv)).range([20-2,0])
+				var curve = d3.svg.area()
+					.x(function(d,i) {
+						return x(i);
+					})
+					.y1(function(d) {
+						return y(d);
+					})
+					.y0(function() {
+						return y(0);
+					});
+				graph.append("path").attr("d", curve(hv));
+				var infoval = infofield["value"]
+				if (infoval) {
+					var x2 = d3.scale.linear().domain(d3.extent(xv)).range([0,150-2])
+					graph.append("line")
+						.attr("class", "value")
+						.attr("x1", function(d,i) {return x2(infoval)})
+						.attr("x2", function(d,i) {return x2(infoval)})
+						.attr("y1", function() {return y(0)})
+						.attr("y2", function() {return y(y.domain()[1])})
+				}
+			}
 		}
 		function draw_summary_info_table(place, info) {
 			var order = info[".fieldorder"];
@@ -168,21 +209,19 @@
 				}
 			});
 			var table = place.append("table");
-			var tbody = table.selectAll("tbody")
+			var tr = table.selectAll("tr")
 				.data(tabledata).enter()
-				.append("tbody");
-			tbody.append("tr")
-				.append("td").text(function(d) {
-					return d.desc + " (" + d.field + ")";
-				});
-			tbody.append("tr")
-				.append("td").text(function(d) {
-					return d.value;
-				}).append("span")
-				.attr("class", "info-spark")
-				.attr("data-field", function(d) {
-					return d.field
-				});
+				.append("tr");
+			tr.append("td").append("abbr")
+				.attr("title", function(d) {return d.desc})
+				.text(function(d) {return d.field});
+			tr.append("td").text(function(d) {
+				return d.value;
+			});
+			tr.append("td").each(function(d) {
+				var me = d3.select(this)
+				me.call(draw_percentile_spark, d);
+			});
 		}
 		function draw_summary_table(data) {
 			var div = d3.select("#variantinfo");
@@ -232,7 +271,6 @@
 			$.getJSON(api_pheno_url, function(data) {
 				draw_box_plot(data);
 				draw_summary_table(data);
-				draw_spark_lines(data);
 			});
 			$.getJSON(api_assoc_url, function(data) {
 				draw_assoc_table(data)

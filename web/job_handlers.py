@@ -187,14 +187,18 @@ def get_job_zoom(job_id, job=None):
 def merge_info_stats(info, info_stats):
     info_extract = re.compile(r'([A-Z0-9_]+)(?:=([^;]+))?(?:;|$)')
     matches = info_extract.findall(info)
-    merged = {".fieldorder": info_stats["fields"]}
+    merged = dict()
+    if "fields" in info_stats:
+        merged[".fieldorder"] = info_stats["fields"]
     for match in matches:
         field = match[0]
         value = match[1]
-        if field in info_stats["desc"]:
+        if "desc" in info_stats and field in info_stats["desc"]:
             stats = dict(info_stats["desc"][field])
-            stats["value"] = value
-            merged[field] = stats
+        else:
+            stats = dict()
+        stats["value"] = value
+        merged[field] = stats
     return merged
 
 @check_view_job

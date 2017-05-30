@@ -209,11 +209,18 @@
 			}
 		}
 		function draw_summary_info_table(place, info) {
-			var order = info[".fieldorder"];
+			var order;
+			if (info[".fieldorder"]) {
+				order = info[".fieldorder"];
+			} else {
+				order = Object.keys(info);
+			}
+			var has_percentile = false;
 			var tabledata = $.map(order, function(val) {
 				if (info.hasOwnProperty(val) & val!="ANN") {
 					var x = info[val];
 					x["field"] = val;
+					has_percentile = has_percentile || x.hasOwnProperty("percentile");
 					return x;
 				} else {
 					return null;
@@ -223,7 +230,6 @@
 			var header = table.append("thead").append("tr");
 			header.append("th").text("Field");
 			header.append("th").text("Value");
-			header.append("th").text("Percentile");
 			var tr = table.selectAll("tr")
 				.data(tabledata).enter()
 				.append("tr");
@@ -233,10 +239,13 @@
 			tr.append("td").text(function(d) {
 				return d.value;
 			});
-			tr.append("td").each(function(d) {
-				var me = d3.select(this)
-				me.call(draw_percentile_spark, d);
-			});
+			if (has_percentile) {
+				header.append("th").text("Percentile");
+				tr.append("td").each(function(d) {
+					var me = d3.select(this)
+					me.call(draw_percentile_spark, d);
+				});
+			};
 		}
 		function draw_summary_table(data) {
 			var div = d3.select("#variantinfo");

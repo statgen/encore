@@ -88,13 +88,16 @@ Ideogram.prototype.drawRegions = function(positions, regions, opts) {
     var polys = []; 
     var hasToolTips = false;
     for(var i=0; i<regions.length; i++) {
-        polys.push({points: this.getRegionPath(positions,
+        var pts = this.getRegionPath(positions,
             regions[i].chrom, 
             regions[i].start,
-            regions[i].stop),
-            fill: regions[i].fill || opts.fill,
-            tooltip: regions[i].tooltip});
-        hasToolTips |= !!(regions[i].tooltip);
+            regions[i].stop);
+        if (pts) {
+            polys.push({points: pts, 
+                fill: regions[i].fill || opts.fill,
+                tooltip: regions[i].tooltip});
+            hasToolTips |= !!(regions[i].tooltip);
+        }
     }
     var r = this.svg.select("g.chromosome").selectAll("polygon.region")
         .data(polys);
@@ -236,6 +239,9 @@ Ideogram.prototype.getContour = function(start, stop, landmarks, ease) {
 };
 
 Ideogram.prototype.getRegionPath = function(positions, chr, start, stop) {
+    if (!positions.hasOwnProperty("names") || !positions.names.hasOwnProperty(chr)) {
+        return null;
+    }
     var cell = positions.positions[positions.names[chr]];
     var y0 = cell.y0;
     var y1 = cell.y1;

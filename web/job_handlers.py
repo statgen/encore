@@ -211,7 +211,10 @@ def get_job_variant_pheno(job_id, job=None):
     pos = int(pos)
     geno = Genotype.get(job.meta["genotype"], current_app.config)
     reader = geno.get_geno_reader(current_app.config)
-    variant = reader.get_variant(chrom, pos, variant_id)
+    try:
+        variant = reader.get_variant(chrom, pos, variant_id)
+    except Exception as e:
+        return json_resp({"error": "Unable to retrieve genotypes ({})".format(e)})
     info_stats = geno.get_info_stats()
     info = variant["INFO"]
     calls = variant["GENOS"]

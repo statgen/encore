@@ -52,6 +52,7 @@
 		function csstranslate(x, y) { return "translate(" + x + "," + y + ")"; }
 		function cssrotate(x) { return "rotate(" + x + ")"; }
 		function draw_box_plot(data) {
+			if (!data.data) {return;}
 			var margin = {top: 10, right:50, bottom:50, left:50};
 			var width = 500 - margin.left - margin.right;
 			var height = 350 - margin.top - margin.bottom;
@@ -248,6 +249,7 @@
 			};
 		}
 		function draw_summary_table(data) {
+			if (!data.header) {return;}
 			var div = d3.select("#variantinfo");
 			var cols = ["CHROM","POS","REF","ALT","FILTER","QUAL","INFO"];
 			var tabledata = $.map(cols, function(key) {

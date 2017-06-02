@@ -107,7 +107,7 @@
 			svg.selectAll(".box")
 				.data(plotdata)
 				.enter().append("g")
-				.attr("transform", function(d, i) { return csstranslate(x(d.g),0); } )
+				.attr("transform", function(d, i) { return csstranslate(x(d.g),margin.top); } )
 				.call(chart.width(x.rangeBand())); 
 
 			svg.append("g")

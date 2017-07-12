@@ -88,9 +88,8 @@ def guess_column_class(colinfo):
 
 def strip_comments(item, token="#"):
     for line in item:
-        s = line.strip()
-        if not s.startswith(token):
-            yield s
+        if not line.strip().startswith(token):
+            yield line
 
 def get_comments(item, token="#"):
     for line in item:
@@ -157,19 +156,27 @@ def is_possible_sample_id_col(meta, colinfo):
 def infer_meta(csvfile, dialect=None):
     meta = {"layout": {}, "columns": []}
 
+    start_pos = 0
+    csvfile.seek(0)
+    first = csvfile.read(4)
+    if first.startswith("\xfe\xff") or first.startswith("\xff\xfe"):
+        start_pos = 2
+    elif first.startswith("\xef\xbb\xbf"):
+        start_pos = 3
+
     # store csv dialect
     if not dialect:
-        csvfile.seek(0)
+        csvfile.seek(start_pos)
         dialect = sniff_file(csvfile)
     for k in [k for k in dir(dialect) if not k.startswith("_")]:
         meta["layout"]["csv_" + k] = getattr(dialect, k)
 
     # read comments 
-    csvfile.seek(0)
+    csvfile.seek(start_pos)
     comments = list(get_comments(csvfile))
 
     # read and process csv rows 
-    csvfile.seek(0)
+    csvfile.seek(start_pos)
     cvr = csv.reader(strip_comments(csvfile), dialect)
     firstrow = next(cvr)
     cols = defaultdict(lambda : defaultdict(Counter))

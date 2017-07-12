@@ -219,7 +219,7 @@ class PhenoReader:
             self.meta = self.infer_meta()
 
     def infer_meta(self):
-        with open(self.path, 'rb') as csvfile:
+        with open(self.path, 'rU') as csvfile:
             return infer_meta(csvfile)
 
     def get_dialect(self, opts=None):
@@ -255,7 +255,7 @@ class PhenoReader:
             skip = self.meta['layout']['skip']
         else:
             skip = 0
-        with open(self.path, 'rb') as csvfile:
+        with open(self.path, 'rU') as csvfile:
             if not dialect:
                 dialect = sniff_file(csvfile)
                 csvfile.seek(0)

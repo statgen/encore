@@ -186,10 +186,13 @@ class SlurmEpactsJob:
             else:
                 raise Exception("No phenotype information in job")
 
-        ped_writer = epm.get_ped_writer(job_desc, geno, pheno) 
-        ped_path = self.relative_path("pheno.ped")
-        with open(ped_path,"w") as pedfile:
-            ped_writer.write_to_file(pedfile)
+        try:
+            ped_writer = epm.get_ped_writer(job_desc, geno, pheno) 
+            ped_path = self.relative_path("pheno.ped")
+            with open(ped_path, "w") as pedfile:
+                ped_writer.write_to_file(pedfile)
+        except Exception as e:
+            raise Exception("Failed to create ped file ({})".format(e))
 
         return epm.get_analysis_command(job_desc, geno, ped_path, ped_writer)
 

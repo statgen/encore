@@ -24,7 +24,7 @@ class ColumnFactory:
 
     @staticmethod
     def __get_column_class(coldef, pr):
-        if coldef is None or not "class" in coldef:
+        if not "class" in coldef:
             raise Exception("Invalid Column Definition")
         colclass = coldef["class"]
         if colclass=="categorical":
@@ -80,7 +80,7 @@ class CategoricalColumn(Column):
         super(CategoricalColumn, self).__init__(coldef, pr)
         self.levels = coldef["levels"]
         self.ref_level = self.levels[0]
-        self.contr_levels = self.levels[1:]
+        self.contr_levels = self.levels[1:-1]
 
     def headers(self):
         return [self.name + "_" + x for x in self.contr_levels]
@@ -89,7 +89,7 @@ class CategoricalColumn(Column):
         val = self.value(index) 
         if val is None:
             return None
-        return [str(int(val==x)) for x in self.contr_levels] 
+        return [str(int(val[0]==x)) for x in self.contr_levels] 
 
 class BinaryColumn(Column):
     
@@ -105,7 +105,7 @@ class BinaryColumn(Column):
         val = self.value(index) 
         if val is None:
             return None
-        return [str(int(val==self.ref_level))] 
+        return [str(int(val[0]==self.ref_level))] 
 
 class PedRequiredColumn(Column):
     def __init__(self, coldef, field, pr):

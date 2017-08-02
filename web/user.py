@@ -50,7 +50,7 @@ class User(UserMixin):
         sql = "INSERT INTO users (email, can_analyze) values (%s, %s)"
         cur.execute(sql, (email, can_analyze))
         new_id = cur.lastrowid
-        cur.execute("SELECT id, email FROM users WHERE id=%s", (new_id,))
+        cur.execute("SELECT id, email, can_analyze FROM users WHERE id=%s", (new_id,))
         res = cur.fetchone()
         return User(res["email"], res["id"], res["can_analyze"])
 

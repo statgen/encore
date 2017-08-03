@@ -14,6 +14,18 @@ MYSQL_DB = "my_db"
 MYSQL_USER = "my_user"
 MYSQL_PASSWORD = "my_pass"
 
+BUILD_REF = {
+    "GRCh37": {
+        "fasta": "/data/ref/hs37d5.fa",
+        "nearest_gene_bed": "/data/ref/nearest-gene.GRCh37.bed"
+    },
+    "GRCh38": {
+        "fasta": "/data/ref/hs38DH.fa",
+        "nearest_gene_bed": "/data/ref/nearest-gene.GRCh38.bed"
+    }
+}
+
+
 SECRET_KEY = None
 
 GOOGLE_LOGIN_CLIENT_ID = None

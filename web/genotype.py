@@ -16,6 +16,7 @@ class Genotype:
         self.build = None
         self.creation_date = None
         self.root_path = ""
+        self.build_info = {} 
        
     def get_vcf_path(self, chrom=1, must_exist=False):
         vcf_stub = ""
@@ -85,6 +86,19 @@ class Genotype:
         else:
             return dict()
 
+    def get_build_info(self, config, build):
+        if build in config.get("BUILD_REF", {}):
+            build_info = config.get("BUILD_REF").get(build)
+        else:
+            raise Exception("Build information not found: {}".format(build))
+        return build_info
+
+    def get_build_ref_path(self):
+        return self.build_info.get("fasta", None)
+
+    def get_build_nearest_gene_path(self):
+        return self.build_info.get("nearest_gene_bed", None)
+
     def get_phenotypes(self):
         if not "phenotypes" in self.meta:
             return None
@@ -125,6 +139,7 @@ class Genotype:
         obj["phenos"] = self.get_phenotypes()
         return obj
 
+
     @staticmethod
     def get(geno_id, config):
         geno_folder = os.path.join(config.get("GENO_DATA_FOLDER", "./"), geno_id)
@@ -150,6 +165,7 @@ class Genotype:
             g.build = result["build"]
             g.creation_date = result["creation_date"]
             g.root_path = geno_folder
+            g.build_info = g.get_build_info(config, g.build)
         else:
             g = None
         return g

@@ -26,13 +26,15 @@ class EpactsModel(object):
                 model["genopheno"])
         return ped_writer
 
+
     def get_analysis_command(self, model, geno, ped_path, ped_writer):
         cmd = "{} {}".format(self.config.get("ANALYSIS_BINARY", "epacts"), self.cmd) + \
             " --vcf {}".format(geno.get_vcf_path(1)) + \
             " --ped {}".format(ped_path) +  \
             " --field GT" + \
             " --sepchr" + \
-            " --out ./output --run {}".format(self.cores_per_job)
+            " --ref {}".format(geno.get_build_ref_path())+ \
+            " --out ./output --run {}".format(self.cores_per_job) 
         for resp in ped_writer.get_response_headers():
             cmd += " --pheno {}".format(resp)
         for covar in ped_writer.get_covar_headers():
@@ -40,7 +42,7 @@ class EpactsModel(object):
         cmd += " " + " ".join(self.get_opts(model, geno)) 
         return cmd
 
-    def get_postprocessing_command(self):
+    def get_postprocessing_command(self, geno):
         cmds = []
         if self.cmd == "group":
             cmds.append("if [ -e output.epacts -a ! -e output.epacts.gz ]; then\n" + \
@@ -58,8 +60,8 @@ class EpactsModel(object):
             cmd =  "{} ./output.epacts.top5000 ./tophits.json".format(self.config.get("TOPHITS_BINARY"))
             if self.cmd == "group":
                 cmd += " --window 0"
-            elif self.config.get("NEAREST_GENE_BED"):
-                cmd += " --gene " + self.config.get("NEAREST_GENE_BED") 
+            elif geno.get_build_nearest_gene_path():
+                cmd += " --gene {}".format(geno.get_build_nearest_gene_path())
             cmds.append(cmd)
         return "\n".join(cmds) 
 
@@ -173,19 +175,26 @@ class SlurmEpactsJob:
            "#SBATCH --time=14-0\n" + \
            "#SBATCH --nodes=1\n"
 
-    def create_analysis_command(self, epm, job_desc, geno=None, pheno=None):
+    def get_geno(self, job_desc, geno=None):
         if geno is None:
             if "genotype" in job_desc:
                 geno = Genotype.get(job_desc["genotype"], self.config)
             else:
                 raise Exception("No genotype information in job")
-        
+        return geno
+
+    def get_pheno(self, job_desc, pheno=None):
         if pheno is None:
             if "phenotype" in job_desc:
                 pheno = Phenotype.get(job_desc["phenotype"], self.config)
             else:
                 raise Exception("No phenotype information in job")
+        return pheno
 
+    def create_analysis_command(self, epm, job_desc, geno=None, pheno=None):
+        geno = self.get_geno(job_desc, geno)
+        pheno = self.get_pheno(job_desc, pheno)
+        
         try:
             ped_writer = epm.get_ped_writer(job_desc, geno, pheno) 
             ped_path = self.relative_path("pheno.ped")
@@ -199,19 +208,16 @@ class SlurmEpactsJob:
     def create_reproducible_command(self, job_desc):
         epm = EpactsModel.get(job_desc.get("type", None), {})
         geno = Genotype(None)
+        pheno = self.get_pheno(job_desc)
     
-        if "phenotype" in job_desc:
-            pheno = Phenotype.get(job_desc["phenotype"], self.config)
-        else:
-            raise Exception("No phenotype information in job")
-
         ped_writer = epm.get_ped_writer(job_desc, geno, pheno) 
 
         return epm.get_analysis_command(job_desc, geno, ped_path="pheno.ped", ped_writer=ped_writer)
 
-    def create_postprocessing_command(self, epm):
+    def create_postprocessing_command(self, epm, job_desc, geno=None):
+        geno = self.get_geno(job_desc, geno)
         cmd =  "if [ $EXIT_STATUS == 0 ]; then\n" 
-        cmd += epm.get_postprocessing_command() 
+        cmd += epm.get_postprocessing_command(geno) 
         cmd += "\nfi\n"
         return cmd
 
@@ -222,7 +228,7 @@ class SlurmEpactsJob:
         cmd = self.create_sbatch_header(epm) + "\n"
         cmd += "{} 2> ./err.log 1> ./out.log\n".format(self.create_analysis_command(epm, job_desc))
         cmd += "EXIT_STATUS=$?\n"
-        cmd += self.create_postprocessing_command(epm) + "\n" 
+        cmd += self.create_postprocessing_command(epm, job_desc) + "\n" 
         cmd += "echo $EXIT_STATUS > ./exit_status.txt\n"
         cmd += "exit $EXIT_STATUS\n"
         return cmd

@@ -50,6 +50,7 @@ def get_job_chunks(job_id):
         for file in files:
             m = p.search(file)
             chunk = dict(m.groupdict())
+            chunk['chr'] =  chunk['chr'].replace("chr", "")
             chunk['start'] = int(chunk['start'])
             chunk['stop'] = int(chunk['stop'])
             chunk['modified'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file)))

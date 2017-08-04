@@ -29,6 +29,9 @@ class Job:
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))
 
+    def get_genotype_id(self):
+        return self.meta.get("genotype", None) 
+
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields  + self.__extfields if hasattr(self, key)} 
         obj["job_id"] = self.job_id

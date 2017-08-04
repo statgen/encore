@@ -1,6 +1,6 @@
 /* eslint-env jquery */
 /* eslint no-unused-vars: ["error", { "vars": "local" }] */
-/* global LocusZoom, job_id, api_url */
+/* global LocusZoom, job_id, api_url, genome_build */
 
 var lzplot;
 $(document).ready(function() {
@@ -14,6 +14,14 @@ $(document).ready(function() {
     var EpactsLD = LocusZoom.Data.Source.extend(function(init) {
         this.parseInit(init);
     }, "LDEP", LocusZoom.Data.LDSource);
+    var origGet = LocusZoom.Data.LDSource.prototype.getURL;
+    EpactsLD.prototype.getURL = function(state, chain, fields) {
+        var ns = Object.assign({}, state);
+        ns.chr = ns.chr.replace("chr", "");
+        var url = origGet.call(this, ns, chain, fields);
+        url = url.replace("variant1 eq 'chr","variant1 eq '");
+        return url;
+    };
     EpactsLD.prototype.findMergeFields = function() {
         return {
             id: "epacts:MARKER_ID",
@@ -21,14 +29,39 @@ $(document).ready(function() {
             pvalue: "epacts:PVALUE|neglog10"
         };
     };
+    EpactsLD.prototype.parseData = function(x, fields, outnames, trans) {
+        var data = LocusZoom.Data.Source.prototype.parseData(x, fields, outnames, trans);
+        for(var i=0; i<data.length; i++) {
+            if (data[i].chr) {
+                data[i].chr = data[i].chr.replace("chr","");
+            }
+        }
+        return data;
+    };
 
     var apiBase = "/api/lz/";
     data_sources.add("epacts", new EpactsDS)
       .add("ld", ["LDEP", apiBase + "ld-"])
-      .add("gene", ["GeneLZ", { url: apiBase + "gene", params: {source: 2} }])
-      .add("recomb", ["RecombLZ", { url: apiBase + "recomb", params: {source: 15} }])
       .add("constraint", ["GeneConstraintLZ", { url: apiBase + "constraint" }])
       .add("sig", ["StaticJSON", [{ "x": 0, "y": 4.522 }, { "x": 2881033286, "y": 4.522 }] ]);
+
+    if (genome_build == "GRCh37") {
+        data_sources
+          .add("gene", ["GeneLZ", { url: apiBase + "gene", params: {source: 2} }])
+          .add("recomb", ["RecombLZ", { url: apiBase + "recomb", params: {source: 15} }]);
+    } else if (genome_build == "GRCh38") {
+        data_sources
+          .add("gene", ["GeneLZ", { url: apiBase + "gene", params: {source: 1 } }]);
+          //.add("recomb", ["RecombLZ", { url: apiBase + "recomb", params: {source: 15} }]);
+    }
+
+    data_sources.get("gene").getURL = function(state, chain, fields) {
+        var ns = Object.assign({}, state);
+        if (ns.chr) {
+            ns.chr = ns.chr.replace("chr","");
+        }
+        return LocusZoom.Data.GeneSource.prototype.getURL.call(this, ns, chain, fields);
+    };
 
     LocusZoom.TransformationFunctions.set("scinotation", function(x) {
         var log;
@@ -47,7 +80,7 @@ $(document).ready(function() {
     });
 
 
-    function getlayout(avail_fields) {
+    function getlayout(avail_fields, build) {
         var has_maf = avail_fields.indexOf("MAF") !== -1;
         var has_beta = avail_fields.indexOf("BETA") !== -1;
         var fields = ["epacts:MARKER_ID", "epacts:CHROM", 
@@ -72,26 +105,30 @@ $(document).ready(function() {
         var assoc_mods = {
             dashboard: {components: []},
             data_layers: [
-                LocusZoom.Layouts.get("data_layer", "significance"),
-                LocusZoom.Layouts.get("data_layer", "recomb_rate"),
-                LocusZoom.Layouts.get("data_layer", "association_pvalues", {
-                    namespace: {"assoc": "epacts"} ,
-                    fields: fields,
-                    id_field: fields[0],
-                    x_axis: {field: "epacts:BEGIN"},
-                    y_axis: {field: "epacts:PVALUE|neglog10"},
-                    tooltip: {html: tooltip, 
-                        closable: false, 
-                        "show": { "or": ["highlighted"] },
-                        "hide": { "and": ["unhighlighted"] }
-                    },
-                    behaviors: {"onclick": [{
-                        action: "link",
-                        href: "../variant?chrom={{epacts:CHROM}}&pos={{epacts:BEGIN}}&variant_id={{epacts:MARKER_ID|urlencode}}"
-                    }]}
-                })
+                LocusZoom.Layouts.get("data_layer", "significance")
             ]
         };
+        if ( build != "GRCh38" ) {
+            assoc_mods.data_layers.push( LocusZoom.Layouts.get("data_layer", "recomb_rate") );
+        }
+        assoc_mods.data_layers.push( 
+            LocusZoom.Layouts.get("data_layer", "association_pvalues", {
+                namespace: {"assoc": "epacts"} ,
+                fields: fields,
+                id_field: fields[0],
+                x_axis: {field: "epacts:BEGIN"},
+                y_axis: {field: "epacts:PVALUE|neglog10"},
+                tooltip: {html: tooltip, 
+                    closable: false, 
+                    "show": { "or": ["highlighted"] },
+                    "hide": { "and": ["unhighlighted"] }
+                },
+                behaviors: {"onclick": [{
+                    action: "link",
+                    href: "../variant?chrom={{epacts:CHROM}}&pos={{epacts:BEGIN}}&variant_id={{epacts:MARKER_ID|urlencode}}"
+                }]}
+            })
+        );
         var gene_mods = {
             namespace: {"gene": "gene"},
             dashboard: {components: []}
@@ -150,7 +187,7 @@ $(document).ready(function() {
         if (x.header && x.header.variant_columns) {
             cols = x.header.variant_columns;
         }
-        var layout = getlayout(cols);
+        var layout = getlayout(cols, genome_build);
         lzplot = LocusZoom.populate("#locuszoom", data_sources, layout);
 
         $(".control-buttons .pan-left").on("click", function() {move(lzplot, -0.5);});

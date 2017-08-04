@@ -104,7 +104,8 @@ def get_job_details_view(job_id, job=None):
 
 @check_view_job
 def get_job_locuszoom_plot(job_id, region, job=None):
-    return render_template("job_locuszoom.html", job=job.as_object(), region=region)
+    geno = Genotype.get(job.get_genotype_id(), current_app.config)
+    return render_template("job_locuszoom.html", job=job.as_object(), build=geno.build, region=region)
 
 @check_view_job
 def get_job_variant_page(job_id, job=None):

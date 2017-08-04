@@ -25,6 +25,7 @@
 
 	<script type="text/javascript">
 		job_id = "{{ job.job_id }}";
+		genome_build = "{{ build }}"
 		api_url = "{{ url_for("get_api_job_zoom", job_id = job.job_id) }}"
 	</script>
 {% endblock %}

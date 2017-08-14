@@ -18,6 +18,10 @@ def get_phenos():
     phenos = Phenotype.list_all_for_user(current_user.rid)
     return json_resp(phenos)
 
+def get_all_phenos():
+    phenos = Phenotype.list_all(current_app.config)
+    return json_resp(phenos)
+
 def get_pheno_list_view():
     return render_template("pheno_list.html")
 

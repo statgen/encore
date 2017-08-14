@@ -358,12 +358,6 @@ def get_models():
     models = SlurmEpactsJob.available_models()
     return json_resp(models)
 
-def get_admin_main_page():
-    return render_template("admin_main.html", githash=current_app.config.get("git-hash", None))
-
-def get_admin_user_page():
-    return render_template("admin_users.html")
-
 def json_resp(data):
     resp = Response(mimetype='application/json')
     resp.set_data(json.dumps(data))

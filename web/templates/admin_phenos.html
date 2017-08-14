@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block header %}
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
+
+	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+
+<script type="text/javascript">
+		$(document).ready(function() {
+			$("#phenos-table").DataTable({
+				ajax: {url: "/api/phenos-all", dataSrc: ""},
+				order: [[3, "desc"]],
+				columns: [
+					{data: "id", title: "Pheno ID"},
+					{data: "user_email", title: "User"},
+					{data: "name", title: "Name"},
+					{data: "creation_date", title: "Date Created"},
+					{title: "Pheno", data: "id", render: function(data) {
+						return "<a href='/phenos/" + data + "'>View</a>"}}
+				]
+			})
+		});
+	</script>
+{% endblock %}
+{% block content %}
+
+        <div class="section">
+            <div class="section-title">
+                <h2>Phenos</h2>
+            </div>
+            <table id="phenos-table"></table>
+        </div>
+
+{% endblock %}

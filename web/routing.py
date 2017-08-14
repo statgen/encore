@@ -3,6 +3,7 @@ from flask import request, Response, Flask, render_template, session, send_from_
 from flask_login import LoginManager, login_required, current_user, logout_user
 import job_handlers
 import pheno_handlers
+import admin_handlers
 import sign_in_handler
 import job_tracking
 from functools import wraps
@@ -258,13 +259,19 @@ def get_api_models():
 @login_required
 @admin_required
 def get_admin_page():
-    return job_handlers.get_admin_main_page()
+    return admin_handlers.get_admin_main_page()
 
 @app.route("/admin/users", methods=["GET"])
 @login_required
 @admin_required
 def get_admin_user_page():
-    return job_handlers.get_admin_user_page()
+    return admin_handlers.get_admin_user_page()
+
+@app.route("/admin/phenos", methods=["GET"])
+@login_required
+@admin_required
+def get_admin_pheno_page():
+    return admin_handlers.get_admin_pheno_page()
 
 @app.route("/admin/log/<job_id>/<log_name>", methods=["GET"])
 @login_required
@@ -284,6 +291,12 @@ def get_job_log(job_id, log_name):
 def get_api_users_all():
     return job_handlers.get_all_users()
 
+@app.route("/api/phenos-all", methods=["GET"])
+@login_required
+@admin_required
+def get_api_phenos_all():
+    return pheno_handlers.get_all_phenos()
+
 @app.context_processor
 def template_helpers():
     def guess_tab(path):
@@ -297,6 +310,8 @@ def template_helpers():
             return "job"
         elif path.startswith("/admin/user"):
             return "user"
+        elif path.startswith("/admin/phenos"):
+            return "pheno"
         else:
             return ""
 
@@ -305,6 +320,7 @@ def template_helpers():
         if path.startswith("/admin"):
             links["left"].append(("job", "Jobs", url_for("get_admin_page")))
             links["left"].append(("user", "Users", url_for("get_admin_user_page")))
+            links["left"].append(("pheno", "Phenos", url_for("get_admin_pheno_page")))
             links["right"].append(("return","Return to App", url_for("index")))
         else:
             links["left"].append(("job", "Jobs", url_for("index")))

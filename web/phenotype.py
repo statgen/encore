@@ -90,6 +90,23 @@ class Phenotype:
         return results
 
     @staticmethod
+    def list_all(config=None):
+        db = sql_pool.get_conn()
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = """
+            SELECT bin_to_uuid(P.id) AS id, P.user_id, P.name,
+            U.email as user_email,
+            P.orig_file_name, P.md5sum, 
+            DATE_FORMAT(P.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date 
+            FROM phenotypes as P
+            JOIN users as U on P.user_id = U.id
+            ORDER BY creation_date DESC
+            """
+        cur.execute(sql)
+        results = cur.fetchall()
+        return results
+
+    @staticmethod
     def update(pheno_id, new_values):
         updateable_fields = ["name"]
         fields = new_values.keys() 

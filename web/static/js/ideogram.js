@@ -8,7 +8,7 @@ var Ideogram = function(selector) {
     }
     this.svg = d3.select(selector).append("svg")
         .attr("width",800)
-        .attr("height", 500);
+        .attr("height", 450);
     this.svg.append("g")
         .attr("class", "chromosome");
     this.svg.append("g")

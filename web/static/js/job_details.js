@@ -324,6 +324,9 @@ function init_chunk_progress(job_id, selector) {
         });
         ideo.setRegions(chunks);
         ideo.draw();
+        var boxcss = "display: inline-block; width: 1em; height:1em; margin: 0 5px; ";
+        $(selector).append("<p style='text-align: center'><span style='" + boxcss + "background:#66F297'> </span>In Progress " + 
+            "<span style='" + boxcss + "background:#3CA661'> </span>Completed</p>");
     });
 }
 

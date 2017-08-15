@@ -66,6 +66,10 @@
 			<td>{{ ", ".join(job.details.get("covariates",[]) + job.details.get("genopheno",[]) ) }}</td>
 		</tr>
 		<tr>
+			<th>Model Type</th>
+			<td>{{ job.details.get("type","?") }}</td>
+		</tr>
+		<tr>
 			<th>Phenotype</th>
 			<td><a href={{url_for("get_pheno", pheno_id=job.details.phenotype.pheno_id) }}>
 			{{ job.details.phenotype.name }}</a></td>

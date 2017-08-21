@@ -141,6 +141,11 @@ def update_api_job(job_id):
 def post_api_job_share_request(job_id):
     return job_handlers.post_to_share_job(job_id)
 
+@app.route("/api/jobs/<job_id>/resubmit", methods=["POST"])
+@login_required
+def post_api_job_resubmit_request(job_id):
+    return job_handlers.resubmit_job(job_id)
+
 @app.route("/api/jobs/<job_id>/cancel_request", methods=["POST"])
 @login_required
 def post_api_job_cancel_request(job_id):

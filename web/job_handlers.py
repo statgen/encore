@@ -318,6 +318,26 @@ def post_to_jobs():
     return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
 
 @check_edit_job
+def resubmit_job(job_id, job=None):
+    sjob = SlurmEpactsJob(job_id, job.root_path, current_app.config) 
+    try:
+        sjob.resubmit()
+    except Exception as exception:
+        print exception
+        raise Exception("Could not resubmit job ({})".format(exception));
+    try:
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute("""
+            UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name = 'queued')
+            WHERE id = uuid_to_bin(%s)
+            """, (job_id, ))
+        db.commit()
+    except:
+        raise Exception("Could not update job status");
+    return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
+
+@check_edit_job
 def post_to_share_job(job_id, job=None):
     form_data = request.form
     add = form_data["add"].split(",") 

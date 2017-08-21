@@ -251,6 +251,24 @@ class SlurmEpactsJob:
                 raise Exception("Could not find sbatch")
         return True
 
+    def resubmit(self):
+        sbatch = self.config.get("QUEUE_JOB_BINARY", "sbatch")
+        batch_script_path = self.relative_path("batch_script.sh")
+        if not os.path.isfile(batch_script_path):
+            raise Exception("Existing script file not found") 
+        batch_output_path = self.relative_path("batch_script_output.txt")
+        with open(batch_output_path, "w") as f:
+            try:
+                subprocess.check_call([sbatch, batch_script_path], stdout=f)
+            except subprocess.CalledProcessError as e:
+                # log to server log
+                print "SBATCH ERROR"
+                print e
+                raise Exception("Could not queue job") 
+            except OSError:
+                raise Exception("Could not find sbatch")
+        return True
+
     def cancel_job(self):
         scancel = self.config.get("CANCEL_JOB_BINARY", "scancel")
         batch_output_path = self.relative_path("batch_script_output.txt")

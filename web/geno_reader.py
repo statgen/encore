@@ -1,9 +1,9 @@
 import subprocess
 from collections import deque
 
-def get_variant_id(data):
+def get_epacts_variant_id(data):
     if data[2] != ".":
-        return data[2]
+        return "{}:{}_{}/{}_{}".format(data[0], data[1], data[3], data[4], data[2])
     else:
         return "{}:{}_{}/{}".format(data[0], data[1], data[3], data[4])
 
@@ -18,7 +18,6 @@ class GenoReader:
             "-h",
             vcf_path,
             "{}:{}-{}".format(chrom , pos, pos+1)]
-        print cmd
         try:
             lines = subprocess.check_output(cmd).split("\n")
         except subprocess.CalledProcessError as e:
@@ -31,15 +30,14 @@ class GenoReader:
         headers = lines.popleft().split("\t")
         headers[0] = headers[0].strip("#")
         data = lines.popleft().split("\t")
-        current_variant = get_variant_id(data)
+        current_variant = get_epacts_variant_id(data)
         if variant_id is not None:
             while current_variant != variant_id:
-                print current_variant
                 if len(lines)<1:
                     raise Exception("Variant not found ({})".format(variant_id))
                 data = lines.popleft().split("\t")
-                current_variant = get_variant_id(data)
-        elif len(lines)>2:
+                current_variant = get_epacts_variant_id(data)
+        if len(lines)>2:
             raise Exception("Multiple variants found, no ID given")
         variant_data = dict(zip(headers[0:9], data[0:9]))
         variant_data["GENOS"] = dict(zip(headers[9:], data[9:]))

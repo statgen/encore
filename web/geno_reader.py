@@ -18,6 +18,7 @@ class GenoReader:
             "-h",
             vcf_path,
             "{}:{}-{}".format(chrom , pos, pos+1)]
+        print cmd
         try:
             lines = subprocess.check_output(cmd).split("\n")
         except subprocess.CalledProcessError as e:

@@ -20,7 +20,7 @@ class Genotype:
        
     def get_vcf_path(self, chrom=1, must_exist=False):
         vcf_stub = ""
-        chrom = str(chrom)
+        chrom = str(chrom).replace("chr","")
         if "vcfs" in self.meta:
             vcfs = self.meta["vcfs"]
             if type(vcfs) is dict:

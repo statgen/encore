@@ -30,8 +30,9 @@ var Ideogram = function(selector) {
     this.regions = [];
 };
 
-Ideogram.prototype.draw = function() {
-    var layout = this.getLayout(this.chrs_hg19);
+Ideogram.prototype.draw = function(build) {
+    build = build || "GRCh37";
+    var layout = this.getLayout(this.layouts[build]);
     var positions = this.calculatePositions(layout);
     this.drawOutlines(positions);
     this.drawRegions(positions, this.regions);
@@ -120,7 +121,8 @@ Ideogram.prototype.drawRegions = function(positions, regions, opts) {
     }
 };
 
-Ideogram.prototype.chrs_hg19 = [
+Ideogram.prototype.layouts = {};
+Ideogram.prototype.layouts["GRCh37"] = [
     {chr: "chr1", center: 125000000, end: 249250621},
     {chr: "chr2", center: 93300000, end: 243199373},
     {chr: "chr3", center: 91000000, end: 198022430},
@@ -145,6 +147,33 @@ Ideogram.prototype.chrs_hg19 = [
     {chr: "chr22", center: 14700000, end: 51304566},
     {chr: "chrX", center: 60600000, end: 155270560},
     {chr: "chrY", center: 12500000, end: 59373566}
+];
+
+Ideogram.prototype.layouts["GRCh38"] = [
+    {chr: "chr1", center: 123400000, end: 248956422},
+    {chr: "chr2", center: 93900000, end: 242193529},
+    {chr: "chr3", center: 90900000, end: 198295559},
+    {chr: "chr4", center: 50000000, end: 190214555},
+    {chr: "chr5", center: 48800000, end: 181538259},
+    {chr: "chr6", center: 59800000, end: 170805979},
+    {chr: "chr7", center: 60100000, end: 159345973},
+    {chr: "chr8", center: 45200000, end: 145138636},
+    {chr: "chr9", center: 43000000, end: 138394717},
+    {chr: "chr10", center: 39800000, end: 133797422},
+    {chr: "chr11", center: 53400000, end: 135086622},
+    {chr: "chr12", center: 35500000, end: 133275309},
+    {chr: "chr13", center: 17700000, end: 114364328},
+    {chr: "chr14", center: 17200000, end: 107043718},
+    {chr: "chr15", center: 19000000, end: 101991189},
+    {chr: "chr16", center: 36800000, end: 90338345},
+    {chr: "chr17", center: 25100000, end: 83257441},
+    {chr: "chr18", center: 18500000, end: 80373285},
+    {chr: "chr19", center: 26200000, end: 58617616},
+    {chr: "chr20", center: 28100000, end: 64444167},
+    {chr: "chr21", center: 12000000, end: 46709983},
+    {chr: "chr22", center: 15000000, end: 50818468},
+    {chr: "chrX", center: 61000000, end: 156040895},
+    {chr: "chrY", center: 10400000, end: 57227415}
 ];
 
 

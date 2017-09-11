@@ -46,7 +46,7 @@ class EpactsModel(object):
         cmds = []
         if self.cmd == "group":
             cmds.append("if [ -e output.epacts -a ! -e output.epacts.gz ]; then\n" + \
-                "  awk 'NR<2{print;next}{print| \"sort -g -k1,1 -k2g,3\"}' output.epacts | " + \
+                "  awk 'NR<2{print;next}{print| \"sort -V -k1,1 -k2g,3\"}' output.epacts | " + \
                 "{} -c > output.epacts.gz\n".format(self.config.get("BGZIP_BINARY", "bgzip")) + \
                 " {} -p bed output.epacts.gz\n".format(self.config.get("TABIX_BINARY", "tabix")) + \
                 "fi")

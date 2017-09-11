@@ -191,6 +191,7 @@ class AssocResultReader:
                     other["stop"] = end2
                     if name2:
                         other["label"] = name2
+            chrom = chrom.replace("chr", "")
             return AssocResult(chrom, pos, pval, other)
 
     def __iter__(self):

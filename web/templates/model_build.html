@@ -294,6 +294,7 @@
 							opts.m = x.details.type;
 							opts.r = x.details.response;
 							opts.c = x.details.covariates;
+							opts.gp = x.details.genopheno || [];
 						}
 						return $.when(opts);
 					}, function() {
@@ -307,20 +308,23 @@
 						phenoSelect.val(opts.p).trigger("change.select2");
 					});
 					var lg = loadGeno(opts.g).then(function() {
-						genophenoSelect.val(opts.g).trigger("change.select2");
+						genoSelect.val(opts.g).trigger("change.select2");
 					});
 					return $.when(lp, lg).then(function() {
 						return $.when(opts);
 					});
 				}).then(function(opts) {
 					if (opts.g) {
-						genoSelect.val(opts.g).trigger("change");
+						genoSelect.val(opts.g);
 					}
 					if (opts.r) {
 						responseSelect.val(opts.r).trigger("change");
 					}
 					if (opts.c) {
 						covariateSelect.val(opts.c).trigger("change");
+					}
+					if (opts.gp) {
+						genophenoSelect.val(opts.gp).trigger("change");
 					}
 					if (opts.m) {
 						$("input[type=radio]", "#model-form").

@@ -101,6 +101,10 @@
 			<th>Last Updated</th>
 			<td>{{ job.modified_date }}</td>
 		</tr>
+		<tr>
+			<th>New Job Like This</th>
+			<td><a href="{{ url_for("get_model_build", like=job.job_id) }}">New Job</a></td>
+		</tr>
 	</table>
 {%- endmacro %}
 {% block content %}

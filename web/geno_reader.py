@@ -2,10 +2,7 @@ import subprocess
 from collections import deque
 
 def get_epacts_variant_id(data):
-    if data[2] != ".":
-        return "{}:{}_{}/{}_{}".format(data[0], data[1], data[3], data[4], data[2])
-    else:
-        return "{}:{}_{}/{}".format(data[0], data[1], data[3], data[4])
+    return "{}:{}_{}/{}".format(data[0], data[1], data[3], data[4])
 
 class GenoReader:
     def __init__(self, geno, config):
@@ -32,7 +29,7 @@ class GenoReader:
         data = lines.popleft().split("\t")
         current_variant = get_epacts_variant_id(data)
         if variant_id is not None:
-            while current_variant != variant_id:
+            while not variant_id.startswith(current_variant):
                 if len(lines)<1:
                     raise Exception("Variant not found ({})".format(variant_id))
                 data = lines.popleft().split("\t")

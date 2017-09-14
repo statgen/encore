@@ -471,6 +471,9 @@ function result_lookup(term) {
     };
     return $.getJSON(position_url, req).then(function(x) {
         if (x.data && x.data.length) {
+            if (x.build && x.build=="grch38") {
+                x.data = x.data.map(function(x) {x.chrom="chr" + x.chrom; return(x);});
+            }
             var lookups = x.data.map(single_lookup);
             return $.when.apply($, lookups).then(function() {
                 var lookups = Array.prototype.slice.call(arguments);

@@ -158,7 +158,16 @@ def get_job_zoom(job_id, job=None):
 
     headerpos = {x:i for i,x in enumerate(header)}
     tb = tabix.open(epacts_filename)
-    results = tb.query(chrom, start_pos, end_pos)
+    try:
+        results = tb.query(chrom, start_pos, end_pos)
+    except:
+        if chrom.startswith("chr"):
+            chrom = chrom.replace("chr","")
+        else:
+            chrom = "chr" + chrom
+        print [chrom, start_pos, end_pos]
+        results = tb.query(chrom, start_pos, end_pos)
+
     json_response_data = dict()
 
     json_response_data["CHROM"] = []
@@ -169,7 +178,7 @@ def get_job_zoom(job_id, job=None):
     json_response_data["PVALUE"] = []
     if "MAF" in headerpos:
         json_response_data["MAF"] = []
-    if "MAF" in headerpos:
+    if "BETA" in headerpos:
         json_response_data["BETA"] = []
     for r in results:
         if r[headerpos["PVALUE"]] != "NA":

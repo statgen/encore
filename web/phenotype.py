@@ -7,7 +7,7 @@ from job import Job
 from pheno_reader import PhenoReader
 
 class Phenotype:
-    __dbfields = ["name","orig_file_name","md5sum","user_id","creation_date"]
+    __dbfields = ["name","orig_file_name","md5sum","user_id","creation_date", "is_active"]
 
     def __init__(self, pheno_id, meta=None):
         self.pheno_id = pheno_id
@@ -51,7 +51,8 @@ class Phenotype:
         sql = """
             SELECT bin_to_uuid(id) AS id, user_id, name, 
             orig_file_name, md5sum, 
-            DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
+            DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
+            is_active
             FROM phenotypes WHERE """ + where
         cur.execute(sql, vals)
         result = cur.fetchone()
@@ -82,7 +83,9 @@ class Phenotype:
             orig_file_name, md5sum, 
             DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
             FROM phenotypes
-            WHERE user_id = %s
+            WHERE 
+              user_id = %s
+              AND is_active=1
             ORDER BY creation_date DESC
             """
         cur.execute(sql, (user_id,))
@@ -97,7 +100,8 @@ class Phenotype:
             SELECT bin_to_uuid(P.id) AS id, P.user_id, P.name,
             U.email as user_email,
             P.orig_file_name, P.md5sum, 
-            DATE_FORMAT(P.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date 
+            DATE_FORMAT(P.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date,
+            P.is_active
             FROM phenotypes as P
             JOIN users as U on P.user_id = U.id
             ORDER BY creation_date DESC
@@ -129,6 +133,23 @@ class Phenotype:
         return result
 
     @staticmethod
+    def retire(pheno_id, config=None):
+        pheno = Phenotype.get(pheno_id, config)
+        result = {}
+        if pheno:
+            db = sql_pool.get_conn()
+            cur = db.cursor()
+            sql = "UPDATE phenotypes SET is_active=0 WHERE id = uuid_to_bin(%s)"
+            cur.execute(sql, (pheno_id, ))
+            affected = cur.rowcount
+            db.commit()
+
+            result = {"phenos": affected, "found": True, "action": "retire"}
+            return result
+        else:
+            return {"found": False, "action": "retire"}
+
+    @staticmethod
     def purge(pheno_id, config=None):
         pheno = Phenotype.get(pheno_id, config)
         result = {}
@@ -149,7 +170,7 @@ class Phenotype:
                 except:
                     pass
 
-            result = {"phenos": affected, "files": removed, "found": True}
+            result = {"phenos": affected, "files": removed, "found": True, "action": "purge"}
             return result
         else:
-            return {"found": False}
+            return {"found": False, "action": "purge"}

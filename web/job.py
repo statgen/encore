@@ -7,7 +7,7 @@ import sys
 from user import User
 
 class Job:
-    __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date"]
+    __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
     __extfields = ["status", "role"]
 
     def __init__(self, job_id, meta=None):
@@ -60,7 +60,8 @@ class Job:
               jobs.status_id as status_id, statuses.name AS status,
               jobs.error_message AS error_message,
               DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
-              DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
+              DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date,
+              jobs.is_active
             FROM jobs
             LEFT JOIN statuses ON jobs.status_id = statuses.id
             WHERE jobs.id = uuid_to_bin(%s)
@@ -107,7 +108,8 @@ class Job:
                 LEFT JOIN jobs on jobs.id = ju.job_id
                 LEFT JOIN users on users.id = jobs.user_id
             LEFT JOIN statuses ON jobs.status_id = statuses.id
-            WHERE ju.user_id = %s
+            WHERE ju.user_id = %s 
+            AND is_active=1
             """
         cur.execute(sql, (user_id,))
         results = cur.fetchall()
@@ -129,7 +131,9 @@ class Job:
             FROM jobs
                 LEFT JOIN users on users.id = jobs.user_id
             LEFT JOIN statuses ON jobs.status_id = statuses.id
-            WHERE jobs.pheno_id = uuid_to_bin(%s)
+            WHERE 
+              jobs.pheno_id = uuid_to_bin(%s)
+              AND jobs.is_active=1
             ORDER BY creation_date DESC
             """
         cur.execute(sql, (pheno_id,))
@@ -141,8 +145,12 @@ class Job:
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
-            SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, statuses.name AS status, DATE_FORMAT(jobs.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, DATE_FORMAT(jobs.modified_date, '%Y-%m-%d %H:%i:%s') AS modified_date,
-            users.email as user_email
+            SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, 
+              statuses.name AS status, 
+              DATE_FORMAT(jobs.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, 
+              DATE_FORMAT(jobs.modified_date, '%Y-%m-%d %H:%i:%s') AS modified_date,
+              users.email as user_email,
+              jobs.is_active
             FROM jobs
             LEFT JOIN statuses ON jobs.status_id = statuses.id
             LEFT JOIN users ON jobs.user_id = users.id
@@ -174,6 +182,22 @@ class Job:
             result = {"updated": False, "error": str(e)}
         return result
 
+    @staticmethod
+    def retire(job_id, config=None):
+        job = Job.get(job_id, config)
+        result = {}
+        if job:
+            db = sql_pool.get_conn()
+            cur = db.cursor()
+            sql = "UPDATE jobs SET is_active=0 WHERE id = uuid_to_bin(%s)"
+            cur.execute(sql, (job_id, ))
+            affected = cur.rowcount
+            db.commit()
+
+            result = {"jobs": affected, "found": True, "action": "retire"}
+            return result
+        else:
+            return {"found": False, "action": "retire"}
 
     @staticmethod
     def purge(job_id, config=None):
@@ -199,10 +223,10 @@ class Job:
                 except:
                     pass
 
-            result = {"jobs": affected, "users": users, "files": removed, "found": True}
+            result = {"jobs": affected, "users": users, "files": removed, "found": True, "action": "purge"}
             return result
         else:
-            return {"found": False}
+            return {"found": False, "action": "purge"}
 
     @staticmethod
     def share_add_email(job_id, email, current_user, role=0, config=None):

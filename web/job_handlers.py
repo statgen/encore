@@ -72,6 +72,14 @@ def cancel_job(job_id, job=None):
             return json_resp({"error": "COULD NOT CANCEL JOB"}), 500 
     return json_resp({"message": "Job canceled"})
 
+@check_edit_job
+def retire_job(job_id, job=None):
+    result = Job.retire(job_id, current_app.config)
+    if result["found"]:
+        return json_resp(result)
+    else:
+        return json_resp(result), 404
+
 def purge_job(job_id):
     result = Job.purge(job_id, current_app.config)
     if result["found"]:

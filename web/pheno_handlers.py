@@ -112,6 +112,14 @@ def post_to_pheno():
         "url_model": url_for("get_model_build", pheno=pheno_id), \
         "url_view": url_for("get_pheno", pheno_id=pheno_id)})
 
+@check_edit_pheno
+def retire_pheno(pheno_id, pheno=None):
+    result = Phenotype.retire(pheno_id, current_app.config)
+    if result["found"]:
+        return json_resp(result)
+    else:
+        return json_resp(result), 404
+
 def purge_pheno(pheno_id):
     result = Phenotype.purge(pheno_id, current_app.config)
     if result["found"]:

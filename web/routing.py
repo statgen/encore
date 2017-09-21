@@ -127,8 +127,13 @@ def get_api_job(job_id):
 
 @app.route("/api/jobs/<job_id>", methods=["DELETE"])
 @login_required
+def retire_api_job(job_id):
+    return job_handlers.retire_job(job_id)
+
+@app.route("/api/jobs/<job_id>/purge", methods=["DELETE"])
+@login_required
 @admin_required
-def delete_api_job(job_id):
+def purge_api_job(job_id):
     return job_handlers.purge_job(job_id)
 
 @app.route("/api/jobs/<job_id>", methods=["POST"])
@@ -241,8 +246,13 @@ def update_api_pheno(pheno_id):
 
 @app.route("/api/pheno/<pheno_id>", methods=["DELETE"])
 @login_required
+def retire_api_pheno(pheno_id):
+    return pheno_handlers.retire_pheno(pheno_id)
+
+@app.route("/api/pheno/<pheno_id>/purge", methods=["DELETE"])
+@login_required
 @admin_required
-def delete_api_pheno(pheno_id):
+def purge_api_pheno(pheno_id):
     return pheno_handlers.purge_pheno(pheno_id)
 
 @app.route("/api/pheno", methods=["POST"])

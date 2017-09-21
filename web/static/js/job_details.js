@@ -14,6 +14,47 @@ function init_job_tabs() {
     $("ul.tabs li:first").click();
 }
 
+function init_job_resubmit_button(job_id, selector) {
+    selector = selector || "button[name=resubmit_job]";
+    $(selector).click(function(evt) {
+        evt.preventDefault();
+        var url = $(evt.target).data("link");
+        document.location = url;
+    });
+}
+function init_job_share_button(job_id, selector) {
+    selector = selector || "button[name=share_job]";
+    $(selector).click(function(evt) {
+        evt.preventDefault();
+        var url = $(evt.target).data("link");
+        document.location = url;
+    });
+}
+
+function init_job_delete_button(job_id, selector) {
+    selector = selector || "button[name=delete_job]";
+    $(selector).click(function(evt) {
+        evt.preventDefault();
+        var url = $(evt.target).data("action");
+        $("button.delete-job").data("action", url);
+        $("#deleteModal").modal();
+    });
+    $("#deleteModal button.delete-job").click(function(evt) {
+        evt.preventDefault();
+        var url = $(evt.target).data("action");
+        $.ajax({
+            url: url, 
+            type: "DELETE",
+            success: function() {
+                document.location.reload();
+            },
+            error: function() {
+                alert("Deletion request failed");
+            }
+        });
+    });
+}
+
 function init_job_cancel_button(job_id, selector) {
     selector = selector || "button[name=cancel_job]";
     $(selector).click(function(evt)

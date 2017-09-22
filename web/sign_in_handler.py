@@ -42,7 +42,8 @@ def get_sign_in_view(target):
             flask_login.login_user(user)
             return redirect(url_for("index"))
         else:
-            return render_template("/sign_in.html", error_message="Not an authorized user")
+            error_message = "Not an authorized user ({})".format(user_data["email"])
+            return render_template("/sign_in.html", error_message=error_message)
     elif "authorize" in request.args:
         return redirect(oauth_service.get_authorize_url(
             scope="email",

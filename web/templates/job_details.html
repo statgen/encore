@@ -120,7 +120,9 @@
 								Share {% if job.users|length>1 %}({{ job.users | length -1}}){% endif %}</button>
 						{% endif %}
 						{% if job.status == "queued" or job.status == "started" %}
-							<button class="btn btn-danger" name="cancel_job">Cancel Job</button>
+							<button class="btn btn-danger" name="cancel_job"
+								data-action="{{ url_for("post_api_job_cancel_request", job_id=job.job_id) }}">
+							Cancel Job</button>
 						{% else %}
 							{%if job.is_active %}
 							<button class="btn btn-danger" name="delete_job"
@@ -178,6 +180,7 @@
 
         {% endif %}
 
+		{% if job.can_edit %}
 		<div class="modal fade" id="editModal" role="dialog">
 			<div class="modal-dialog">
 				<div class="modal-content">
@@ -219,4 +222,23 @@
 				</div>
 			</div>
 		</div>
+		<div class="modal fade" id="cancelModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Terminate Job</h4>
+					</div>
+					<div class="modal-body">
+						<p>Are you sure you want to stop this job from 
+						running?</p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-danger cancel-job">Terminate</button>
+					</div>
+				</div>
+			</div>
+		</div>
+        {% endif %}
 {% endblock %}

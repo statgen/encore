@@ -60,7 +60,13 @@ function init_job_cancel_button(job_id, selector) {
     $(selector).click(function(evt)
     {
         evt.preventDefault();
-        var url = "/api/jobs/" + job_id + "/cancel_request";
+        var url = $(evt.target).data("action");
+        $("#cancelModal button.cancel-job").data("action", url);
+        $("#cancelModal").modal();
+    });
+    $("#cancelModal button.cancel-job").click(function(evt) {
+        evt.preventDefault();
+        var url = $(evt.target).data("action");
         $.post(url).done( function() {
             alert("Cancellation in progress..."); 
             document.location = "../";

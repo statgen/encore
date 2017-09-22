@@ -15,7 +15,7 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/ideogram.js') }}"></script>
 	
     <script type="text/javascript" src="{{ url_for('static', filename='js/plot.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/job_details.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/job_details.js') }}?2"></script>
 	<script type="text/javascript">
 		job_id = "{{ job.job_id }}"
 		job_status = "{{ job.status }}"
@@ -25,6 +25,9 @@
 		job_api_url = "{{url_for("get_api_job", job_id=job.job_id) }}"
 		zoom_api_url = "{{ url_for("get_api_job_zoom", job_id = job.job_id) }}"
 		$(document).ready(function() {
+			init_page();
+		});
+		function init_page() {
 			init_job_tabs();
 			init_job_resubmit_button(job_id);
 			init_job_cancel_button(job_id);
@@ -42,7 +45,7 @@
 			if (job_status=="started") {
 				init_chunk_progress(job_id);
 			}
-		});
+		};
 	</script>
 	<style>
 		svg .variant_points a {cursor: pointer}

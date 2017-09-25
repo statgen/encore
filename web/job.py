@@ -4,6 +4,7 @@ import json
 import sql_pool
 import MySQLdb
 import sys
+import re
 from user import User
 
 class Job:
@@ -42,6 +43,8 @@ class Job:
 
     @staticmethod
     def get(job_id, config):
+        if not re.match('[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}', job_id):
+            return None
         job_folder = os.path.join(config.get("JOB_DATA_FOLDER", "./"), job_id)
         meta_path = os.path.expanduser(os.path.join(job_folder, "job.json"))
         if os.path.exists(meta_path):

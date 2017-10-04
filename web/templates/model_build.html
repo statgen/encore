@@ -293,6 +293,7 @@
 							opts.g = x.details.genotype;
 							opts.m = x.details.type;
 							opts.r = x.details.response;
+							opts.inv = x.details.response_invnorm || false;
 							opts.c = x.details.covariates;
 							opts.gp = x.details.genopheno || [];
 						}
@@ -319,6 +320,9 @@
 					}
 					if (opts.r) {
 						responseSelect.val(opts.r).trigger("change");
+					}
+					if (opts.inv) {
+						$("input[name=response_invnorm]", "#model-form").prop("checked", true);
 					}
 					if (opts.c) {
 						covariateSelect.val(opts.c).trigger("change");

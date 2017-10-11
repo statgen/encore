@@ -95,71 +95,47 @@ class Job:
     @staticmethod
     def list_all_for_user(user_id, config=None):
         db = sql_pool.get_conn()
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT
-              bin_to_uuid(jobs.id) AS id,
-              jobs.name AS name, ju.user_id as user_id,
-              ju.role_id as role_id, role.role_name as role,
-              jobs.user_id as owner_id, users.email as owner,
-              jobs.status_id as status_id, statuses.name AS status,
-              jobs.error_message AS error_message,
-              DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
-              DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
-            FROM job_users as ju
-                LEFT JOIN job_user_roles role on role.id = ju.role_id
-                LEFT JOIN jobs on jobs.id = ju.job_id
-                LEFT JOIN users on users.id = jobs.user_id
-            LEFT JOIN statuses ON jobs.status_id = statuses.id
-            WHERE ju.user_id = %s 
-            AND is_active=1
-            """
-        cur.execute(sql, (user_id,))
-        results = cur.fetchall()
+        results = Job.__list_by_sql_where(db, "jobs.id IN (SELECT job_id from job_users where user_id=%s) AND jobs.is_active=1", (user_id, ))
         return results 
 
     @staticmethod
     def list_all_for_phenotype(pheno_id, config=None):
         db = sql_pool.get_conn()
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT
-              bin_to_uuid(jobs.id) AS id,
-              jobs.name AS name,
-              jobs.user_id as owner_id, users.email as owner,
-              jobs.status_id as status_id, statuses.name AS status,
-              jobs.error_message AS error_message,
-              DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
-              DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date
-            FROM jobs
-                LEFT JOIN users on users.id = jobs.user_id
-            LEFT JOIN statuses ON jobs.status_id = statuses.id
-            WHERE 
-              jobs.pheno_id = uuid_to_bin(%s)
-              AND jobs.is_active=1
-            ORDER BY creation_date DESC
-            """
-        cur.execute(sql, (pheno_id,))
-        results = cur.fetchall()
+        results = Job.__list_by_sql_where(db, "jobs.pheno_id = uuid_to_bin(%s) AND jobs.is_active=1", (pheno_id, ))
         return results 
+
+    @staticmethod
+    def list_pending(config=None):
+        db = sql_pool.get_conn()
+        results = Job.__list_by_sql_where(db, "(statuses.name='queued' OR statuses.name='started')")
+        return results
 
     @staticmethod
     def list_all(config=None):
         db = sql_pool.get_conn()
+        results = Job.__list_by_sql_where(db)
+        return results
+
+    @staticmethod
+    def __list_by_sql_where(db, where="", vals=(), order=""):
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = """
             SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, 
               statuses.name AS status, 
-              DATE_FORMAT(jobs.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, 
-              DATE_FORMAT(jobs.modified_date, '%Y-%m-%d %H:%i:%s') AS modified_date,
+              DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date, 
+              DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date,
               users.email as user_email,
               jobs.is_active
             FROM jobs
             LEFT JOIN statuses ON jobs.status_id = statuses.id
-            LEFT JOIN users ON jobs.user_id = users.id
-            ORDER BY jobs.creation_date DESC
-            """
-        cur.execute(sql)
+            LEFT JOIN users ON jobs.user_id = users.id"""
+        if where:
+            sql += " WHERE " + where
+        if order:
+            sql += " ORDER BY " + order
+        else:
+            sql += " ORDER BY jobs.creation_date DESC"
+        cur.execute(sql, vals)
         results = cur.fetchall()
         return results
 

@@ -44,21 +44,35 @@ class Tracker(object):
     @staticmethod
     def update_job_status(db, job, slurm_status, exit_code):
         status = ""
+        reason = ""
         if slurm_status == "RUNNING":
             status = "started"
+        elif slurm_status == "CANCELLED by 0":
+            status = "failed"
+            reason = "Insufficient resource allocation"
         elif slurm_status.startswith("CANCELLED"):
             status = "cancelled"
         elif slurm_status == "PENDING" or slurm_status == "QUEUED":
             status = "queued"
-        elif slurm_status == "PREEMPTED" or slurm_status == "FAILED" or slurm_status == "TIMEOUT" or slurm_status == "NODE_FAIL":
+        elif slurm_status == "TIMEOUT":
+            status = "failed"
+            reason = "Exceeded allocated time"
+        elif slurm_status == "PREEMPTED" or slurm_status == "FAILED" or slurm_status == "NODE_FAIL":
             status = "failed"
         elif slurm_status == "COMPLETED":
             status = "succeeded"
 
         if status:
             cur = db.cursor(MySQLdb.cursors.DictCursor)
-            sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1), modified_date = NOW() WHERE id = uuid_to_bin(%s)"
-            cur.execute(sql, (status, job.id))
+            if reason:
+                sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1), " +  \
+                    "error_message=%s, " + \
+                    "modified_date = NOW() WHERE id = uuid_to_bin(%s)"
+                cur.execute(sql, (status, reason, job.id))
+            else:
+                sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1), " + \
+                    "modified_date = NOW() WHERE id = uuid_to_bin(%s)"
+                cur.execute(sql, (status, job.id))
             db.commit()
 
     @staticmethod

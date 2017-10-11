@@ -346,7 +346,7 @@ def resubmit_job(job_id, job=None):
         db = sql_pool.get_conn()
         cur = db.cursor()
         cur.execute("""
-            UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name = 'queued')
+            UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name = 'queued'), error_message=""
             WHERE id = uuid_to_bin(%s)
             """, (job_id, ))
         db.commit()

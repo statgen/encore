@@ -6,7 +6,7 @@
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 
-<script type="text/javascript">
+	<script type="text/javascript">
 		$(document).ready(function() {
 			$("#jobs-table").DataTable({
 				ajax: {url: "/api/jobs-all", dataSrc: ""},
@@ -25,10 +25,18 @@
 						" - " + 
 						"<a href='/admin/log/" + data.id + "/err.log?tail=50'>error</a>"	
 					}, orderable: false}
-				]
+				],
+				createdRow: function(row, data, index) {
+					if (!data.is_active) {
+						$(row).addClass("inactive")
+					}
+				}
 			})
 		});
 	</script>
+	<style>
+		tr.inactive {text-decoration: line-through;} 
+	</style>
 {% endblock %}
 {% block content %}
 

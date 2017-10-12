@@ -2,7 +2,8 @@
 /* eslint no-unused-vars: ["error", { "vars": "local" }] */
 /* global create_gwas_plot, create_qq_plot, Ideogram, zoom_api_url, genome_build */
 
-function init_job_tabs() {
+function init_job_tabs(job_id) {
+    var tabkey = job_id + "_tab";
     $("ul.tabs li").click(function()
     {
         $("ul.tabs li").removeClass("active");
@@ -10,8 +11,25 @@ function init_job_tabs() {
         $(".tab-content").css("z-index", "-1");
         var activeTab = $(this).attr("rel");
         $("#"+activeTab).css("z-index", "0");
+        if (sessionStorage) {
+            sessionStorage.setItem(tabkey, activeTab);
+        }
     });
-    $("ul.tabs li:first").click();
+    var opentab = "";
+    if (sessionStorage) {
+        opentab = sessionStorage.getItem(tabkey);
+        if (opentab)  {
+            var findtab = $("ul.tabs li[rel='" + opentab + "']");
+            if (findtab.length>0) {
+                findtab.click();
+            } else {
+                opentab = "";
+            }
+        }
+    }
+    if (!opentab) {
+        $("ul.tabs li:first").click();
+    }
 }
 
 function init_job_resubmit_button(job_id, selector) {

@@ -85,13 +85,18 @@ class Tracker(object):
 29646435            COMPLETED             0
 """
 
+        # only keep last record for jobs that were re-run
+        slurm_jobs_found = dict()
         for line in squeue_out.split("\n"):
             if line:
                 slurm_job = line.strip().split("|")
-                for j in jobs:
-                    if slurm_job[3][5:] == j.id:
-                        Tracker.update_job_status(db, j, slurm_job[1], slurm_job[2])
-                        break
+                # strip off "gasp_"
+                slurm_jobs_found[slurm_job[3][5:]] = slurm_job
+        for slurm_job in slurm_jobs_found.values():
+            for j in jobs:
+                if slurm_job[3][5:] == j.id:
+                    Tracker.update_job_status(db, j, slurm_job[1], slurm_job[2])
+                    break
 
     def routine(self):
         db = MySQLdb.connect(host=self.credentials.host, user=self.credentials.user, passwd=self.credentials.pw, db=self.credentials.db)

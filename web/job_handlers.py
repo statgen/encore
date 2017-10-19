@@ -39,25 +39,10 @@ def get_all_users():
     users = User.list_all(current_app.config)
     return json_resp(users)
 
-def get_job_chunks(job_id):
-    job_directory = os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-    output_file_glob = os.path.join(job_directory, "output.*.epacts")
-    files = glob.glob(output_file_glob)
-    now = time.strftime('%Y-%m-%d %H:%M:%S')
-    if len(files):
-        chunks = []
-        p = re.compile(r'output.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.epacts$')
-        for file in files:
-            m = p.search(file)
-            chunk = dict(m.groupdict())
-            chunk['chr'] =  chunk['chr'].replace("chr", "")
-            chunk['start'] = int(chunk['start'])
-            chunk['stop'] = int(chunk['stop'])
-            chunk['modified'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file)))
-            chunks.append(chunk)
-        return {"data": chunks, "now": now}
-    else:
-        return {"data":[], "now": now} 
+@check_view_job
+def get_job_progress(job_id, job=None):
+    sej = SlurmEpactsJob(job_id, job.root_path, current_app.config)
+    return json_resp(sej.get_progress())
 
 @check_edit_job
 def cancel_job(job_id, job=None):

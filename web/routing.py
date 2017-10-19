@@ -184,10 +184,10 @@ def get_api_job_variant_pheno(job_id):
 def get_api_job_tophits(job_id):
     return job_handlers.get_job_output(job_id, "tophits.json", False)
 
-@app.route("/api/jobs/<job_id>/chunks", methods=["GET"])
+@app.route("/api/jobs/<job_id>/progress", methods=["GET"])
 @login_required
-def get_api_job_chuncks(job_id):
-   return job_handlers.json_resp(job_handlers.get_job_chunks(job_id))
+def get_api_job_progress(job_id):
+   return job_handlers.get_job_progress(job_id)
 
 @app.route('/api/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
 @login_required

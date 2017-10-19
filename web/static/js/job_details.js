@@ -372,7 +372,7 @@ function collapse_chunk_bins(bins) {
 
 function init_chunk_progress(job_id, selector) {
     selector = selector || "#progress";
-    $.getJSON("/api/jobs/" + job_id + "/chunks").done(function(resp) {
+    $.getJSON("/api/jobs/" + job_id + "/progress").done(function(resp) {
         var now = (resp.now && new Date(resp.now)) || new Date();
         chunks = resp.data || resp;
         if (chunks.length<1) {

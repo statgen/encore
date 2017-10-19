@@ -1,7 +1,10 @@
 from genotype import Genotype
 from phenotype import Phenotype 
 from ped_writer import PedWriter
+import glob
+import time
 import os
+import re
 import subprocess
 
 class EpactsModel(object):
@@ -285,6 +288,25 @@ class SlurmEpactsJob:
         except OSError:
             raise Exception("Could not find scancel")
         return True
+
+    def get_progress(self):
+        output_file_glob = self.relative_path("output.*.epacts")
+        files = glob.glob(output_file_glob)
+        now = time.strftime('%Y-%m-%d %H:%M:%S')
+        if len(files):
+            chunks = []
+            p = re.compile(r'output.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.epacts$')
+            for file in files:
+                m = p.search(file)
+                chunk = dict(m.groupdict())
+                chunk['chr'] =  chunk['chr'].replace("chr", "")
+                chunk['start'] = int(chunk['start'])
+                chunk['stop'] = int(chunk['stop'])
+                chunk['modified'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file)))
+                chunks.append(chunk)
+            return {"data": chunks, "now": now}
+        else:
+            return {"data":[], "now": now} 
  
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.job_directory, *args))

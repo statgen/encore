@@ -292,21 +292,8 @@ class SlurmEpactsJob:
     def get_progress(self):
         output_file_glob = self.relative_path("output.*.epacts")
         files = glob.glob(output_file_glob)
-        now = time.strftime('%Y-%m-%d %H:%M:%S')
-        if len(files):
-            chunks = []
-            p = re.compile(r'output.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.epacts$')
-            for file in files:
-                m = p.search(file)
-                chunk = dict(m.groupdict())
-                chunk['chr'] =  chunk['chr'].replace("chr", "")
-                chunk['start'] = int(chunk['start'])
-                chunk['stop'] = int(chunk['stop'])
-                chunk['modified'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.path.getmtime(file)))
-                chunks.append(chunk)
-            return {"data": chunks, "now": now}
-        else:
-            return {"data":[], "now": now} 
+        resp = get_chr_chunk_progress(files)
+        return resp
  
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.job_directory, *args))
@@ -314,3 +301,85 @@ class SlurmEpactsJob:
     @staticmethod
     def available_models():
         return EpactsModel.list()
+
+def bin_chunks_by_chr_and_age(chunks, now):
+    def get_age_group(a):
+        diff_minutes = (now-a)/60
+        if diff_minutes < 10:
+            return 0
+        elif diff_minutes < 60: 
+            return 1
+        else:
+            return 2
+
+    bins = {}
+    for chunk in chunks:
+        chunk_chr = chunk["chrom"]
+        chunk_age  = get_age_group(chunk["modified"])
+        chunk_key = (chunk_chr, chunk_age)
+        #chunk_key = "{}-{}".format(chunk_chr, chunk_age)
+        if chunk_key in bins:
+            bins[chunk_key]["vals"].append(chunk)
+        else:
+            bins[chunk_key] = {
+                "chrom": chunk_chr,
+                "age": chunk_age,
+                "vals": [chunk]
+            }
+
+    def sort_chunk_vals(chunk):
+        chunk["vals"] = sorted(chunk["vals"], key=lambda x: x["start"] )
+        return chunk
+
+    bins = { k: sort_chunk_vals(v) for (k,v) in bins.iteritems() }
+    return bins
+
+def collapse_chunk_bins(bins):
+    results = []
+    state = { "start": 0, "stop": 0, "oldest": time.gmtime(), "newest": time.gmtime() }
+
+    def add(chrom, age, state):
+        results.append({"chrom": chrom, "age": age, 
+            "start": state["start"], "stop": state["stop"],
+            "oldest": state["oldest"], "newest": state["newest"] })
+    def reset(val, state):
+        state["start"]= val["start"]
+        state["stop"] = val["stop"]
+        state["oldest"] = val["modified"]
+        state["newest"] = val["modified"]
+        return state
+    def extend(val, state):
+        state["stop"] = val["stop"]
+        state["oldest"] = val["modified"] if val["modified"]<state["oldest"] else state["oldest"]
+        state["newest"] = val["modified"] if val["modified"]>state["newest"] else state["newest"]
+        return state
+
+    for b in bins.itervalues():
+        vals = iter(b["vals"])
+        state = reset(next(vals), state)
+        for val in vals:
+            if val["start"] != state["stop"]+1:
+                add(b["chrom"], b["age"], state)
+                state = reset(val, state)
+            else: 
+                state = extend(val, state)
+        add(b["chrom"], b["age"], state)
+
+    return results
+
+def get_chr_chunk_progress(files):
+    now = time.mktime(time.localtime())
+    if len(files):
+        chunks = []
+        p = re.compile(r'output.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.epacts$')
+        for file in files:
+            m = p.search(file)
+            chunk = dict(m.groupdict())
+            chunk['chrom'] =  chunk['chr']
+            chunk['start'] = int(chunk['start'])
+            chunk['stop'] = int(chunk['stop'])
+            chunk['modified'] = time.mktime(time.localtime(os.path.getmtime(file)))
+            chunks.append(chunk)
+        
+        result = collapse_chunk_bins(bin_chunks_by_chr_and_age(chunks, now))
+        return {"data": result}

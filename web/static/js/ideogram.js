@@ -182,7 +182,7 @@ Ideogram.prototype.getLayout = function(chrs, opts) {
     var rows = [];
     var maxextent = 0;
     var lookup = {};
-    var drawSex = false;
+    var drawX = true;
     var add2col = function(i, a,b) {
         var cols = [];
         var rowextent = a.end + b.end;
@@ -196,13 +196,24 @@ Ideogram.prototype.getLayout = function(chrs, opts) {
         lookup[a.chr] = [i, 1];
         lookup[b.chr] = [i, 3];
     };
+    var add1col = function(i, a) {
+        var cols = [];
+        var rowextent = a.end;
+        if (rowextent > maxextent) {maxextent = rowextent;}
+        cols.push({type: "gap", min_width: "25px"});
+        cols.push({type: "label", width: "45px", text: a.chr});
+        cols.push({type: "chr", name: a.chr, center: a.center, end: a.end});
+        cols.push({type: "gap", min_width: "25px"});
+        rows.push({cols: cols});
+        lookup[a.chr] = [i, 2];
+    };
     for(var i=0; i<11; i++) {
         var a = chrs[i];
         var b = chrs[21-i];
         add2col(i,a,b);
     }
-    if (drawSex) {
-        add2col(i, chrs[22], chrs[23]);
+    if (drawX) {
+        add1col(i, chrs[22]);
     }
     return {rows: rows, max_row_extent: maxextent,
         corner_ease: 5, chr: lookup};
@@ -210,7 +221,7 @@ Ideogram.prototype.getLayout = function(chrs, opts) {
 
 Ideogram.prototype.getRowWidths = function(row, width, scale) {
     var fixed = 0;
-    var gap = -1;
+    var gaps = [];
     var data = 0;
     var widths = row.cols.map(function() {return 0;});
     var remainWidth = width;
@@ -225,7 +236,7 @@ Ideogram.prototype.getRowWidths = function(row, width, scale) {
             data = data + col.end;
         }
         if (col.type && col.type=="gap") {
-            gap = idx;
+            gaps.push(idx);
         }
     });
     scale = (width - fixed)/scale;
@@ -236,8 +247,10 @@ Ideogram.prototype.getRowWidths = function(row, width, scale) {
             remainWidth -= w;
         }
     });
-    if (gap > -1 && remainWidth>0) {
-        widths[gap] = remainWidth; 
+    if (gaps.length > 0 && remainWidth>0) {
+        gaps.map(function(g) {
+            widths[g] = remainWidth/gaps.length; 
+        });
     }
     return widths;
 };

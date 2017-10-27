@@ -259,7 +259,7 @@ def get_job_share_page(job_id, job=None):
 
 def post_to_jobs():
     user = current_user
-    if not user.can_analyze():
+    if not user.can_analyze:
         return "User Action Not Allowed", 403
     job_desc = dict()
     if request.method != 'POST':
@@ -371,7 +371,7 @@ def get_genotype_info_stats(geno_id):
     return json_resp(g.get_info_stats())
 
 def get_model_build_view():
-    if current_user.can_analyze():
+    if current_user.can_analyze:
         return render_template("model_build.html")
     else:
         return render_template("not_authorized_to_analyze.html")

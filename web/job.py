@@ -213,14 +213,14 @@ class Job:
         db = sql_pool.get_conn()
         user = User.from_email(email, db)
         if user is None:
-            user = User.create(email, False, db)
+            user = User.create({"email": email, "can_analyze": False}, db)["user"]
         try:
             cur = db.cursor()
             sql = """
                 INSERT INTO job_users (job_id, user_id, role_id, created_by)
                 VALUES (uuid_to_bin(%s), %s, %s, %s)
                 """
-            cur.execute(sql, (job_id,user.rid, role, current_user.rid))
+            cur.execute(sql, (job_id, user.rid, role, current_user.rid))
             db.commit()
         except:
             ex = sys.exc_info()[0]

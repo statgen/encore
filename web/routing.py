@@ -56,6 +56,12 @@ def sign_out():
     logout_user()
     return redirect(url_for("index"))
 
+@app.route("/api/users", methods=["POST"])
+@login_required
+@admin_required
+def add_user():
+    return admin_handlers.add_user() 
+
 @app.route("/api/geno", methods=["GET"])
 @login_required
 def get_genotypes():

@@ -7,7 +7,7 @@
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 
 <script type="text/javascript">
-		$(document).ready(function() {
+		function init_user_table() {
 			$("#users-table").DataTable({
 				ajax: {url: "/api/users-all", dataSrc: ""},
 				order: [[5, "desc"]],
@@ -18,18 +18,95 @@
 					{data: "affiliation", title: "Affiliation"},
 					{data: "creation_date", title: "Date Created"},
 					{data: "last_login_date", title: "Last Login"}
-				]
+				],
+				stateSave: true
 			})
+		}
+		function init_addform() {
+			$("#addModal").find("form").on("keyup keypress", function(e) {
+				var keyCode = e.keyCode || e.which;
+				if (keyCode === 13) { 
+					e.preventDefault();
+					return false;
+				}
+			});
+			$("#new_user_button").click(function(evt) {
+				evt.preventDefault();
+				$("#addModal").on("shown.bs.modal", function() {
+					$("#addModal").find("#email").focus();
+				});
+				$("#addModal").modal();
+			});
+			$("button.add-user-save").click(function(evt) {
+				evt.preventDefault();
+				var data = ["email", "full_name", "affiliation"].reduce(function(obj, x) {
+					obj[x] = $("#addModal").find("#" + x).val();
+					return obj;
+				}, {});
+				console.log(data);
+				var add_user_url = $(this).data("action");
+				console.log(add_user_url);
+				$.post(add_user_url, data).done( function() {
+					$("#users-table").DataTable().ajax.reload();
+					$("#addModal").modal("hide");
+				}).fail(function() {
+					alert("Insert failed");
+				});
+			});
+		}
+		function init_page() {
+			init_user_table();
+			init_addform();
+		}
+		$(document).ready(function() {
+			init_page();
 		});
 	</script>
 {% endblock %}
 {% block content %}
 
         <div class="section">
-            <div class="section-title">
-                <h2>Users</h2>
+            <div class="section-title row">
+				<div class="col-md-10">
+					<h2>Users</h2>
+				</div>
+				<div class="col-md-2">
+					<button class="btn btn-success" name="add_user" id="new_user_button">New User</button>
+				</div>
             </div>
             <table id="users-table"></table>
         </div>
 
+		<div class="modal fade" id="addModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Add User</h4>
+					</div>
+					<div class="modal-body">
+						<form class="form-horizonal"> 
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="email">E-mail</label>
+							<div class="col-sm-10"><input type="text" class="form-control" id="email"/></div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="full_name">Name</label>
+							<div class="col-sm-10"><input type="text" class="form-control" id="full_name"/></div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="affiliation">Affiliation</label>
+							<div class="col-sm-10"><input type="text" class="form-control" id="affiliation"/></div>
+						</div>
+						&nbsp;
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-success add-user-save" 
+							data-action="{{ url_for("add_user") }}">Add</button>
+					</div>
+				</div>
+			</div>
+		</div>
 {% endblock %}

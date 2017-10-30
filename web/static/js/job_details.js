@@ -269,7 +269,8 @@ function init_tophits(job_id, selector, data_url) {
             order: [[pvalcol, "asc"]],
             lengthChange: false,
             searching: false,
-            dom: "rtip"
+            dom: "rtip",
+            stateSave: true
         });
         //$("#tophits").on("click","tr",function(event) {
         //  var data = table.row(this).data()
@@ -315,6 +316,7 @@ function init_job_lookup(job_id) {
                     columns: getDataCols(results.get_columns() + ["removeable"], job_id),
                     lengthChange: false,
                     searching: false,
+                    stateSave: true,
                     createdRow: function(row, data) {
                         if (!data.found) {
                             var msg = data.message || "Not Found";

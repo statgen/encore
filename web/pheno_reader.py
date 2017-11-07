@@ -139,6 +139,9 @@ def find_header(firstrow, lastcomment, cols):
     return (["COL{0}".format(i) for i in xrange(len(colclasses))], "position")
 
 def check_if_ped(cols, obs):
+    # This just isn't working quite right
+    # better to check column names?
+    return False, None
     if len(cols)<6:
         return False, None
     types = [x["type"] for x in cols]

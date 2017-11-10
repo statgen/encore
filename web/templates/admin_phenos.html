@@ -19,10 +19,18 @@
 					{title: "Pheno", data: "id", render: function(data) {
 						return "<a href='/phenos/" + data + "'>View</a>"}}
 				],
+				createdRow: function(row, data, index) {
+					if (!data.is_active) {
+						$(row).addClass("inactive")
+					}
+				},
 				stateSave: true
 			})
 		});
 	</script>
+	<style>
+		tr.inactive {text-decoration: line-through;} 
+	</style>
 {% endblock %}
 {% block content %}
 

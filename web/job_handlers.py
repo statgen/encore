@@ -161,15 +161,11 @@ def get_job_results(job_id, filters=dict(), job=None):
         return True
 
     def generate():
-        count = 0
         yield "\t".join(header) + "\n"
         next(indata) #skip header
         for row in indata:
             if pass_row(row):
-                count += 1
                 yield "\t".join(row)
-                if count > 20:
-                    return
 
     return Response(generate(), mimetype="text/plain")
 

@@ -90,11 +90,16 @@ def get_job(job_id):
     return job_handlers.get_job_details_view(job_id)
 
 
-@app.route("/jobs/<job_id>/output", methods=["GET"])
+@app.route("/jobs/<job_id>/output", methods=["get"])
 @login_required
 def get_job_output(job_id):
-    return job_handlers.get_job_output(job_id, "output.epacts.gz", True)
+    return job_handlers.get_job_output(job_id, "output.epacts.gz", true)
 
+@app.route("/jobs/<job_id>/results", methods=["get"])
+@login_required
+def get_job_results(job_id):
+    filters = request.args.to_dict()
+    return job_handlers.get_job_results(job_id, filters)
 
 @app.route("/jobs/<job_id>/locuszoom/<region>", methods=["GET"])
 @login_required

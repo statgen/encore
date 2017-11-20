@@ -109,6 +109,71 @@ def get_job_variant_page(job_id, job=None):
         variant_id=variant_id, chrom=chrom, pos=pos)
 
 @check_view_job
+def get_job_results(job_id, filters=dict(), job=None):
+    epacts_filename = job.relative_path("output.epacts.gz")
+    with gzip.open(epacts_filename) as f:
+        header = f.readline().rstrip('\n').split('\t')
+        if header[1] == "BEG":
+            header[1] = "BEGIN"
+        if header[0] == "#CHROM":
+            header[0] = "CHROM"
+    assert len(header) > 0
+    headerpos = {x:i for i,x in enumerate(header)}
+
+    if filters.get("region", ""):
+        tb = tabix.open(epacts_filename)
+        indata = tb.query(chrom, start_pos, end_pos)
+    else:
+        indata = (x.split("\t") for x in gzip.open(epacts_filename))
+
+    pass_tests = []
+    if filters.get("non-monomorphic", False):
+        if "AC" not in headerpos:
+            raise Exception("Column AC not found")
+        ac_index = headerpos["AC"]
+        def mono_pass(row):
+            if float(row[ac_index])>0:
+                return True
+            else:
+                return False
+        pass_tests.append(mono_pass)
+
+    if "max-pvalue" in filters:
+        if "PVALUE" not in headerpos:
+            raise Exception("Column PVALUE not found")
+        pval_index = headerpos["PVALUE"]
+        thresh = float(filters.get("max-pvalue", 1))
+        def pval_pass(row):
+            if row[pval_index] == "NA":
+                return False
+            if float(row[pval_index])<thresh:
+                return True
+            else:
+                return False
+        pass_tests.append(pval_pass)
+
+    def pass_row(row):
+        if len(pass_tests)==0:
+            return True
+        for f in pass_tests:
+            if not f(row):
+                return False
+        return True
+
+    def generate():
+        count = 0
+        yield "\t".join(header) + "\n"
+        next(indata) #skip header
+        for row in indata:
+            if pass_row(row):
+                count += 1
+                yield "\t".join(row)
+                if count > 20:
+                    return
+
+    return Response(generate(), mimetype="text/plain")
+
+@check_view_job
 def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, head=None, job=None):
     try:
         output_file = job.relative_path(filename)

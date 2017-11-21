@@ -87,7 +87,7 @@ class Tracker(object):
 
         # only keep last record for jobs that were re-run
         slurm_jobs_found = dict()
-        for line in squeue_out.split("\n"):
+        for line in squeue_out.rstrip().split("\n"):
             if line:
                 slurm_job = line.strip().split("|")
                 # strip off "gasp_"

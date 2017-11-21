@@ -18,7 +18,7 @@ from genotype import Genotype
 from phenotype import Phenotype
 from job import Job 
 from user import User
-from slurm_epacts_job import SlurmEpactsJob
+from slurm_epacts_job import SlurmEpactsJob, get_queue
 
 def get_home_view():
     return render_template("home.html")
@@ -440,6 +440,18 @@ def get_model_build_view():
 def get_models():
     models = SlurmEpactsJob.available_models()
     return json_resp(models)
+
+def get_queue_status(job_id=None):
+    queue = get_queue()
+    summary = {"running": len(queue["running"]),
+        "queued": len(queue["queued"])}
+    if job_id is not None:
+        try:
+            position = [x["job_name"] for x in queue["queued"]].index(job_id)
+            summary["position"] = position
+        except:
+            pass
+    return json_resp(summary) 
 
 def json_resp(data):
     resp = Response(mimetype='application/json')

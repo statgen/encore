@@ -215,6 +215,12 @@ def get_api_annotations(resource):
     else:
         return "Not Found", 404
 
+@app.route("/api/queue", methods=["GET"])
+@app.route("/api/queue/<job_id>", methods=["GET"])
+@login_required
+def get_queue_status(job_id=None):
+    return job_handlers.get_queue_status(job_id) 
+
 @app.route("/jobs/<job_id>/plots/tmp-qq", methods=["GET"])
 @login_required
 def get_job_tmp_qq(job_id):

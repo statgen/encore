@@ -6,6 +6,7 @@ import time
 import os
 import re
 import subprocess
+import pwd
 
 class EpactsModel(object):
     __models = []
@@ -383,3 +384,30 @@ def get_chr_chunk_progress(files):
         
         result = collapse_chunk_bins(bin_chunks_by_chr_and_age(chunks, now))
         return {"data": result}
+
+def get_queue():
+    cols = [["job_id", "%i"], ["job_name", "%j"], ["state", "%t"],
+        ["time", "%M"], ["reason", "%R"]]
+    col_names = [x[0] for x in cols]
+    col_formats = [x[1] for x in cols]
+    cmd = ["/usr/cluster/bin/squeue", 
+        "-u", pwd.getpwuid(os.getuid())[0], 
+        "-p", "encore",
+        "-o", "|".join(col_formats),
+        "--noheader"]
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    squeue_out, squeue_err = p.communicate()
+    queue = {"running": [], "queued": []}
+    for line in squeue_out.split("\n"):
+        values = line.split("|")
+        if len(values) != len(col_names):
+            continue
+        row = dict(zip(col_names, values))
+        row["job_name"] = row["job_name"][5:]
+        if row["state"]=="R":
+            queue["running"].append(row)
+        elif row["state"] == "PD":
+            queue["queued"].append(row)
+    return queue
+            
+

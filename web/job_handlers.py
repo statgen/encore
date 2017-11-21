@@ -447,7 +447,7 @@ def get_queue_status(job_id=None):
         "queued": len(queue["queued"])}
     if job_id is not None:
         try:
-            position = [x["job_name"] for x in queue["queued"]].index(job_id)
+            position = [x["job_name"] for x in queue["queued"]].index(job_id) + 1
             summary["position"] = position
         except:
             pass

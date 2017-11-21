@@ -500,3 +500,18 @@ function init_editform(job_id, job_api_url) {
     });
 }
 
+function init_queue_info(selector) {
+    selector = selector || "#queue_info";
+    var $ele = $(selector);
+    var url = $ele.data("url");
+    $.getJSON(url).done(function(resp) {
+        var text = "Queue status: ";
+        text += (resp.running || 0) + " job(s) running. ";
+        text += (resp.queued || 0) + " job(s) queued. ";
+        if(resp.position) {
+            text += "Position in queue: " + resp.position;
+        }
+        $(selector).addClass("queue-info bg-info");
+        $(selector).append(text);
+    });
+}

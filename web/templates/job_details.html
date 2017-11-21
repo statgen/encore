@@ -42,6 +42,9 @@
 			if (job_can_edit && job_is_active) {
 				init_editform(job_id, job_api_url);
 			}
+			if (job_status=="queued") {
+				init_queue_info();
+			}
 			if (job_status=="started") {
 				init_chunk_progress(job_id);
 			}
@@ -176,6 +179,7 @@
 		{% else %}
 
 			<div id="progress"></div>
+			<div id="queue_info" data-url="{{ url_for('get_queue_status', job_id=job.job_id) }}"></div>
 			{% if job.is_active<1 %} 
 				<h3 style="text-align:center; padding: 10px;">This job has been deleted</h3>
 			{% endif %}

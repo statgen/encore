@@ -78,3 +78,8 @@ ul.tabs li.active
 	display: block;
 	margin: 0 auto;
 }
+
+.queue-info {
+	padding: 20px;
+	margin: 20px auto;
+}

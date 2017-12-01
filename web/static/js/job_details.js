@@ -284,23 +284,48 @@ function init_tophits(job_id, selector, data_url) {
 function init_chunk_progress(job_id, selector) {
     selector = selector || "#progress";
     $.getJSON("/api/jobs/" + job_id + "/progress").done(function(resp) {
+        var format = resp.header && resp.header.format || "none";
         var chunks = resp.data || resp;
-        if (chunks.length<1) {
-            return;
+        if (format=="ideogram") {
+            draw_progress_ideogram(selector, chunks);
+        } else if (format=="progress") {
+            if (chunks.complete && chunks.total) {
+                draw_progress_bar(selector, chunks.complete/chunks.total);
+            }
         }
-        $(selector).append("<h3>Progress</h3>");
-        var ideo = new Ideogram(selector);
-        chunks = chunks.map(function(x) {
-            //x.fill = ["#3CA661","#66F297","#1D5932"][x.age] ;
-            x.fill = ["#66F297","#3CA661","#3CA661"][x.age] ;
-            return x;
-        });
-        ideo.setRegions(chunks);
-        ideo.draw(genome_build);
-        var boxcss = "display: inline-block; width: 1em; height:1em; margin: 0 5px; ";
-        $(selector).append("<p style='text-align: center'><span style='" + boxcss + "background:#66F297'> </span>In Progress " + 
-            "<span style='" + boxcss + "background:#3CA661'> </span>Completed</p>");
     });
+}
+
+function draw_progress_ideogram(selector, chunks) {
+    if (chunks.length<1) {
+        return;
+    }
+    $(selector).append("<h3>Progress</h3>");
+    var ideo = new Ideogram(selector);
+    chunks = chunks.map(function(x) {
+        //x.fill = ["#3CA661","#66F297","#1D5932"][x.age] ;
+        x.fill = ["#66F297","#3CA661","#3CA661"][x.age] ;
+        return x;
+    });
+    ideo.setRegions(chunks);
+    ideo.draw(genome_build);
+    var boxcss = "display: inline-block; width: 1em; height:1em; margin: 0 5px; ";
+    $(selector).append("<p style='text-align: center'><span style='" + boxcss + "background:#66F297'> </span>In Progress " + 
+        "<span style='" + boxcss + "background:#3CA661'> </span>Completed</p>");
+}
+
+function draw_progress_bar(selector, percent) {
+    var fake_layout =  {rows: [{cols: [{type: "chr", name: "complete", center: 30, end: 100}]}], 
+        max_row_extent: 100,
+        corner_ease: 5, chr: {"complete": [0,0]},
+        height: 40};
+    $(selector).append("<h3>Progress</h3>");
+    var ideo = new Ideogram(selector);
+    ideo.setRegions([{"chrom": "complete", "start": 0, "stop": 100*percent, "fill": "#3CA661"}]);
+    ideo.draw(fake_layout);
+    var boxcss = "display: inline-block; width: 1em; height:1em; margin: 0 5px; ";
+    $(selector).append("<p style='text-align: center'>" + 
+        "<span style='" + boxcss + "background:#3CA661'> </span>Completed</p>");
 }
 
 function init_job_lookup(job_id) {

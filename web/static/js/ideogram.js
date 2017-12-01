@@ -7,8 +7,8 @@ var Ideogram = function(selector) {
         throw("Must supply a selector to initialize ideogram");
     }
     this.svg = d3.select(selector).append("svg")
-        .attr("width",800)
-        .attr("height", 450);
+        .attr("width", 1)
+        .attr("height", 1);
     this.svg.append("g")
         .attr("class", "chromosome");
     this.svg.append("g")
@@ -30,9 +30,13 @@ var Ideogram = function(selector) {
     this.regions = [];
 };
 
-Ideogram.prototype.draw = function(build) {
-    build = build || "GRCh37";
-    var layout = this.getLayout(this.layouts[build]);
+Ideogram.prototype.draw = function(layout) {
+    layout = layout || "GRCh37";
+    if (this.layouts[layout]) {
+        layout = this.getLayout(this.layouts[layout]);
+    }
+    this.svg.attr("width", layout.width || 800);
+    this.svg.attr("height", layout.height || 450);
     var positions = this.calculatePositions(layout);
     this.drawOutlines(positions);
     this.drawRegions(positions, this.regions);

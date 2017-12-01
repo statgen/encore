@@ -292,8 +292,11 @@ class SlurmEpactsJob:
 
     def get_progress(self):
         output_file_glob = self.relative_path("output.*.epacts")
-        files = glob.glob(output_file_glob)
-        resp = get_chr_chunk_progress(files)
+        if os.path.isfile(self.relative_path("output.1.R")):
+            resp = get_gene_chunk_progress(output_file_glob,
+                self.relative_path("output.*.R"))
+        else:
+            resp = get_chr_chunk_progress(output_file_glob)
         return resp
  
     def relative_path(self, *args):
@@ -368,7 +371,14 @@ def collapse_chunk_bins(bins):
 
     return results
 
-def get_chr_chunk_progress(files):
+def get_gene_chunk_progress(output_file_glob, input_file_glob):
+    in_files = glob.glob(input_file_glob)
+    out_files = glob.glob(output_file_glob)
+    return {"data": {"total": len(in_files), "complete": len(out_files)}, 
+        "header": {"format": "progress"}}
+
+def get_chr_chunk_progress(output_file_glob):
+    files = glob.glob(output_file_glob)
     now = time.mktime(time.localtime())
     if len(files):
         chunks = []
@@ -383,7 +393,7 @@ def get_chr_chunk_progress(files):
             chunks.append(chunk)
         
         result = collapse_chunk_bins(bin_chunks_by_chr_and_age(chunks, now))
-        return {"data": result}
+        return {"data": result, "header": {"format": "ideogram"}}
 
 def get_queue():
     cols = [["job_id", "%i"], ["job_name", "%j"], ["state", "%t"],

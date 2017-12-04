@@ -97,8 +97,12 @@ def get_job_details_view(job_id, job=None):
 
 @check_view_job
 def get_job_locuszoom_plot(job_id, region, job=None):
-    geno = Genotype.get(job.get_genotype_id(), current_app.config)
-    return render_template("job_locuszoom.html", job=job.as_object(), build=geno.build, region=region)
+    if job.meta.get("genome_build"):
+        build = job.meta["genome_build"]
+    else:
+        geno = Genotype.get(job.get_genotype_id(), current_app.config)
+        build = geno.build
+    return render_template("job_locuszoom.html", job=job.as_object(), build=build, region=region)
 
 @check_view_job
 def get_job_variant_page(job_id, job=None):
@@ -226,10 +230,12 @@ def get_job_zoom(job_id, job=None):
 
     json_response_data["CHROM"] = []
     json_response_data["BEGIN"] = []
-    json_response_data["END"] = []
     json_response_data["MARKER_ID"] = []
-    json_response_data["NS"] = []
     json_response_data["PVALUE"] = []
+    if "END" in headerpos:
+        json_response_data["END"] = []
+    if "NS" in headerpos:
+        json_response_data["NS"] = []
     if "MAF" in headerpos:
         json_response_data["MAF"] = []
     if "BETA" in headerpos:
@@ -238,10 +244,12 @@ def get_job_zoom(job_id, job=None):
         if r[headerpos["PVALUE"]] != "NA":
             json_response_data["CHROM"].append(r[headerpos["CHROM"]])
             json_response_data["BEGIN"].append(r[headerpos["BEGIN"]])
-            json_response_data["END"].append(r[headerpos["END"]])
+            if "END" in headerpos:
+                json_response_data["END"].append(r[headerpos["END"]])
             json_response_data["MARKER_ID"].append(r[headerpos["MARKER_ID"]])
             json_response_data["PVALUE"].append(r[headerpos["PVALUE"]])
-            json_response_data["NS"].append(r[4])
+            if "NS" in headerpos:
+                json_response_data["NS"].append(r[headerpos["NS"]])
             if "MAF" in headerpos:
                 json_response_data["MAF"].append(r[headerpos["MAF"]])
             if "BETA" in headerpos:

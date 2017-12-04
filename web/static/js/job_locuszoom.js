@@ -83,10 +83,11 @@ $(document).ready(function() {
     function getlayout(avail_fields, build) {
         var has_maf = avail_fields.indexOf("MAF") !== -1;
         var has_beta = avail_fields.indexOf("BETA") !== -1;
+        var has_ns = avail_fields.indexOf("NS") !== -1;
         var fields = ["epacts:MARKER_ID", "epacts:CHROM", 
-            "epacts:END", "epacts:BEGIN", "epacts:PVALUE|neglog10", 
+            "epacts:BEGIN", "epacts:PVALUE|neglog10", 
             "epacts:PVALUE|scinotation", "epacts:PVALUE", 
-            "epacts:NS", "ld:state", "ld:isrefvar"];
+            "ld:state", "ld:isrefvar"];
         var tooltip = "<div style='text-align: right'>"
             + "<strong>{{epacts:MARKER_ID}}</strong><br>"
             + "Chrom: <strong>{{epacts:CHROM}}</strong><br/>"
@@ -94,13 +95,16 @@ $(document).ready(function() {
             + "P Value: <strong>{{epacts:PVALUE|scinotation}}</strong><br>"
             + ((has_maf)? "MAF: <strong>{{epacts:MAF}}</strong><br/>" : "")
             + ((has_beta) ? "BETA: <strong>{{epacts:BETA}}</strong><br/>" : "")
-            + "N: <strong>{{epacts:NS}}</strong><br/>"
+            + ((has_ns) ? "N: <strong>{{epacts:NS}}</strong><br/>" : "")
             + "</div>";
         if (has_maf) {
             fields.push("epacts:MAF");
         }
         if (has_beta) {
             fields.push("epacts:BETA");
+        }
+        if (has_ns) {
+            fields.push("epacts:NS");
         }
         var assoc_mods = {
             dashboard: {components: []},

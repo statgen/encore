@@ -21,7 +21,7 @@
 		job_status = "{{ job.status }}"
 		job_can_edit = {{ job.can_edit|default(False)|tojson }}
 		job_is_active = {{ job.is_active|default(False)|tojson }}
-		genome_build = "{{ job.details.genotype.build }}"
+		genome_build = "{{ job.details.genome_build or job.details.genotype.build }}"
 		job_api_url = "{{url_for("get_api_job", job_id=job.job_id) }}"
 		zoom_api_url = "{{ url_for("get_api_job_zoom", job_id = job.job_id) }}"
 		$(document).ready(function() {
@@ -67,27 +67,35 @@
 			<td>{{ job.name }}</td>
 		</tr>
 		{% if job.details %}
+		{% if job.details.response %}
 		<tr>
 			<th>Response</th>
 			<td>{{ job.details["response"] }}</td>
 		</tr>
+		{% endif %}
+		{% if job.details.covariates %}
 		<tr>
 			<th>Covariates</th>
 			<td>{{ ", ".join(job.details.get("covariates",[]) + job.details.get("genopheno",[]) ) }}</td>
 		</tr>
+		{% endif %}
 		<tr>
 			<th>Model Type</th>
 			<td>{{ job.details.get("type","?") }}</td>
 		</tr>
+		{% if job.details.phenotype %}
 		<tr>
 			<th>Phenotype</th>
 			<td><a href={{url_for("get_pheno", pheno_id=job.details.phenotype.pheno_id) }}>
 			{{ job.details.phenotype.name }}</a></td>
 		</tr>
+		{% endif %}
+		{% if job.details.genotype %}
 		<tr>
 			<th>Genotype</th>
 			<td>{{ job.details.genotype.name }} ( {{ job.details.genotype.build }} )</td>
 		</tr>
+		{% endif %}
 		{% endif %}
 		<tr>
 			<th>Status</th>

@@ -205,7 +205,12 @@ def get_api_job_progress(job_id):
 @login_required
 def get_api_annotations(resource):
     if resource == "ld-results":
-        return requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/results/', params=request.args).content
+        ldresp =  requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/results/', params=request.args)
+        if ldresp.status_code != 500:
+            return ldresp.content
+        else:
+            empty = "{\"data\": {\"position2\": []}}"
+            return empty
     elif resource == "gene":
         return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/genes/', params=request.args).content
     elif resource == "recomb":

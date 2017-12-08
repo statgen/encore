@@ -86,12 +86,19 @@ class Genotype:
         else:
             return dict()
 
-    def get_build_info(self, config, build):
-        if build in config.get("BUILD_REF", {}):
-            build_info = config.get("BUILD_REF").get(build)
-        else:
-            raise Exception("Build information not found: {}".format(build))
-        return build_info
+    def get_samples(self):
+        path = self.get_samples_path()
+        samples = None
+        if path:
+            with open(path) as infile:
+                samples = infile.readlines()
+        return samples
+
+    def get_samples_path(self):
+        return self.meta.get("samples_path", None)
+
+    def get_pca_genotypes_path(self):
+        return self.meta.get("pca_genotypes_path", None)
 
     def get_build_ref_path(self):
         return self.build_info.get("fasta", None)

@@ -95,10 +95,20 @@ class Genotype:
         return samples
 
     def get_samples_path(self):
-        return self.meta.get("samples_path", None)
+        samples_path = self.meta.get("samples_path", None)
+        samples_path = self.relative_path(samples_path)
+        if os.path.exists(samples_path):
+            return samples_path
+        else:
+            return None
 
     def get_pca_genotypes_path(self):
-        return self.meta.get("pca_genotypes_path", None)
+        geno_path = self.meta.get("pca_genotypes_path", None)
+        geno_path = self.relative_path(geno_path)
+        if os.path.exists(geno_path):
+            return geno_path
+        else:
+            return None
 
     def get_build_info(self, config, build):
         if build in config.get("BUILD_REF", {}):

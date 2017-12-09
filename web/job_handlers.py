@@ -18,7 +18,10 @@ from genotype import Genotype
 from phenotype import Phenotype
 from job import Job 
 from user import User
-from slurm_epacts_job import SlurmEpactsJob, get_queue
+from slurm_queue import SlurmJob, get_queue
+from model_factory import ModelFactory
+
+import sys, traceback
 
 def get_home_view():
     return render_template("home.html")
@@ -41,7 +44,7 @@ def get_all_users():
 
 @check_view_job
 def get_job_progress(job_id, job=None):
-    sej = SlurmEpactsJob(job_id, job.root_path, current_app.config)
+    sej = SlurmJob(job_id, job.root_path, current_app.config)
     return json_resp(sej.get_progress())
 
 @check_edit_job
@@ -49,7 +52,7 @@ def cancel_job(job_id, job=None):
     if job is None:
         return json_resp({"error": "JOB NOT FOUND"}), 404
     else:
-        slurmjob = SlurmEpactsJob(job_id, job.root_path, current_app.config) 
+        slurmjob = SlurmJob(job_id, job.root_path, current_app.config) 
         try:
             slurmjob.cancel_job()
         except Exception as exception:
@@ -352,7 +355,7 @@ def post_to_jobs():
         return json_resp({"error": "COULD NOT GENERATE JOB ID"}), 500
     job_directory =  os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
 
-    job = SlurmEpactsJob(job_id, job_directory, current_app.config) 
+    job = SlurmJob(job_id, job_directory, current_app.config) 
 
     try:
         os.mkdir(job_directory)
@@ -366,6 +369,7 @@ def post_to_jobs():
         job.submit_job(job_desc)
     except Exception as e:
         print e
+        traceback.print_exc(file=sys.stdout)
         shutil.rmtree(job_directory)
         return json_resp({"error": "COULD NOT ADD JOB TO QUEUE"}), 500 
     # job submitted to queue
@@ -390,7 +394,7 @@ def post_to_jobs():
 
 @check_edit_job
 def resubmit_job(job_id, job=None):
-    sjob = SlurmEpactsJob(job_id, job.root_path, current_app.config) 
+    sjob = SlurmJob(job_id, job.root_path, current_app.config) 
     try:
         sjob.resubmit()
     except Exception as exception:
@@ -446,7 +450,7 @@ def get_model_build_view():
         return render_template("not_authorized_to_analyze.html")
 
 def get_models():
-    models = SlurmEpactsJob.available_models()
+    models = ModelFactory.list()
     return json_resp(models)
 
 def get_queue_status(job_id=None):

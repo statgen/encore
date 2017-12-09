@@ -32,6 +32,7 @@ class SlurmJob:
             f.write("\n".join(self.get_batch_headers(model_plan)))
             f.write("\n\n")
             f.write("\n".join(model_plan["commands"]))
+            f.write("\n")
 
     def submit_job(self, model_spec):
         model = ModelFactory.get_for_model_spec(model_spec, self.job_directory, self.config)

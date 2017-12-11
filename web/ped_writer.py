@@ -1,7 +1,10 @@
 import re
 
 def sanitize(x):
-    return re.sub(r'[^A-Za-z0-9._-]', "_", x)
+    if re.match(r'^[^A-Za-z]', x):
+        x = "X" + x
+    x = re.sub(r'[^A-Za-z0-9._]', "_", x)
+    return x
 
 class ColumnFactory:
     @staticmethod

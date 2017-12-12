@@ -1,9 +1,7 @@
 from ped_writer import PedWriter
 from base_model import BaseModel
-import glob
-import time
 import os
-import re
+from chunk_progress import get_chr_chunk_progress, get_gene_chunk_progress 
 
 class EpactsModel(BaseModel):
 
@@ -100,7 +98,8 @@ class EpactsModel(BaseModel):
             resp = get_gene_chunk_progress(output_file_glob,
                 self.relative_path("output.*.R"))
         else:
-            resp = get_chr_chunk_progress(output_file_glob)
+            fre = r'output.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.epacts$'
+            resp = get_chr_chunk_progress(output_file_glob, fre)
         return resp
 
         
@@ -171,7 +170,6 @@ class MMSkatOEpactsModel(EpactsModel):
             "--unit 500",
             "--max-maf 0.05"] 
         return opts
-
 
 def bin_chunks_by_chr_and_age(chunks, now):
     def get_age_group(a):
@@ -263,6 +261,4 @@ def get_chr_chunk_progress(output_file_glob):
         
         result = collapse_chunk_bins(bin_chunks_by_chr_and_age(chunks, now))
         return {"data": result, "header": {"format": "ideogram"}}
-
-            
 

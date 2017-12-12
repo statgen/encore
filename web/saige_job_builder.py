@@ -1,7 +1,7 @@
 from base_model import BaseModel
 from ped_writer import PedWriter
 import os
-import re
+from chunk_progress import get_chr_chunk_progress
 
 
 class SaigeModel(BaseModel):
@@ -82,7 +82,10 @@ class SaigeModel(BaseModel):
         return {"commands": cmds}
 
     def get_progress(self):
-        return {}
+        output_file_glob = self.relative_path("step2.bin.*.txt")
+        fre = r'step2\.bin\.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.txt$'
+        resp = get_chr_chunk_progress(output_file_glob, fre)
+        return resp
 
         
 class LinearSaigeModel(SaigeModel):

@@ -61,7 +61,7 @@ class SaigeModel(BaseModel):
         try:
             ped_writer = self.get_ped_writer(model_spec, geno, pheno) 
             with open(ped_file_path, "w") as pedfile:
-                ped_writer.write_to_file(pedfile)
+                ped_writer.write_to_file(pedfile, comment_header=False)
             return {
                 "response": ped_writer.get_response_headers(),
                 "covars": ped_writer.get_covar_headers(),

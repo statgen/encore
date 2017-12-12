@@ -222,10 +222,13 @@ class PedWriter:
     def get_covar_headers(self):
         return self.covarheaders
 
-    def write_to_file(self, fconn):
+    def write_to_file(self, fconn, comment_header=True):
         row_count = 0
         self.expand_columns()
-        fconn.write("#" + "\t".join(self.headers) + "\n")
+        header = "\t".join(self.headers) + "\n"
+        if comment_header:
+            header = "#" + header
+        fconn.write(header)
         for idx in range(max((len(x) for x in self.allcols))):
             vals = flatten([x.values(idx) for x in self.allcols])
             has_missing = any((x is None for x in vals))

@@ -80,7 +80,7 @@ class CategoricalColumn(Column):
         super(CategoricalColumn, self).__init__(coldef, pr)
         self.levels = coldef["levels"]
         self.ref_level = self.levels[0]
-        self.contr_levels = self.levels[1:-1]
+        self.contr_levels = self.levels[1:]
 
     def headers(self):
         return [self.name + "_" + x for x in self.contr_levels]
@@ -89,7 +89,14 @@ class CategoricalColumn(Column):
         val = self.value(index) 
         if val is None:
             return None
-        return [str(int(val[0]==x)) for x in self.contr_levels] 
+        ret = ["0"] * len(self.contr_levels)
+        if val == self.ref_level:
+            return ret
+        for index, level in enumerate(self.contr_levels):
+            if val == level:
+                ret[index] = "1"
+                return ret
+        raise Exception("Found unexpected value ({}) in categorical column ()".format(val, self.name))
 
 class BinaryColumn(Column):
     
@@ -105,7 +112,12 @@ class BinaryColumn(Column):
         val = self.value(index) 
         if val is None:
             return None
-        return [str(int(val[0]==self.ref_level))] 
+        if val==self.ref_level:
+            return ["0"]
+        elif val==self.levels[1]:
+            return ["1"]
+        else:
+            raise Exception("Found unexpected value in binary column")
 
 class PedRequiredColumn(Column):
     def __init__(self, coldef, field, pr):

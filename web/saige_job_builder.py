@@ -26,6 +26,7 @@ class SaigeModel(BaseModel):
     def get_analysis_commands(self, model_spec, geno, ped):
         cmd = "{}".format(self.app_config.get("SAIGE_BINARY", "saige")) + \
             " -j{} ".format(self.cores_per_job) + \
+            " THREADS={}".format(self.cores_per_job) + \
             " VCFFILE={}".format(geno.get_vcf_path(1)) + \
             " PHENOFILE={}".format(ped.get("path")) +  \
             " REFFILE={}".format(geno.get_build_ref_path())+ \
@@ -42,13 +43,13 @@ class SaigeModel(BaseModel):
     def get_postprocessing_commands(self, geno, result_file="./results.txt.gz"):
         cmds = []
         if self.app_config.get("MANHATTAN_BINARY"):
-            cmd  = "{} {} ./manhattan.json".format(result_file, self.app_config.get("MANHATTAN_BINARY", ""))
+            cmd  = "{} {} ./manhattan.json".format(self.app_config.get("MANHATTAN_BINARY", ""), result_file)
             cmds.append(cmd)
         if self.app_config.get("TOPHITS_BINARY"):
-            cmd = "{} {} ./qq.json".format(result_file, self.app_config.get("QQPLOT_BINARY", ""))
+            cmd = "{} {} ./qq.json".format(self.app_config.get("QQPLOT_BINARY", ""), result_file)
             cmds.append(cmd)
         if self.app_config.get("TOPHITS_BINARY"):
-            cmd =  "{} {} ./tophits.json".format(result_file, self.app_config.get("TOPHITS_BINARY"))
+            cmd =  "{} {} ./tophits.json".format(self.app_config.get("TOPHITS_BINARY"), result_file)
             if geno.get_build_nearest_gene_path():
                 cmd += " --gene {}".format(geno.get_build_nearest_gene_path())
             cmds.append(cmd)
@@ -75,9 +76,9 @@ class SaigeModel(BaseModel):
         pheno = self.get_pheno(model_spec)
 
         ped = self.write_ped_file(self.relative_path("pheno.ped"), model_spec, geno, pheno)
-        cmds =  self.get_analysis_commands(model_spec, geno, ped)
-        cmds += self.get_postprocessing_commands(geno)
-
+        cmds =  self.if_exit_success(
+            self.get_analysis_commands(model_spec, geno, ped), 
+            self.get_postprocessing_commands(geno))
         return {"commands": cmds}
 
     def get_progress(self):

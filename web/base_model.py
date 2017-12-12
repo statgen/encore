@@ -25,3 +25,11 @@ class BaseModel(object):
 
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.working_directory, *args))
+
+    def if_exit_success(self, cmds, ifsuccess): 
+        cmds = cmds + [ 
+            "EXIT_STATUS=$?", 
+            "echo $EXIT_STATUS > ./exit_status.txt",
+            "if [ $EXIT_STATUS == 0 ]; then"
+            ] + ifsuccess + ["fi", "exit $EXIT_STATUS"]
+        return cmds

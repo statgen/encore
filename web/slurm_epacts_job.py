@@ -387,6 +387,8 @@ def get_chr_chunk_progress(output_file_glob):
             m = p.search(file)
             chunk = dict(m.groupdict())
             chunk['chrom'] =  chunk['chr']
+            if not chunk['chrom'].startswith("chr"):
+                chunk['chrom'] = "chr" + chunk['chrom']
             chunk['start'] = int(chunk['start'])
             chunk['stop'] = int(chunk['stop'])
             chunk['modified'] = time.mktime(time.localtime(os.path.getmtime(file)))

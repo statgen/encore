@@ -176,8 +176,15 @@ class AssocResultReader:
         if line.startswith("#"):
             line = line[1:]
         header = line.rstrip().split()
-        if header[1] == "BEG":
-            header[1] = "BEGIN"
+        aliases = {"BEG": "BEGIN",
+            "CHR": "CHROM",
+            "POS": "BEGIN",
+            "SNPID": "MARKER_ID",
+            "N": "NS",
+            "p.value": "PVALUE"}
+        for i, col in enumerate(header):
+            if aliases.get(col):
+                header[i] = aliases.get(col)
         self.filecols = { x:i for i,x in enumerate(header)}
 
     def row_parser(self, row):

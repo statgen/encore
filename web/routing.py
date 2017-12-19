@@ -376,7 +376,7 @@ def template_helpers():
 # def internal_error(exception):
 #     return render_template('500.html'), 500
 
-job_tracker = job_tracking.Tracker(30.0, job_tracking.DatabaseCredentials("localhost", app.config.get("MYSQL_USER"), app.config.get("MYSQL_PASSWORD"), app.config.get("MYSQL_DB")))
+job_tracker = job_tracking.Tracker(5*60.0, job_tracking.DatabaseCredentials("localhost", app.config.get("MYSQL_USER"), app.config.get("MYSQL_PASSWORD"), app.config.get("MYSQL_DB")))
 job_tracker.start()
 
 def on_exit():

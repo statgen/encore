@@ -25,7 +25,8 @@ class SlurmJob:
            "#SBATCH --workdir={}".format(self.job_directory), 
            "#SBATCH --cpus-per-task={}".format(cores_per_job),  
            "#SBATCH --time=14-0", 
-           "#SBATCH --nodes=1"]
+           "#SBATCH --nodes=1",
+           "export OPENBLAS_NUM_THREADS=1"]
 
     def write_batch_script(self, batch_script_path, model_plan):
         with open(batch_script_path, "w") as f:

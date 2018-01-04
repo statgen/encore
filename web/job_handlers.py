@@ -450,7 +450,7 @@ def get_model_build_view():
         return render_template("not_authorized_to_analyze.html")
 
 def get_models():
-    models = ModelFactory.list()
+    models = ModelFactory.list(current_app.config)
     return json_resp(models)
 
 def get_queue_status(job_id=None):

@@ -119,7 +119,7 @@ class LMEpactsModel(EpactsModel):
     model_desc = "A simple linear model"
 
     def __init__(self, working_directory, app_config):
-        EpactsModel.__init__(self, working_directory, app_config, "single", model_code)
+        EpactsModel.__init__(self, working_directory, app_config, "single", "lm")
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno) 
@@ -134,7 +134,7 @@ class LMMEpactsModel(EpactsModel):
     model_desc = "Adjust for potential relatedness using kinship matrix"
 
     def __init__(self, working_directory, app_config):
-        EpactsModel.__init__(self, working_directory, app_config, "single", model_code)
+        EpactsModel.__init__(self, working_directory, app_config, "single", "lmm")
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno) 
@@ -150,7 +150,7 @@ class SkatOEpactsModel(EpactsModel):
     model_desc = "Adaptive burden test"
 
     def __init__(self, working_directory, app_config):
-        EpactsModel.__init__(self, working_directory, app_config, "group", model_code)
+        EpactsModel.__init__(self, working_directory, app_config, "group", "skato")
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno) 
@@ -168,7 +168,7 @@ class MMSkatOEpactsModel(EpactsModel):
     model_desc = "Adaptive burden test that adjusts for potential relatedness using kinship matrix"
 
     def __init__(self, working_directory, app_config):
-        EpactsModel.__init__(self, working_directory, app_config, "group", model_code)
+        EpactsModel.__init__(self, working_directory, app_config, "group", "mmskato")
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno) 

@@ -196,6 +196,8 @@ class AssocResultReader:
             chrom = v[column_indices["CHROM"]]
             pos = int(v[column_indices["BEGIN"]])
             pval = float(v[column_indices["PVALUE"]])
+            if pval < 1e-308:
+                pval = 1e-308
             marker_id = v[column_indices["MARKER_ID"]]
             other = { k: v[i] for k,i in column_indices.iteritems()};
             match = AssocResultReader._single_id_regex.match(marker_id)

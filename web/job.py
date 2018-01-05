@@ -33,10 +33,23 @@ class Job:
     def get_genotype_id(self):
         return self.meta.get("genotype", None) 
 
+    def get_output_files(self):
+        files = []
+        def add_if_exists(rel_path, display_name):
+            file_path = self.relative_path(rel_path)
+            if os.path.exists(file_path):
+                files.append({"path": rel_path, "size": os.path.getsize(file_path), 
+                    "name": display_name})
+        add_if_exists("output.epacts.gz", "Epacts Results")
+        add_if_exists("results.txt.gz", "SAIGE Results")
+        add_if_exists("output.filtered.001.gz", "Filtered Results (p-val<0.001)")
+        return files
+
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields  + self.__extfields if hasattr(self, key)} 
         obj["job_id"] = self.job_id
         obj["users"] = self.users
+        obj["output_files"] = self.get_output_files()
         if self.meta:
             obj["details"] = self.meta
         return obj

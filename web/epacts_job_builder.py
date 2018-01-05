@@ -5,9 +5,10 @@ from chunk_progress import get_chr_chunk_progress, get_gene_chunk_progress
 
 class EpactsModel(BaseModel):
 
-    def __init__(self, working_directory, app_config, cmd=""):
+    def __init__(self, working_directory, app_config, cmd="", code=""):
         BaseModel.__init__(self, working_directory, app_config) 
         self.cmd = cmd
+        self.code = code
         self.cores_per_job = 56
 
     def get_opts(self, model, geno):
@@ -49,6 +50,15 @@ class EpactsModel(BaseModel):
                 "{} -c > output.epacts.gz\n".format(self.app_config.get("BGZIP_BINARY", "bgzip")) + \
                 " {} -p bed output.epacts.gz\n".format(self.app_config.get("TABIX_BINARY", "tabix")) + \
                 "fi")
+        else:
+            if self.code == "lmm":
+                cmds.append("zcat -f output.epacts.gz | " + \
+                    'awk -F"\\t" \'NR==1 || ($9 > 0 && $11 < 0.001) {OFS="\\t"; print }\' | ' + \
+                    "{} -c > output.filtered.001.gz".format(self.app_config.get("BGZIP_BINARY", "bgzip")))
+            elif self.code == "lm":
+                cmds.append("zcat -f output.epacts.gz | " + \
+                    'awk -F"\\t" \'NR==1 || ($8 > 0 && $9 < 0.001) {OFS="\\t"; print }\' | ' + \
+                    "{} -c > output.filtered.001.gz".format(self.app_config.get("BGZIP_BINARY", "bgzip")))
         if self.app_config.get("MANHATTAN_BINARY"):
             cmd  = "{} ./output.epacts.gz ./manhattan.json".format(self.app_config.get("MANHATTAN_BINARY", ""))
             cmds.append(cmd)
@@ -109,7 +119,7 @@ class LMEpactsModel(EpactsModel):
     model_desc = "A simple linear model"
 
     def __init__(self, working_directory, app_config):
-        EpactsModel.__init__(self, working_directory, app_config, "single")
+        EpactsModel.__init__(self, working_directory, app_config, "single", model_code)
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno) 
@@ -124,7 +134,7 @@ class LMMEpactsModel(EpactsModel):
     model_desc = "Adjust for potential relatedness using kinship matrix"
 
     def __init__(self, working_directory, app_config):
-        EpactsModel.__init__(self, working_directory, app_config, "single")
+        EpactsModel.__init__(self, working_directory, app_config, "single", model_code)
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno) 
@@ -140,7 +150,7 @@ class SkatOEpactsModel(EpactsModel):
     model_desc = "Adaptive burden test"
 
     def __init__(self, working_directory, app_config):
-        EpactsModel.__init__(self, working_directory, app_config, "group")
+        EpactsModel.__init__(self, working_directory, app_config, "group", model_code)
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno) 
@@ -158,7 +168,7 @@ class MMSkatOEpactsModel(EpactsModel):
     model_desc = "Adaptive burden test that adjusts for potential relatedness using kinship matrix"
 
     def __init__(self, working_directory, app_config):
-        EpactsModel.__init__(self, working_directory, app_config, "group")
+        EpactsModel.__init__(self, working_directory, app_config, "group", model_code)
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno) 

@@ -180,9 +180,13 @@
 				</div>
             </div>
         </div>
-        <form class="section" action="{{ url_for("get_job_output", job_id= job.job_id) }}">
-            <button type="submit">Download Output</button>
-        </form>
+		{% if job.output_files %}
+			Download:  {% for file in job.output_files %}
+				<form style="display: inline" action="{{ url_for("get_job_output_file", job_id= job.job_id, file_name=file.path) }}">
+				<button>{{file.name}} [{{file.size | filesizeformat}}]</button>
+				</form>
+			{% endfor %}
+		{% endif %}
 
 		{% else %}
 

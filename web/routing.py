@@ -95,6 +95,11 @@ def get_job(job_id):
 def get_job_output(job_id):
     return job_handlers.get_job_output(job_id, "output.epacts.gz", True)
 
+@app.route("/jobs/<job_id>/output/<file_name>", methods=["get"])
+@login_required
+def get_job_output_file(job_id, file_name):
+    return job_handlers.get_job_output(job_id, file_name, True)
+
 @app.route("/jobs/<job_id>/results", methods=["get"])
 @login_required
 def get_job_results(job_id):

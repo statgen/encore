@@ -163,7 +163,7 @@
 				var opts  = [];
 				var hideCols = ["family_id","sample_id","mother_id","father_id"];
 				pheno.meta.columns.forEach(function(col) {
-					if (hideCols.indexOf(col.class)<0 && col.class != "fixed") {
+					if (hideCols.indexOf(col.class)<0 && col.class != "fixed" && col.class != "id") {
 						opts.push({id: col.name, text: col.name});	
 					}
 				});

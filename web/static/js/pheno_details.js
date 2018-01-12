@@ -35,6 +35,15 @@ function init_editform(pheno_id, pheno_api_url) {
     });
 }
 
+function init_new_job_button(selector) {
+    selector = selector || "button[name=new_job]";
+    $(selector).click(function(evt) {
+        evt.preventDefault();
+        var url = $(evt.target).data("link");
+        document.location = url;
+    });
+}
+
 function init_pheno_delete_button(selector) {
     selector = selector || "button[name=delete_pheno]";
     $(selector).click(function(evt) {

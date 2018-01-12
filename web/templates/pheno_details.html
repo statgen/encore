@@ -3,7 +3,7 @@
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 
-	<script type="text/javascript" src="{{ url_for('static', filename='js/pheno_details.js') }}?2"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='js/pheno_details.js') }}"></script>
 
 	<script type="text/javascript">
 		pheno_id = "{{ pheno.pheno_id }}"
@@ -19,6 +19,7 @@
 			});
 			if (pheno_can_edit && pheno_is_active) {
 				init_editform(pheno_id, pheno_api_url);
+				init_new_job_button();
 				init_pheno_delete_button();
 			}
 		});
@@ -39,7 +40,7 @@
 				</div>
 				<div class="col-md-2 pheno-actions">
 					{% if pheno.can_edit  and pheno.is_active %}
-						<button class="btn btn-success" name="resubmit_job" 
+						<button class="btn btn-success" name="new_job" 
 							data-link="{{ url_for("get_model_build", pheno=pheno.pheno_id) }}">
 							New Job</button>
 						<button class="btn btn-danger" name="delete_pheno"

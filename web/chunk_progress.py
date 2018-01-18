@@ -68,9 +68,14 @@ def collapse_chunk_bins(bins):
 
     return results
 
-def get_gene_chunk_progress(output_file_glob, input_file_glob):
+def get_gene_chunk_progress(output_file_glob, input_file_glob, min_done_age=0):
     in_files = glob.glob(input_file_glob)
     out_files = glob.glob(output_file_glob)
+    if min_done_age>0:
+        now = time.mktime(time.localtime())
+        def age_in_minutes(x):
+            return (now - time.mktime(time.localtime(os.path.getmtime(x)))) / 60
+        out_files = [x for x in out_files if age_in_minutes(x)>min_done_age]
     return {"data": {"total": len(in_files), "complete": len(out_files)}, 
         "header": {"format": "progress"}}
 

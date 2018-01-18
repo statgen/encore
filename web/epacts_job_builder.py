@@ -107,6 +107,9 @@ class EpactsModel(BaseModel):
         if os.path.isfile(self.relative_path("output.1.R")):
             resp = get_gene_chunk_progress(output_file_glob,
                 self.relative_path("output.*.R"))
+        elif os.path.isfile(self.relative_path("output.1.grp")):
+            resp = get_gene_chunk_progress(output_file_glob,
+                self.relative_path("output.*.grp"), min_done_age=30)
         else:
             fre = r'output.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.epacts$'
             resp = get_chr_chunk_progress(output_file_glob, fre)
@@ -178,5 +181,59 @@ class MMSkatOEpactsModel(EpactsModel):
             "--groupf {}".format(geno.get_groups_path(group)),
             "--kin {}".format(geno.get_kinship_path()),
             "--unit 500",
+            "--max-maf 0.05"] 
+        return opts
+
+class MMSkatEpactsModel(EpactsModel):
+    model_code = "mmskat"
+    model_name = "Mixed Model SKAT Test"
+    model_desc = "Burden test that adjusts for potential relatedness using kinship matrix"
+
+    def __init__(self, working_directory, app_config):
+        EpactsModel.__init__(self, working_directory, app_config, "group", "mmskat")
+
+    def get_opts(self, model, geno):
+        opts = super(self.__class__, self).get_opts(model, geno) 
+        group = model.get("group", "nonsyn")
+        opts += ["--test mmskat",
+            "--groupf {}".format(geno.get_groups_path(group)),
+            "--kin {}".format(geno.get_kinship_path()),
+            "--unit 300",
+            "--max-maf 0.05"] 
+        return opts
+
+class MMVTEpactsModel(EpactsModel):
+    model_code = "mmVT"
+    model_name = "Mixed Model Variable-Threshold Test"
+    model_desc = "Variable-threshold burden test that adjusts for potential relatedness using kinship matrix"
+
+    def __init__(self, working_directory, app_config):
+        EpactsModel.__init__(self, working_directory, app_config, "group", "mmVT")
+
+    def get_opts(self, model, geno):
+        opts = super(self.__class__, self).get_opts(model, geno) 
+        group = model.get("group", "nonsyn")
+        opts += ["--test emmaxVT",
+            "--groupf {}".format(geno.get_groups_path(group)),
+            "--kin {}".format(geno.get_kinship_path()),
+            "--unit 300",
+            "--max-maf 0.05"] 
+        return opts
+
+class MMCMCEpactsModel(EpactsModel):
+    model_code = "mmCMC"
+    model_name = "Mixed Model Collapsing Burden Test"
+    model_desc = "Collapsing burden test that adjusts for potential relatedness using kinship matrix"
+
+    def __init__(self, working_directory, app_config):
+        EpactsModel.__init__(self, working_directory, app_config, "group", "mmCMC")
+
+    def get_opts(self, model, geno):
+        opts = super(self.__class__, self).get_opts(model, geno) 
+        group = model.get("group", "nonsyn")
+        opts += ["--test emmaxCMC",
+            "--groupf {}".format(geno.get_groups_path(group)),
+            "--kin {}".format(geno.get_kinship_path()),
+            "--unit 300",
             "--max-maf 0.05"] 
         return opts

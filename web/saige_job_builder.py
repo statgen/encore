@@ -27,7 +27,7 @@ class SaigeModel(BaseModel):
         cmd = "{}".format(self.app_config.get("SAIGE_BINARY", "saige")) + \
             " -j{} ".format(self.cores_per_job) + \
             " THREADS={}".format(self.cores_per_job) + \
-            " VCFFILE={}".format(geno.get_vcf_path(1)) + \
+            " SAVFILE={}".format(geno.get_sav_path(1)) + \
             " PHENOFILE={}".format(ped.get("path")) +  \
             " REFFILE={}".format(geno.get_build_ref_path())+ \
             " PLINKFILE={}".format(geno.get_pca_genotypes_path()) + \

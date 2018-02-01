@@ -38,6 +38,26 @@ class Genotype:
             return None
         return vcf_path
 
+    def get_sav_path(self, chrom=1, must_exist=False):
+        sav_stub = ""
+        chrom = str(chrom).replace("chr","")
+        if "savs" in self.meta:
+            savs = self.meta["savs"]
+            if type(savs) is dict:
+                if chrom in savs:
+                    sav_stub = savs[chrom]
+                elif "*" in savs:
+                    sav_stub = savs["*"]
+            else:
+                sav_stub = savs
+        if sav_stub == "":
+            sav_stub = "savs/chr{0}.sav"
+        sav_stub = sav_stub.replace("*","{0}").format(chrom)
+        sav_path = self.relative_path(sav_stub)
+        if must_exist and not os.path.exists(sav_path):
+            return None
+        return sav_path
+
     def get_groups_path(self, group, must_exist=False):
         grp_stub = ""
         if "groups" in self.meta:

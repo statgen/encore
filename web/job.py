@@ -21,10 +21,11 @@ class Job:
     def get_adjusted_phenotypes(self):
         phe_file = self.relative_path("output.phe")
         phenos = {}
-        with open(phe_file) as f:
-            for line in f:
-                (sample, val) = line.split()
-                phenos[sample] = float(val)
+        if os.path.exists(phe_file):
+            with open(phe_file) as f:
+                for line in f:
+                    (sample, val) = line.split()
+                    phenos[sample] = float(val)
         return phenos
 
     def relative_path(self, *args):
@@ -35,15 +36,22 @@ class Job:
 
     def get_output_files(self):
         files = []
-        def add_if_exists(rel_path, display_name):
+        def add_if_exists(rel_path, display_name, primary=False):
             file_path = self.relative_path(rel_path)
             if os.path.exists(file_path):
                 files.append({"path": rel_path, "size": os.path.getsize(file_path), 
-                    "name": display_name})
-        add_if_exists("output.epacts.gz", "Epacts Results")
-        add_if_exists("results.txt.gz", "SAIGE Results")
+                    "name": display_name, "primary": primary})
+        add_if_exists("output.epacts.gz", "Epacts Results", True)
+        add_if_exists("results.txt.gz", "SAIGE Results", True)
         add_if_exists("output.filtered.001.gz", "Filtered Results (p-val<0.001)")
         return files
+
+    def get_output_file_path(self):
+        files = [x for x in self.get_output_files() if x.get("primary", False)]
+        if len(files)==1:
+            return self.relative_path(files[0]["path"])
+        else:
+            return None
 
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields  + self.__extfields if hasattr(self, key)} 

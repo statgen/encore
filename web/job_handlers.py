@@ -202,13 +202,23 @@ def get_job_output(job_id, filename, as_attach=False, mimetype=None, tail=None, 
 @check_view_job
 def get_job_zoom(job_id, job=None):
     header = []
-    epacts_filename = job.relative_path("output.epacts.gz")
-    with gzip.open(epacts_filename) as f:
+    output_filename = job.get_output_file_path()
+    with gzip.open(output_filename) as f:
         header = f.readline().rstrip('\n').split('\t')
         if header[1] == "BEG":
             header[1] = "BEGIN"
+        if header[1] == "POS":
+            header[1] = "BEGIN"
         if header[0] == "#CHROM":
             header[0] = "CHROM"
+        if header[0] == "CHR":
+            header[0] = "CHROM"
+        if header[6] == "AF_Allele2":
+            header[6] = "MAF"
+        if header[7] == "N":
+            header[7] = "NS"
+        if header[11] == "p.value":
+            header[11] = "PVALUE"
     assert len(header) > 0
     chrom = request.args.get("chrom", "")
     start_pos = int(request.args.get("start_pos", "0"))
@@ -218,7 +228,7 @@ def get_job_zoom(job_id, job=None):
         return json_resp({"header": {"variant_columns": header}})
 
     headerpos = {x:i for i,x in enumerate(header)}
-    tb = tabix.open(epacts_filename)
+    tb = tabix.open(output_filename)
     try:
         results = tb.query(chrom, start_pos, end_pos)
     except:
@@ -249,12 +259,21 @@ def get_job_zoom(job_id, job=None):
             json_response_data["BEGIN"].append(r[headerpos["BEGIN"]])
             if "END" in headerpos:
                 json_response_data["END"].append(r[headerpos["END"]])
-            json_response_data["MARKER_ID"].append(r[headerpos["MARKER_ID"]])
+            if "MARKER_ID" in headerpos:
+                json_response_data["MARKER_ID"].append(r[headerpos["MARKER_ID"]])
+            else:
+                var1 = "{}:{}".format(r[headerpos["CHROM"]], r[headerpos["BEGIN"]])
+                if "Allele1" in headerpos and "Allele2" in headerpos:
+                    var1 = "{}_{}/{}".format(var1, r[headerpos["Allele1"]], r[headerpos["Allele2"]])
+                json_response_data["MARKER_ID"].append(var1)
             json_response_data["PVALUE"].append(r[headerpos["PVALUE"]])
             if "NS" in headerpos:
                 json_response_data["NS"].append(r[headerpos["NS"]])
             if "MAF" in headerpos:
-                json_response_data["MAF"].append(r[headerpos["MAF"]])
+                maf = float(r[headerpos["MAF"]])
+                if maf > .5:
+                    maf = 1-maf
+                json_response_data["MAF"].append(str(maf))
             if "BETA" in headerpos:
                 json_response_data["BETA"].append(r[headerpos["BETA"]])
     return json_resp({"header": {"variant_columns": json_response_data.keys()}, \

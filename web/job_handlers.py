@@ -213,11 +213,11 @@ def get_job_zoom(job_id, job=None):
             header[0] = "CHROM"
         if header[0] == "CHR":
             header[0] = "CHROM"
-        if header[6] == "AF_Allele2":
+        if len(header)>6 and header[6] == "AF_Allele2":
             header[6] = "MAF"
-        if header[7] == "N":
+        if len(header)>7 and header[7] == "N":
             header[7] = "NS"
-        if header[11] == "p.value":
+        if len(header)>11 and header[11] == "p.value":
             header[11] = "PVALUE"
     assert len(header) > 0
     chrom = request.args.get("chrom", "")

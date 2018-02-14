@@ -5,6 +5,7 @@ import job_handlers
 import pheno_handlers
 import admin_handlers
 import sign_in_handler
+from admin_blueprint import admin_area
 import job_tracking
 from functools import wraps
 import atexit
@@ -21,6 +22,8 @@ app.url_map.strict_slashes = False
 app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
 app.config["PROPAGATE_EXCEPTIONS"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60*5 # seconds
+
+app.register_blueprint(admin_area, url_prefix="/admin")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -298,24 +301,6 @@ def get_model_build():
 def get_api_models():
     return job_handlers.get_models()
 
-@app.route("/admin", methods=["GET"])
-@login_required
-@admin_required
-def get_admin_page():
-    return admin_handlers.get_admin_main_page()
-
-@app.route("/admin/users", methods=["GET"])
-@login_required
-@admin_required
-def get_admin_user_page():
-    return admin_handlers.get_admin_user_page()
-
-@app.route("/admin/phenos", methods=["GET"])
-@login_required
-@admin_required
-def get_admin_pheno_page():
-    return admin_handlers.get_admin_pheno_page()
-
 @app.route("/admin/log/<job_id>/<log_name>", methods=["GET"])
 @login_required
 @admin_required
@@ -349,27 +334,27 @@ def template_helpers():
             return "pheno"
         elif path.startswith("/jobs") or path == "/":
             return "job"
-        elif path == "/admin":
-            return "job"
         elif path.startswith("/admin/user"):
             return "user"
         elif path.startswith("/admin/phenos"):
             return "pheno"
+        elif path.startswith("/admin"):
+            return "job"
         else:
             return ""
 
     def get_navigation_links(path, user=None):
         links = {"left": [], "right":[]}
         if path.startswith("/admin"):
-            links["left"].append(("job", "Jobs", url_for("get_admin_page")))
-            links["left"].append(("user", "Users", url_for("get_admin_user_page")))
-            links["left"].append(("pheno", "Phenos", url_for("get_admin_pheno_page")))
+            links["left"].append(("job", "Jobs", url_for("admin.get_admin_page")))
+            links["left"].append(("user", "Users", url_for("admin.get_admin_user_page")))
+            links["left"].append(("pheno", "Phenos", url_for("admin.get_admin_pheno_page")))
             links["right"].append(("return","Return to App", url_for("index")))
         else:
             links["left"].append(("job", "Jobs", url_for("index")))
             links["left"].append(("pheno", "Phenotypes", url_for("get_pheno_list")))
             if (user is not None) and hasattr(user, "is_admin") and user.is_admin():
-                links["right"].append(("admin","Admin", url_for("get_admin_page")))
+                links["right"].append(("admin","Admin", url_for("admin.get_admin_page")))
         links["right"].append(("logout","Logout", url_for("sign_out")))
         return links
 

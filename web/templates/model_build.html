@@ -177,7 +177,7 @@
 		}
 
 		function loadGeno(geno_id) {
-			return $.getJSON("/api/geno/" + geno_id).done(function(geno) {
+			return $.getJSON("/api/genos/" + geno_id).done(function(geno) {
 				var opts  = [];
 				if (geno.phenos) {
 					pheno = geno.phenos[0]
@@ -240,7 +240,7 @@
 				evt.preventDefault();
 				genophenoSelect.val("").trigger("change");
 			});
-			var d1 = $.getJSON("/api/geno").then(function(resp) {
+			var d1 = $.getJSON("/api/genos").then(function(resp) {
 				var genos = [];
 				resp.forEach(function(g) {
 					genos.push({id: g.id, text: g.name});

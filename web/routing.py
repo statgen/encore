@@ -6,6 +6,7 @@ import pheno_handlers
 import admin_handlers
 import sign_in_handler
 from admin_blueprint import admin_area
+from api_blueprint import api
 import job_tracking
 from functools import wraps
 import atexit
@@ -24,6 +25,7 @@ app.config["PROPAGATE_EXCEPTIONS"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60*5 # seconds
 
 app.register_blueprint(admin_area, url_prefix="/admin")
+app.register_blueprint(api, url_prefix="/api")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -60,26 +62,11 @@ def sign_out():
     logout_user()
     return redirect(url_for("index"))
 
-@app.route("/api/users", methods=["POST"])
+@app.route("/admin/users", methods=["POST"])
 @login_required
 @admin_required
 def add_user():
     return admin_handlers.add_user() 
-
-@app.route("/api/geno", methods=["GET"])
-@login_required
-def get_genotypes():
-    return job_handlers.get_genotypes()
-
-@app.route("/api/geno/<geno_id>", methods=["GET"])
-@login_required
-def get_genotype(geno_id):
-    return job_handlers.get_genotype(geno_id)
-
-@app.route("/api/geno/<geno_id>/info", methods=["GET"])
-@login_required
-def get_genotype_info_stats(geno_id):
-    return job_handlers.get_genotype_info_stats(geno_id)
 
 @app.route("/jobs", methods=["GET"])
 @login_required
@@ -124,31 +111,11 @@ def get_job_variant_page(job_id):
 def get_job_share_page(job_id):
     return job_handlers.get_job_share_page(job_id)
 
-@app.route("/api/jobs", methods=["POST"])
-@login_required
-def post_api_jobs():
-    return job_handlers.post_to_jobs()
-
-@app.route("/api/jobs", methods=["GET"])
-@login_required
-def get_api_jobs():
-    return job_handlers.get_jobs()
-
 @app.route("/api/jobs-all", methods=["GET"])
 @login_required
 @admin_required
 def get_api_jobs_all():
     return job_handlers.get_all_jobs()
-
-@app.route("/api/jobs/<job_id>", methods=["GET"])
-@login_required
-def get_api_job(job_id):
-    return job_handlers.get_job(job_id)
-
-@app.route("/api/jobs/<job_id>", methods=["DELETE"])
-@login_required
-def retire_api_job(job_id):
-    return job_handlers.retire_job(job_id)
 
 @app.route("/api/jobs/<job_id>/purge", methods=["DELETE"])
 @login_required
@@ -156,58 +123,6 @@ def retire_api_job(job_id):
 def purge_api_job(job_id):
     return job_handlers.purge_job(job_id)
 
-@app.route("/api/jobs/<job_id>", methods=["POST"])
-@login_required
-def update_api_job(job_id):
-    return job_handlers.update_job(job_id)
-
-@app.route("/api/jobs/<job_id>/share", methods=["POST"])
-@login_required
-def post_api_job_share_request(job_id):
-    return job_handlers.post_to_share_job(job_id)
-
-@app.route("/api/jobs/<job_id>/resubmit", methods=["POST"])
-@login_required
-def post_api_job_resubmit_request(job_id):
-    return job_handlers.resubmit_job(job_id)
-
-@app.route("/api/jobs/<job_id>/cancel_request", methods=["POST"])
-@login_required
-def post_api_job_cancel_request(job_id):
-    return job_handlers.cancel_job(job_id)
-
-
-@app.route("/api/jobs/<job_id>/plots/qq", methods=["GET"])
-@login_required
-def get_api_job_qq(job_id):
-    return job_handlers.get_job_output(job_id, "qq.json")
-
-
-@app.route("/api/jobs/<job_id>/plots/manhattan", methods=["GET"])
-@login_required
-def get_api_job_manhattan(job_id):
-    return job_handlers.get_job_output(job_id, "manhattan.json")
-
-
-@app.route("/api/jobs/<job_id>/plots/zoom", methods=["GET"])
-@login_required
-def get_api_job_zoom(job_id):
-    return job_handlers.get_job_zoom(job_id)
-
-@app.route("/api/jobs/<job_id>/plots/pheno", methods=["GET"])
-@login_required
-def get_api_job_variant_pheno(job_id):
-    return job_handlers.get_job_variant_pheno(job_id)
-
-@app.route("/api/jobs/<job_id>/tables/top", methods=["GET"])
-@login_required
-def get_api_job_tophits(job_id):
-    return job_handlers.get_job_output(job_id, "tophits.json", False)
-
-@app.route("/api/jobs/<job_id>/progress", methods=["GET"])
-@login_required
-def get_api_job_progress(job_id):
-   return job_handlers.get_job_progress(job_id)
 
 @app.route('/api/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
 @login_required
@@ -228,23 +143,6 @@ def get_api_annotations(resource):
     else:
         return "Not Found", 404
 
-@app.route("/api/queue", methods=["GET"])
-@app.route("/api/queue/<job_id>", methods=["GET"])
-@login_required
-def get_queue_status(job_id=None):
-    return job_handlers.get_queue_status(job_id) 
-
-@app.route("/jobs/<job_id>/plots/tmp-qq", methods=["GET"])
-@login_required
-def get_job_tmp_qq(job_id):
-    return job_handlers.get_job_output(job_id, "output.epacts.qq.pdf", False)
-
-
-@app.route("/jobs/<job_id>/plots/tmp-manhattan", methods=["GET"])
-@login_required
-def get_job_tmp_manhattan(job_id):
-    return job_handlers.get_job_output(job_id, "output.epacts.mh.pdf", False)
-
 @app.route("/phenos", methods=["GET"])
 @login_required
 def get_pheno_list():
@@ -260,46 +158,17 @@ def get_pheno(pheno_id):
 def get_pheno_upload():
     return pheno_handlers.get_pheno_upload_view()
 
-@app.route("/api/pheno", methods=["GET"])
-@login_required
-def get_api_pheno_list():
-    return pheno_handlers.get_phenos()
-
-@app.route("/api/pheno/<pheno_id>", methods=["GET"])
-@login_required
-def get_api_pheno_detail(pheno_id):
-    return pheno_handlers.get_pheno(pheno_id)
-
-@app.route("/api/pheno/<pheno_id>", methods=["POST"])
-@login_required
-def update_api_pheno(pheno_id):
-    return pheno_handlers.update_pheno(pheno_id)
-
-@app.route("/api/pheno/<pheno_id>", methods=["DELETE"])
-@login_required
-def retire_api_pheno(pheno_id):
-    return pheno_handlers.retire_pheno(pheno_id)
-
-@app.route("/api/pheno/<pheno_id>/purge", methods=["DELETE"])
+@app.route("/pheno/<pheno_id>/purge", methods=["DELETE"])
 @login_required
 @admin_required
 def purge_api_pheno(pheno_id):
     return pheno_handlers.purge_pheno(pheno_id)
-
-@app.route("/api/pheno", methods=["POST"])
-@login_required
-def post_api_pheno():
-    return pheno_handlers.post_to_pheno()
 
 @app.route("/model-build", methods=["GET"])
 @login_required
 def get_model_build():
     return job_handlers.get_model_build_view()
 
-@app.route("/api/model", methods=["GET"])
-@login_required
-def get_api_models():
-    return job_handlers.get_models()
 
 @app.route("/admin/log/<job_id>/<log_name>", methods=["GET"])
 @login_required

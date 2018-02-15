@@ -31,8 +31,8 @@
 			})
 		};
 		$(document).ready(function() {
-			init_job_table("{{ url_for("get_api_jobs") }}");
-			init_vcf_stats("{{ url_for("get_genotypes") }}");
+			init_job_table("{{ url_for("api.get_jobs") }}");
+			init_vcf_stats("{{ url_for("api.get_genotypes") }}");
 		});
 	</script>
 

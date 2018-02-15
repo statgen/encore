@@ -14,20 +14,21 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@admin_area.route("/")
+@admin_area.before_request
 @login_required
 @admin_required
+def before_request():
+    # Just here to trigger the admin_required before any request
+    pass
+
+@admin_area.route("/")
 def get_admin_page():
     return render_template("admin_main.html", githash=current_app.config.get("git-hash", None))
 
 @admin_area.route("/users/", methods=["GET"])
-@login_required
-@admin_required
 def get_admin_user_page():
     return render_template("admin_users.html")
 
 @admin_area.route("/phenos/", methods=["GET"])
-@login_required
-@admin_required
 def get_admin_pheno_page():
     return render_template("admin_phenos.html")

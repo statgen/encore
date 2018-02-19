@@ -168,3 +168,11 @@ def can_edit_pheno(f):
 
 def check_edit_pheno(f):
     return splat_args(inject_pheno(can_edit_pheno(f)), f)
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_admin():
+            return "You do not have access", 403 
+        return f(*args, **kwargs)
+    return decorated_function

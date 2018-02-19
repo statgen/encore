@@ -1,15 +1,20 @@
-from flask import Blueprint, Response, json, render_template, current_app, request, send_file
+from flask import Blueprint, Response, json, render_template, current_app, request, send_file, url_for
 from flask_login import current_user, login_required
 from user import User
 from job import Job 
-from auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno
+from auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno, admin_required
 from genotype import Genotype
 from phenotype import Phenotype
+from pheno_reader import PhenoReader
 from slurm_queue import SlurmJob, get_queue
 from model_factory import ModelFactory
+import os
 import re
 import gzip
+import uuid
 import tabix
+import hashlib
+import shutil
 import collections
 import numpy as np
 
@@ -401,30 +406,148 @@ def get_pheno(pheno_id):
 @api.route("/phenos/<pheno_id>", methods=["POST"])
 @check_edit_pheno
 def update_pheno(pheno_id, pheno=None):
-    result = Phenotype.update(pheno_id, request.values)
-    if result.get("updated", False):
-        return json_resp(result)
-    else:
-        return json_resp(result), 450
+    try:
+        Phenotype.update(pheno_id, request.values)
+        json_resp({"updated": True})
+    except Exception as e:
+        json_resp({"updated": False, "error": str(e)}), 450
 
 @api.route("/phenos/<pheno_id>", methods=["DELETE"])
 @check_edit_pheno
 def retire_pheno(pheno_id, pheno=None):
-    result = Phenotype.retire(pheno_id, current_app.config)
-    if result["found"]:
-        return json_resp(result)
-    else:
-        return json_resp(result), 404
+    try:
+        Phenotype.retire(pheno_id, current_app.config)
+        return json_resp({"retired": True})
+    except Exception as e:
+        return json_resp({"retired": False, "error": str(e)}), 450
+
+def suggest_pheno_name(filename):
+    base, ext = os.path.splitext(os.path.basename(filename))
+    base = base.replace("_", " ")
+    return base
+
+def hashfile(afile, hasher=None, blocksize=65536):
+    if not hasher:
+        hasher = hashlib.md5()
+    buf = afile.read(blocksize)
+    while len(buf) > 0:
+        hasher.update(buf)
+        buf = afile.read(blocksize)
+    return hasher.digest()
 
 @api.route("/phenos", methods=["POST"])
-def post_api_pheno():
-    return pheno_handlers.post_to_pheno()
+def post_pheno():
+    user = current_user
+    if not user.can_analyze:
+        return "User Action Not Allowed", 403
+    if request.method != 'POST':
+        return json_resp({"error": "NOT A POST REQUEST"}), 405
+    if "pheno_file" not in request.files:
+        return json_resp({"error": "FILE NOT SENT"}), 400
+    pheno_id = str(uuid.uuid4())
+    if not pheno_id:
+        return json_resp({"error": "COULD NOT GENERATE PHENO ID"}), 500
+    pheno_file = request.files["pheno_file"]
+    orig_file_name = pheno_file.filename
+    pheno_name = suggest_pheno_name(orig_file_name)
+    pheno_directory = os.path.join(current_app.config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
+    try:
+        os.mkdir(pheno_directory)
+        pheno_file_path = os.path.join(pheno_directory, "pheno.txt")
+        pheno_meta_path = os.path.join(pheno_directory, "meta.json")
+        pheno_file.save(pheno_file_path)
+        md5 =  hashfile(open(pheno_file_path, "rb")).encode("hex")
+    except Exception as e:
+        print "File saving error: %s" % e
+        return json_resp({"error": "COULD NOT SAVE FILE"}), 500
+    # file has been saved to server
+    existing_pheno = Phenotype.get_by_hash_user(md5, user.rid, current_app.config)
+    if existing_pheno:
+        shutil.rmtree(pheno_directory)
+        pheno_id = existing_pheno.pheno_id
+        pheno_dict = existing_pheno.as_object()
+        pheno_dict["id"] = pheno_id
+        pheno_dict["url_model"] = url_for("get_model_build", pheno=pheno_id)
+        pheno_dict["url_view"] = url_for("get_pheno", pheno_id=pheno_id)
+        pheno_dict["existing"] = True
+        return json_resp(pheno_dict)
+    # file has not been uploaded before
+    istext, filetype, mimetype = PhenoReader.is_text_file(pheno_file_path)
+    if not istext:
+        shutil.rmtree(pheno_directory)
+        return json_resp({"error": "NOT A RECOGNIZED TEXT FILE",
+            "filetype": filetype,
+            "mimetype": mimetype}), 400
+    try:
+        Phenotype.add({"id": pheno_id,
+            "user_id": user.rid,
+            "name": pheno_name,
+            "orig_file_name": orig_file_name,
+            "md5sum": md5})
+    except Exception as e:
+        print "Databse error: %s" % e
+        shutil.rmtree(pheno_directory)
+        return json_resp({"error": "COULD NOT SAVE TO DATABASE"}), 500
+    # file has been saved to DB
+    pheno = PhenoReader(pheno_file_path)
+    if pheno.meta:
+        meta = pheno.meta
+    else:
+        meta = pheno.infer_meta()
+    line_count = sum(1 for _ in pheno.row_extractor()) 
+    meta["records"] = line_count
+    with open(pheno_meta_path, "w") as f:
+        json.dump(meta, f)
+    return json_resp({"id": pheno_id,  \
+        "url_model": url_for("user.get_model_build", pheno=pheno_id), \
+        "url_view": url_for("user.get_pheno", pheno_id=pheno_id)})
 
 @api.route("/models", methods=["GET"])
 @login_required
 def get_models():
     models = ModelFactory.list(current_app.config)
     return json_resp(models)
+
+# ADMIN ENDPOINTS
+
+@api.route("/api/jobs-all", methods=["GET"])
+@admin_required
+def get_jobs_all():
+    jobs = Job.list_all(current_app.config)
+    return json_resp(jobs)
+
+@api.route("/users-all", methods=["GET"])
+@admin_required
+def get_users_all():
+    users = User.list_all(current_app.config)
+    return json_resp(users)
+
+@api.route("/phenos-all", methods=["GET"])
+@admin_required
+def get_api_phenos_all():
+    phenos = Phenotype.list_all(current_app.config)
+    return json_resp(phenos)
+
+@api.route("/users", methods=["POST"])
+@admin_required
+def add_user():
+    return admin_handlers.add_user() 
+
+@api.route("/jobs/<job_id>/purge", methods=["DELETE"])
+@admin_required
+def purge_api_job(job_id):
+    return job_handlers.purge_job(job_id)
+
+@api.route("/pheno/<pheno_id>/purge", methods=["DELETE"])
+@admin_required
+def purge_api_pheno(pheno_id):
+    try: 
+        result = Phenotype.purge(pheno_id, current_app.config)
+        result["purged"] = True
+        return json_resp(result)
+    except Exception as e:
+        json_resp({"purged": False, "error": str(e)}), 450
+        return json_resp(result), 404
 
 def json_resp(data):
     resp = Response(mimetype='application/json')

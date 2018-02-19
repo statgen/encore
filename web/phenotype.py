@@ -111,31 +111,45 @@ class Phenotype:
         return results
 
     @staticmethod
+    def add(values):
+        if "id" in values:
+            pheno_id = values["id"]
+            del values["id"]
+        else:
+            raise Exception("Missing required field: id")
+        updateable_fields = ["name", "user_id", "orig_file_name", "md5sum"]
+        fields = values.keys() 
+        values = values.values()
+        bad_fields = [x for x in fields if x not in updateable_fields]
+        if len(bad_fields)>0:
+            raise Exception("Invalid field: {}".format(", ".join(bad_fields)))
+        sql = "INSERT INTO phenotypes (id, {}) VALUES (uuid_to_bin(%s), {})".format( \
+            ", ".join(fields),  \
+            ", ".join(["%s"] * len(fields)) )
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute(sql, [pheno_id] + values)
+        db.commit()
+
+    @staticmethod
     def update(pheno_id, new_values):
         updateable_fields = ["name"]
         fields = new_values.keys() 
         values = new_values.values()
         bad_fields = [x for x in fields if x not in updateable_fields]
-        try:
-            if len(bad_fields)>0:
-                raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
-            sql = "UPDATE phenotypes SET "+ \
-                ", ".join(("{}=%s".format(k) for k in fields)) + \
-                "WHERE id = uuid_to_bin(%s)"
-            db = sql_pool.get_conn()
-            cur = db.cursor()
-            cur.execute(sql, values + [pheno_id])
-            affected = cur.rowcount
-            db.commit()
-            result = {"updated": True}
-        except Exception as e:
-            result = {"updated": False, "error": str(e)}
-        return result
+        if len(bad_fields)>0:
+            raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
+        sql = "UPDATE phenotypes SET "+ \
+            ", ".join(("{}=%s".format(k) for k in fields)) + \
+            "WHERE id = uuid_to_bin(%s)"
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute(sql, values + [pheno_id])
+        db.commit()
 
     @staticmethod
     def retire(pheno_id, config=None):
         pheno = Phenotype.get(pheno_id, config)
-        result = {}
         if pheno:
             db = sql_pool.get_conn()
             cur = db.cursor()
@@ -143,16 +157,12 @@ class Phenotype:
             cur.execute(sql, (pheno_id, ))
             affected = cur.rowcount
             db.commit()
-
-            result = {"phenos": affected, "found": True, "action": "retire"}
-            return result
         else:
-            return {"found": False, "action": "retire"}
+            raise Exception("Pheno {} Not Found".format(pheno_id))
 
     @staticmethod
     def purge(pheno_id, config=None):
         pheno = Phenotype.get(pheno_id, config)
-        result = {}
         if pheno:
             db = sql_pool.get_conn()
             cur = db.cursor()
@@ -170,7 +180,7 @@ class Phenotype:
                 except:
                     pass
 
-            result = {"phenos": affected, "files": removed, "found": True, "action": "purge"}
+            result = {"records": affected, "files": removed}
             return result
         else:
-            return {"found": False, "action": "purge"}
+            raise Exception("Pheno {} Not Found".format(pheno_id))

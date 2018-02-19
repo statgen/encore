@@ -9,7 +9,7 @@
 <script type="text/javascript">
 		function init_user_table() {
 			$("#users-table").DataTable({
-				ajax: {url: "/api/users-all", dataSrc: ""},
+				ajax: {url: "{{url_for("api.get_users_all")}}", dataSrc: ""},
 				order: [[5, "desc"]],
 				columns: [
 					{data: "id", title: "User ID"},
@@ -104,7 +104,7 @@
 					<div class="modal-footer">
 						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
 						<button type="button" class="btn btn-success add-user-save" 
-							data-action="{{ url_for("add_user") }}">Add</button>
+							data-action="{{ url_for("api.add_user") }}">Add</button>
 					</div>
 				</div>
 			</div>

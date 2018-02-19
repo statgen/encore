@@ -28,14 +28,6 @@ def get_home_view():
 def get_job(job_id, job=None):
     return json_resp(job.as_object())
 
-def get_all_jobs():
-    jobs = Job.list_all(current_app.config)
-    return json_resp(jobs)
-
-def get_all_users():
-    users = User.list_all(current_app.config)
-    return json_resp(users)
-
 def purge_job(job_id):
     result = Job.purge(job_id, current_app.config)
     if result["found"]:

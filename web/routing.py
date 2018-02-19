@@ -32,14 +32,6 @@ app.register_blueprint(api, url_prefix="/api")
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_admin():
-            return "You do not have access", 403 
-        return f(*args, **kwargs)
-    return decorated_function
-
 
 @login_manager.user_loader
 def user_loader(email):
@@ -64,29 +56,11 @@ def sign_out():
     logout_user()
     return redirect(url_for("index"))
 
-@app.route("/admin/users", methods=["POST"])
-@login_required
-@admin_required
-def add_user():
-    return admin_handlers.add_user() 
-
 @app.route("/jobs/<job_id>/results", methods=["get"])
 @login_required
 def get_job_results(job_id):
     filters = request.args.to_dict()
     return job_handlers.get_job_results(job_id, filters)
-
-@app.route("/api/jobs-all", methods=["GET"])
-@login_required
-@admin_required
-def get_api_jobs_all():
-    return job_handlers.get_all_jobs()
-
-@app.route("/api/jobs/<job_id>/purge", methods=["DELETE"])
-@login_required
-@admin_required
-def purge_api_job(job_id):
-    return job_handlers.purge_job(job_id)
 
 @app.route('/api/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
 @login_required
@@ -106,38 +80,6 @@ def get_api_annotations(resource):
         return requests.post('http://exac.broadinstitute.org/api/constraint', data=request.form).content
     else:
         return "Not Found", 404
-
-
-@app.route("/pheno/<pheno_id>/purge", methods=["DELETE"])
-@login_required
-@admin_required
-def purge_api_pheno(pheno_id):
-    return pheno_handlers.purge_pheno(pheno_id)
-
-
-@app.route("/admin/log/<job_id>/<log_name>", methods=["GET"])
-@login_required
-@admin_required
-def get_job_log(job_id, log_name):
-    tail = request.args.get("tail", 0)
-    head = request.args.get("head", 0)
-    if log_name in ["err.log","out.log"]:
-        return job_handlers.get_job_output(job_id, log_name, \
-            mimetype="text/plain", tail=tail, head=head)
-    else:
-        return "Not Found", 404
-
-@app.route("/api/users-all", methods=["GET"])
-@login_required
-@admin_required
-def get_api_users_all():
-    return job_handlers.get_all_users()
-
-@app.route("/api/phenos-all", methods=["GET"])
-@login_required
-@admin_required
-def get_api_phenos_all():
-    return pheno_handlers.get_all_phenos()
 
 @app.context_processor
 def template_helpers():

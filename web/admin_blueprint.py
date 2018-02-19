@@ -32,3 +32,13 @@ def get_admin_user_page():
 @admin_area.route("/phenos/", methods=["GET"])
 def get_admin_pheno_page():
     return render_template("admin_phenos.html")
+
+@admin_area.route("/log/<job_id>/<log_name>", methods=["GET"])
+def get_job_log(job_id, log_name):
+    tail = request.args.get("tail", 0)
+    head = request.args.get("head", 0)
+    if log_name in ["err.log","out.log"]:
+        return job_handlers.get_job_output(job_id, log_name, \
+            mimetype="text/plain", tail=tail, head=head)
+    else:
+        return "Not Found", 404

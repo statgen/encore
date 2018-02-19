@@ -9,7 +9,7 @@
 	<script type="text/javascript">
 		function init_pheno_table() {
 			$("#pheno-table").DataTable({
-				ajax: {url: "/api/pheno", dataSrc: ""},
+				ajax: {url: "{{ url_for("api.get_phenotypes")}}", dataSrc: ""},
 				order: [[1, "desc"]],
 				columns: [
 					{data: "name", title: "Name"},

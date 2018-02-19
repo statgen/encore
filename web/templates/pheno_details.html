@@ -9,7 +9,7 @@
 		pheno_id = "{{ pheno.pheno_id }}"
 		pheno_can_edit = {{ pheno.can_edit|default(False)|tojson }}
 		pheno_is_active = {{ pheno.is_active|default(False)|tojson }}
-		pheno_api_url = "{{url_for("get_api_pheno_detail", pheno_id=pheno.pheno_id) }}"
+		pheno_api_url = "{{url_for("api.get_pheno", pheno_id=pheno.pheno_id) }}"
 		$(document).ready(function() {
 			$(".link-button").click(function() {
 				var url = $(this).data("url");
@@ -41,10 +41,10 @@
 				<div class="col-md-2 pheno-actions">
 					{% if pheno.can_edit  and pheno.is_active %}
 						<button class="btn btn-success" name="new_job" 
-							data-link="{{ url_for("get_model_build", pheno=pheno.pheno_id) }}">
+							data-link="{{ url_for("user.get_model_build", pheno=pheno.pheno_id) }}">
 							New Job</button>
 						<button class="btn btn-danger" name="delete_pheno"
-							data-action="{{ url_for("retire_api_pheno", pheno_id=pheno.pheno_id) }}">
+							data-action="{{ url_for("api.retire_pheno", pheno_id=pheno.pheno_id) }}">
 							Delete</button>
 					{% endif %}
 				</div>
@@ -122,7 +122,7 @@
 					<td>{{ job.name}}</td>
 					<td>{{ job.creation_date }}</td>
 					<td>{{ job.status }}</td>
-					<td><a href="{{ url_for("get_job", job_id=job.id) }}">View</a></td>
+					<td><a href="{{ url_for("user.get_job", job_id=job.id) }}">View</a></td>
 				</tr>
 				{% endfor %}
 			</table>

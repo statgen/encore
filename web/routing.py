@@ -5,6 +5,7 @@ import job_handlers
 import pheno_handlers
 import admin_handlers
 import sign_in_handler
+from user_blueprint import user_area
 from admin_blueprint import admin_area
 from api_blueprint import api
 import job_tracking
@@ -24,6 +25,7 @@ app.config.from_pyfile(os.path.join(APP_ROOT_PATH, "../flask_config.py"))
 app.config["PROPAGATE_EXCEPTIONS"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60*5 # seconds
 
+app.register_blueprint(user_area)
 app.register_blueprint(admin_area, url_prefix="/admin")
 app.register_blueprint(api, url_prefix="/api")
 
@@ -50,7 +52,7 @@ def favicon():
 @app.route("/")
 @login_required
 def index():
-    return job_handlers.get_home_view()
+    return render_template("home.html")
 
 @app.route("/sign-in", methods=["GET"])
 @login_manager.unauthorized_handler
@@ -68,48 +70,11 @@ def sign_out():
 def add_user():
     return admin_handlers.add_user() 
 
-@app.route("/jobs", methods=["GET"])
-@login_required
-def get_jobs():
-    return redirect(url_for("index"))
-
-
-@app.route("/jobs/<job_id>", methods=["GET"])
-@login_required
-def get_job(job_id):
-    return job_handlers.get_job_details_view(job_id)
-
-
-@app.route("/jobs/<job_id>/output", methods=["get"])
-@login_required
-def get_job_output(job_id):
-    return job_handlers.get_job_output(job_id, "output.epacts.gz", True)
-
-@app.route("/jobs/<job_id>/output/<file_name>", methods=["get"])
-@login_required
-def get_job_output_file(job_id, file_name):
-    return job_handlers.get_job_output(job_id, file_name, True)
-
 @app.route("/jobs/<job_id>/results", methods=["get"])
 @login_required
 def get_job_results(job_id):
     filters = request.args.to_dict()
     return job_handlers.get_job_results(job_id, filters)
-
-@app.route("/jobs/<job_id>/locuszoom/<region>", methods=["GET"])
-@login_required
-def get_job_locuszoom_plot(job_id, region):
-    return job_handlers.get_job_locuszoom_plot(job_id, region)
-
-@app.route("/jobs/<job_id>/variant", methods=["GET"])
-@login_required
-def get_job_variant_page(job_id):
-    return job_handlers.get_job_variant_page(job_id)
-
-@app.route("/jobs/<job_id>/share", methods=["GET"])
-@login_required
-def get_job_share_page(job_id):
-    return job_handlers.get_job_share_page(job_id)
 
 @app.route("/api/jobs-all", methods=["GET"])
 @login_required
@@ -122,7 +87,6 @@ def get_api_jobs_all():
 @admin_required
 def purge_api_job(job_id):
     return job_handlers.purge_job(job_id)
-
 
 @app.route('/api/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
 @login_required
@@ -143,31 +107,12 @@ def get_api_annotations(resource):
     else:
         return "Not Found", 404
 
-@app.route("/phenos", methods=["GET"])
-@login_required
-def get_pheno_list():
-    return pheno_handlers.get_pheno_list_view()
-
-@app.route("/phenos/<pheno_id>", methods=["GET"])
-@login_required
-def get_pheno(pheno_id):
-    return pheno_handlers.get_pheno_details_view(pheno_id)
-
-@app.route("/pheno-upload", methods=["GET"])
-@login_required
-def get_pheno_upload():
-    return pheno_handlers.get_pheno_upload_view()
 
 @app.route("/pheno/<pheno_id>/purge", methods=["DELETE"])
 @login_required
 @admin_required
 def purge_api_pheno(pheno_id):
     return pheno_handlers.purge_pheno(pheno_id)
-
-@app.route("/model-build", methods=["GET"])
-@login_required
-def get_model_build():
-    return job_handlers.get_model_build_view()
 
 
 @app.route("/admin/log/<job_id>/<log_name>", methods=["GET"])
@@ -221,7 +166,7 @@ def template_helpers():
             links["right"].append(("return","Return to App", url_for("index")))
         else:
             links["left"].append(("job", "Jobs", url_for("index")))
-            links["left"].append(("pheno", "Phenotypes", url_for("get_pheno_list")))
+            links["left"].append(("pheno", "Phenotypes", url_for("user.get_phenos")))
             if (user is not None) and hasattr(user, "is_admin") and user.is_admin():
                 links["right"].append(("admin","Admin", url_for("admin.get_admin_page")))
         links["right"].append(("logout","Logout", url_for("sign_out")))

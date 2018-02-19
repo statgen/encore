@@ -158,7 +158,8 @@
 		}
 
 		function loadPheno(pheno_id) {
-			return $.getJSON("/api/pheno/" + pheno_id).done(function(pheno) {
+			var url = "{{ url_for('api.get_pheno', pheno_id=':ID:') }}".replace(":ID:", pheno_id);
+			return $.getJSON(url).done(function(pheno) {
 				covars = pheno.meta.columns;
 				var opts  = [];
 				var hideCols = ["family_id","sample_id","mother_id","father_id"];
@@ -177,7 +178,8 @@
 		}
 
 		function loadGeno(geno_id) {
-			return $.getJSON("/api/genos/" + geno_id).done(function(geno) {
+			var url = "{{ url_for('api.get_genotype', geno_id=':ID:') }}".replace(":ID:", geno_id);
+			return $.getJSON(url).done(function(geno) {
 				var opts  = [];
 				if (geno.phenos) {
 					pheno = geno.phenos[0]
@@ -240,7 +242,7 @@
 				evt.preventDefault();
 				genophenoSelect.val("").trigger("change");
 			});
-			var d1 = $.getJSON("/api/genos").then(function(resp) {
+			var d1 = $.getJSON("{{url_for('api.get_genotypes')}}").then(function(resp) {
 				var genos = [];
 				resp.forEach(function(g) {
 					genos.push({id: g.id, text: g.name});
@@ -253,7 +255,7 @@
 				});
 				return resp[0].id;
 			});
-			var d2 = $.getJSON("/api/pheno").then(function(resp) {
+			var d2 = $.getJSON("{{url_for('api.get_phenotypes')}}").then(function(resp) {
 				var phenos = [];
 				resp.forEach(function(p) {
 					phenos.push({id: p.id, text:p.name});
@@ -277,7 +279,7 @@
 				});
 				return resp[0].id;
 			});
-			var d3 = $.getJSON("/api/model").then(function(resp) {
+			var d3 = $.getJSON("{{url_for('api.get_models')}}").then(function(resp) {
 				var modelSelect = $("#model-type");
 				var template = document.getElementById("model-radio-group").innerText;
 				modelSelect.html(ejs.render(template, {"models" : resp }));

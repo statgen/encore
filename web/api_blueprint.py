@@ -2,8 +2,9 @@ from flask import Blueprint, Response, json, render_template, current_app, reque
 from flask_login import current_user, login_required
 from user import User
 from job import Job 
-from auth import check_view_job, check_edit_job, can_user_edit_job
+from auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno
 from genotype import Genotype
+from phenotype import Phenotype
 from slurm_queue import SlurmJob, get_queue
 from model_factory import ModelFactory
 import re
@@ -388,20 +389,32 @@ def get_queue_status(job_id=None):
     return json_resp(summary) 
 
 @api.route("/phenos", methods=["GET"])
-def get_api_pheno_list():
-    return pheno_handlers.get_phenos()
+def get_phenotypes():
+    phenos = Phenotype.list_all_for_user(current_user.rid)
+    return json_resp(phenos)
 
 @api.route("/phenos/<pheno_id>", methods=["GET"])
-def get_api_pheno_detail(pheno_id):
-    return pheno_handlers.get_pheno(pheno_id)
+def get_pheno(pheno_id):
+    p = Phenotype.get(pheno_id, current_app.config)
+    return json_resp(p.as_object())
 
 @api.route("/phenos/<pheno_id>", methods=["POST"])
-def update_api_pheno(pheno_id):
-    return pheno_handlers.update_pheno(pheno_id)
+@check_edit_pheno
+def update_pheno(pheno_id, pheno=None):
+    result = Phenotype.update(pheno_id, request.values)
+    if result.get("updated", False):
+        return json_resp(result)
+    else:
+        return json_resp(result), 450
 
 @api.route("/phenos/<pheno_id>", methods=["DELETE"])
-def retire_api_pheno(pheno_id):
-    return pheno_handlers.retire_pheno(pheno_id)
+@check_edit_pheno
+def retire_pheno(pheno_id, pheno=None):
+    result = Phenotype.retire(pheno_id, current_app.config)
+    if result["found"]:
+        return json_resp(result)
+    else:
+        return json_resp(result), 404
 
 @api.route("/phenos", methods=["POST"])
 def post_api_pheno():
@@ -409,7 +422,7 @@ def post_api_pheno():
 
 @api.route("/models", methods=["GET"])
 @login_required
-def get_api_models():
+def get_models():
     models = ModelFactory.list(current_app.config)
     return json_resp(models)
 

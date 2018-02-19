@@ -86,7 +86,7 @@
 		{% if job.details.phenotype %}
 		<tr>
 			<th>Phenotype</th>
-			<td><a href={{url_for("get_pheno", pheno_id=job.details.phenotype.pheno_id) }}>
+			<td><a href={{url_for("user.get_pheno", pheno_id=job.details.phenotype.pheno_id) }}>
 			{{ job.details.phenotype.name }}</a></td>
 		</tr>
 		{% endif %}
@@ -126,11 +126,11 @@
 				<div class="col-md-2 job-actions">
 					{% if job.can_edit %}
 						<button class="btn btn-success" name="resubmit_job" 
-							data-link="{{ url_for("get_model_build", like=job.job_id) }}">
+							data-link="{{ url_for("user.get_model_build", like=job.job_id) }}">
 							New Like This</button>
 						{%if job.is_active %}
 							<button class="btn btn-info" name="share_job" 
-								data-link="{{ url_for("get_job_share_page", job_id=job.job_id) }}">
+								data-link="{{ url_for("user.get_job_share_page", job_id=job.job_id) }}">
 								Share {% if job.users|length>1 %}({{ job.users | length -1}}){% endif %}</button>
 						{% endif %}
 						{% if job.status == "queued" or job.status == "started" %}
@@ -182,7 +182,7 @@
         </div>
 		{% if job.output_files %}
 			Download:  {% for file in job.output_files %}
-				<form style="display: inline" action="{{ url_for("get_job_output_file", job_id= job.job_id, file_name=file.path) }}">
+				<form style="display: inline" action="{{ url_for("user.get_job_output_file", job_id= job.job_id, file_name=file.path) }}">
 				<button>{{file.name}} [{{file.size | filesizeformat}}]</button>
 				</form>
 			{% endfor %}
@@ -191,7 +191,7 @@
 		{% else %}
 
 			<div id="progress"></div>
-			<div id="queue_info" data-url="{{ url_for('get_queue_status', job_id=job.job_id) }}"></div>
+			<div id="queue_info" data-url="{{ url_for('api.get_queue_status', job_id=job.job_id) }}"></div>
 			{% if job.is_active<1 %} 
 				<h3 style="text-align:center; padding: 10px;">This job has been deleted</h3>
 			{% endif %}

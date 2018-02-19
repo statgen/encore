@@ -10,33 +10,10 @@ import MySQLdb
 import hashlib
 import uuid
 
-def get_pheno(pheno_id):
-    p = Phenotype.get(pheno_id, current_app.config)
-    return json_resp(p.as_object())
-
-def get_phenos(): 
-    phenos = Phenotype.list_all_for_user(current_user.rid)
-    return json_resp(phenos)
 
 def get_all_phenos():
     phenos = Phenotype.list_all(current_app.config)
     return json_resp(phenos)
-
-def get_pheno_list_view():
-    return render_template("pheno_list.html")
-
-@access_pheno_page
-def get_pheno_details_view(pheno_id, pheno=None):
-    pheno_obj = pheno.as_object()
-    if can_user_edit_pheno(current_user, pheno):
-        pheno_obj["can_edit"] = True
-    return render_template("pheno_details.html", pheno=pheno_obj)
-
-def get_pheno_upload_view():
-    if current_user.can_analyze:
-        return render_template("pheno_upload.html")
-    else:
-        return render_template("not_authorized_to_analyze.html")
 
 def suggest_pheno_name(filename):
     base, ext = os.path.splitext(os.path.basename(filename))
@@ -112,28 +89,12 @@ def post_to_pheno():
         "url_model": url_for("get_model_build", pheno=pheno_id), \
         "url_view": url_for("get_pheno", pheno_id=pheno_id)})
 
-@check_edit_pheno
-def retire_pheno(pheno_id, pheno=None):
-    result = Phenotype.retire(pheno_id, current_app.config)
-    if result["found"]:
-        return json_resp(result)
-    else:
-        return json_resp(result), 404
-
 def purge_pheno(pheno_id):
     result = Phenotype.purge(pheno_id, current_app.config)
     if result["found"]:
         return json_resp(result)
     else:
         return json_resp(result), 404
-    
-@check_edit_pheno
-def update_pheno(pheno_id, pheno=None):
-    result = Phenotype.update(pheno_id, request.values)
-    if result.get("updated", False):
-        return json_resp(result)
-    else:
-        return json_resp(result), 450
 
 def json_resp(data):
     resp = Response(mimetype='application/json')

@@ -44,38 +44,6 @@ def purge_job(job_id):
         return json_resp(result), 404
 
 @check_view_job
-def get_job_details_view(job_id, job=None):
-    pheno = Phenotype.get(job.meta.get("phenotype", ""), current_app.config)
-    geno = Genotype.get(job.meta.get("genotype", ""), current_app.config)
-    job_obj = job.as_object()
-    if pheno is not None:
-        job_obj["details"]["phenotype"] = pheno.as_object()
-    if geno is not None:
-        job_obj["details"]["genotype"] = geno.as_object()
-    if can_user_edit_job(current_user, job):
-        job_obj["can_edit"] = True
-    else:
-        job_obj["can_edit"] = False
-    return render_template("job_details.html", job=job_obj)
-
-@check_view_job
-def get_job_locuszoom_plot(job_id, region, job=None):
-    if job.meta.get("genome_build"):
-        build = job.meta["genome_build"]
-    else:
-        geno = Genotype.get(job.get_genotype_id(), current_app.config)
-        build = geno.build
-    return render_template("job_locuszoom.html", job=job.as_object(), build=build, region=region)
-
-@check_view_job
-def get_job_variant_page(job_id, job=None):
-    chrom = request.args.get("chrom", None)
-    pos = int(request.args.get("pos", None))
-    variant_id = request.args.get("variant_id", None)
-    return render_template("job_variant.html", job=job.as_object(), 
-        variant_id=variant_id, chrom=chrom, pos=pos)
-
-@check_view_job
 def get_job_results(job_id, filters=dict(), job=None):
     epacts_filename = job.relative_path("output.epacts.gz")
     with gzip.open(epacts_filename) as f:
@@ -137,10 +105,6 @@ def get_job_results(job_id, filters=dict(), job=None):
     return Response(generate(), mimetype="text/plain")
 
 @check_edit_job
-def get_job_share_page(job_id, job=None):
-    return render_template("job_share.html", job=job)
-
-@check_edit_job
 def post_to_share_job(job_id, job=None):
     form_data = request.form
     add = form_data["add"].split(",") 
@@ -151,11 +115,6 @@ def post_to_share_job(job_id, job=None):
         Job.share_drop_email(job_id, address, current_user)
     return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
 
-def get_model_build_view():
-    if current_user.can_analyze:
-        return render_template("model_build.html")
-    else:
-        return render_template("not_authorized_to_analyze.html")
 
 def json_resp(data):
     resp = Response(mimetype='application/json')

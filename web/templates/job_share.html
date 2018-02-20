@@ -10,7 +10,7 @@
 	<script type="text/javascript">
 		var job_id = "{{ job.job_id }}";
 		var sharelist = {{ job.users|tojson() }};
-		var cancel_url =  "{{ url_for("get_job", job_id=job.job_id)  }}";
+		var cancel_url =  "{{ url_for("user.get_job", job_id=job.job_id)  }}";
 		var owner_email = sharelist.filter(function(x) {return x.role == "owner";}).map(function(x) {return x.email;});
 		var current_list = sharelist.filter(function(x) {return x.role != "owner";}).map(function(x) {return x.email;});
 		// from http://www.regular-expressions.info/email.html ...
@@ -168,7 +168,7 @@
 
 	<h1>Share with collaborators</h1>
         <div class="section">
-            <form class="form-horizontal vflex" method="post" action="{{ url_for("post_api_job_share_request", job_id=job.job_id) }}" id="share-form">
+            <form class="form-horizontal vflex" method="post" action="{{ url_for("api.share_job", job_id=job.job_id) }}" id="share-form">
 				<div class="form-group">
 					<label class="control-label col-xs-2">Owner</label>
 					<div class="col-xs-10" style="padding-top: 7px"> <span id="owner-email"></span> </div>

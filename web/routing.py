@@ -1,15 +1,11 @@
 import os
 from flask import request, Response, Flask, render_template, session, send_from_directory, redirect, send_file, url_for
 from flask_login import LoginManager, login_required, current_user, logout_user
-import job_handlers
-import pheno_handlers
-import admin_handlers
 import sign_in_handler
 from user_blueprint import user_area
 from admin_blueprint import admin_area
 from api_blueprint import api
 import job_tracking
-from functools import wraps
 import atexit
 import subprocess
 import requests
@@ -55,12 +51,6 @@ def get_sign_in():
 def sign_out():
     logout_user()
     return redirect(url_for("index"))
-
-@app.route("/jobs/<job_id>/results", methods=["get"])
-@login_required
-def get_job_results(job_id):
-    filters = request.args.to_dict()
-    return job_handlers.get_job_results(job_id, filters)
 
 @app.route('/api/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
 @login_required
@@ -116,11 +106,6 @@ def template_helpers():
 
     return dict(guess_tab = guess_tab, 
         get_navigation_links = get_navigation_links)
-
-
-# @app.errorhandler(500)
-# def internal_error(exception):
-#     return render_template('500.html'), 500
 
 job_tracker = job_tracking.Tracker(5*60.0, job_tracking.DatabaseCredentials("localhost", app.config.get("MYSQL_USER"), app.config.get("MYSQL_PASSWORD"), app.config.get("MYSQL_DB")))
 job_tracker.start()

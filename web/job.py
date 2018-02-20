@@ -161,31 +161,49 @@ class Job:
         return results
 
     @staticmethod
+    def create(job_id, values):
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute("""
+            INSERT INTO jobs (id, name, user_id, geno_id, pheno_id, status_id)
+            VALUES (uuid_to_bin(%s), %s, %s, uuid_to_bin(%s), uuid_to_bin(%s),
+            (SELECT id FROM statuses WHERE name = 'queued'))
+            """, (job_id, values["name"], values["user_id"], values["genotype"], values["phenotype"]))
+        cur.execute("""
+            INSERT INTO job_users(job_id, user_id, created_by, role_id)
+            VALUES (uuid_to_bin(%s), %s, %s, (SELECT id FROM job_user_roles WHERE role_name = 'owner'))
+            """, (job_id, values["user_id"], values["user_id"]))
+        db.commit()
+
+    @staticmethod
     def update(job_id, new_values):
         updateable_fields = ["name"]
         fields = new_values.keys() 
         values = new_values.values()
         bad_fields = [x for x in fields if x not in updateable_fields]
-        try:
-            if len(bad_fields)>0:
-                raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
-            sql = "UPDATE jobs SET "+ \
-                ", ".join(("{}=%s".format(k) for k in fields)) + \
-                "WHERE id = uuid_to_bin(%s)"
-            db = sql_pool.get_conn()
-            cur = db.cursor()
-            cur.execute(sql, values + [job_id])
-            affected = cur.rowcount
-            db.commit()
-            result = {"updated": True}
-        except Exception as e:
-            result = {"updated": False, "error": str(e)}
-        return result
+        if len(bad_fields)>0:
+            raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
+        sql = "UPDATE jobs SET "+ \
+            ", ".join(("{}=%s".format(k) for k in fields)) + \
+            "WHERE id = uuid_to_bin(%s)"
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute(sql, values + [job_id])
+        db.commit()
+
+    @staticmethod
+    def resubmit(job_id):
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute("""
+            UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name = 'queued'), error_message=""
+            WHERE id = uuid_to_bin(%s)
+            """, (job_id, ))
+        db.commit()
 
     @staticmethod
     def retire(job_id, config=None):
         job = Job.get(job_id, config)
-        result = {}
         if job:
             db = sql_pool.get_conn()
             cur = db.cursor()
@@ -193,16 +211,12 @@ class Job:
             cur.execute(sql, (job_id, ))
             affected = cur.rowcount
             db.commit()
-
-            result = {"jobs": affected, "found": True, "action": "retire"}
-            return result
         else:
-            return {"found": False, "action": "retire"}
+            raise Exception("Job {} Not Found".format(job_id))
 
     @staticmethod
     def purge(job_id, config=None):
         job = Job.get(job_id, config)
-        result = {}
         if job:
             db = sql_pool.get_conn()
             cur = db.cursor()
@@ -223,10 +237,10 @@ class Job:
                 except:
                     pass
 
-            result = {"jobs": affected, "users": users, "files": removed, "found": True, "action": "purge"}
+            result = {"recrods": affected, "users": users, "files": removed}
             return result
         else:
-            return {"found": False, "action": "purge"}
+            raise Exception("Job {} Not Found".format(job_id))
 
     @staticmethod
     def share_add_email(job_id, email, current_user, role=0, config=None):

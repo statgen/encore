@@ -66,7 +66,7 @@ def get_job_variant_page(job_id, job=None):
 
 @user_area.route("/jobs/<job_id>/share", methods=["GET"])
 @check_edit_job
-def get_job_share_page(job_id):
+def get_job_share_page(job_id, job=None):
     return render_template("job_share.html", job=job)
 
 @user_area.route("/phenos", methods=["GET"])

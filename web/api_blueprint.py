@@ -16,6 +16,8 @@ import tabix
 import hashlib
 import shutil
 import collections
+import sys, traceback
+import subprocess
 import numpy as np
 
 api = Blueprint("api", __name__)
@@ -49,7 +51,7 @@ def get_genotype_info_stats(geno_id):
     g = Genotype.get(geno_id, current_app.config)
     return json_resp(g.get_info_stats())
 
-@api.route("jobs", methods=["POST"])
+@api.route("/jobs", methods=["POST"])
 def create_new_job():
     user = current_user
     if not user.can_analyze:
@@ -95,23 +97,12 @@ def create_new_job():
         return json_resp({"error": "COULD NOT ADD JOB TO QUEUE"}), 500 
     # job submitted to queue
     try:
-        db = sql_pool.get_conn()
-        cur = db.cursor()
-        cur.execute("""
-            INSERT INTO jobs (id, name, user_id, geno_id, pheno_id, status_id)
-            VALUES (uuid_to_bin(%s), %s, %s, uuid_to_bin(%s), uuid_to_bin(%s),
-            (SELECT id FROM statuses WHERE name = 'queued'))
-            """, (job_id, job_desc["name"], job_desc["user_id"], job_desc["genotype"], job_desc["phenotype"]))
-        cur.execute("""
-            INSERT INTO job_users(job_id, user_id, created_by, role_id)
-            VALUES (uuid_to_bin(%s), %s, %s, (SELECT id FROM job_user_roles WHERE role_name = 'owner'))
-            """, (job_id, job_desc["user_id"], job_desc["user_id"]))
-        db.commit()
+        Job.create(job_id, job_desc)
     except:
         shutil.rmtree(job_directory)
         return json_resp({"error": "COULD NOT SAVE TO DATABASE"}), 500 
     # everything worked
-    return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
+    return json_resp({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
 
 @api.route("/jobs", methods=["GET"])
 def get_jobs():
@@ -126,20 +117,20 @@ def get_job(job_id, job=None):
 @api.route("/jobs/<job_id>", methods=["DELETE"])
 @check_edit_job
 def retire_job(job_id, job=None):
-    result = Job.retire(job_id, current_app.config)
-    if result["found"]:
-        return json_resp(result)
-    else:
-        return json_resp(result), 404
+    try:
+        Job.retire(job_id, current_app.config)
+        return json_resp({"retired": True})
+    except Exception as e:
+        return json_resp({"retired": False, "error": str(e)}), 450
 
 @api.route("/jobs/<job_id>", methods=["POST"])
 @check_edit_job
 def update_job(job_id, job=None):
-    result = Job.update(job_id, request.values)
-    if result.get("updated", False):
-        return json_resp(result)
-    else:
-        return json_resp(result), 450
+    try:
+        Job.update(job_id, request.values)
+        json_resp({"updated": True})
+    except Exception as e:
+        json_resp({"updated": False, "error": str(e)}), 450
 
 @api.route("/jobs/<job_id>/share", methods=["POST"])
 @check_edit_job
@@ -151,11 +142,11 @@ def share_job(job_id, job=None):
         Job.share_add_email(job_id, address, current_user)
     for address in (x for x in drop if len(x)>0):
         Job.share_drop_email(job_id, address, current_user)
-    return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
+    return json_resp({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
 
 @api.route("/jobs/<job_id>/resubmit", methods=["POST"])
 @check_edit_job
-def resubmit_job(job_id, Job=None):
+def resubmit_job(job_id, job=None):
     sjob = SlurmJob(job_id, job.root_path, current_app.config) 
     try:
         sjob.resubmit()
@@ -163,21 +154,14 @@ def resubmit_job(job_id, Job=None):
         print exception
         raise Exception("Could not resubmit job ({})".format(exception));
     try:
-        db = sql_pool.get_conn()
-        cur = db.cursor()
-        cur.execute("""
-            UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name = 'queued'), error_message=""
-            WHERE id = uuid_to_bin(%s)
-            """, (job_id, ))
-        db.commit()
+        Job.resubmit(job_id)
     except:
         raise Exception("Could not update job status");
-    return json_resp({"id": job_id, "url_job": url_for("get_job", job_id=job_id)})
-    return job_handlers.resubmit_job(job_id)
+    return json_resp({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
 
 @api.route("/jobs/<job_id>/cancel_request", methods=["POST"])
 @check_edit_job
-def cancel_job(job_id, Job=None):
+def cancel_job(job_id, job=None):
     if job is None:
         return json_resp({"error": "JOB NOT FOUND"}), 404
     else:
@@ -188,6 +172,69 @@ def cancel_job(job_id, Job=None):
             print exception
             return json_resp({"error": "COULD NOT CANCEL JOB"}), 500 
     return json_resp({"message": "Job canceled"})
+
+@api.route("/jobs/<job_id>/results", methods=["get"])
+@check_view_job
+def get_job_results(job_id, job=None):
+    filters = request.args.to_dict()
+    epacts_filename = job.relative_path("output.epacts.gz")
+    with gzip.open(epacts_filename) as f:
+        header = f.readline().rstrip('\n').split('\t')
+        if header[1] == "BEG":
+            header[1] = "BEGIN"
+        if header[0] == "#CHROM":
+            header[0] = "CHROM"
+    assert len(header) > 0
+    headerpos = {x:i for i,x in enumerate(header)}
+
+    if filters.get("region", ""):
+        tb = tabix.open(epacts_filename)
+        indata = tb.query(chrom, start_pos, end_pos)
+    else:
+        indata = (x.split("\t") for x in gzip.open(epacts_filename))
+
+    pass_tests = []
+    if filters.get("non-monomorphic", False):
+        if "AC" not in headerpos:
+            raise Exception("Column AC not found")
+        ac_index = headerpos["AC"]
+        def mono_pass(row):
+            if float(row[ac_index])>0:
+                return True
+            else:
+                return False
+        pass_tests.append(mono_pass)
+
+    if "max-pvalue" in filters:
+        if "PVALUE" not in headerpos:
+            raise Exception("Column PVALUE not found")
+        pval_index = headerpos["PVALUE"]
+        thresh = float(filters.get("max-pvalue", 1))
+        def pval_pass(row):
+            if row[pval_index] == "NA":
+                return False
+            if float(row[pval_index])<thresh:
+                return True
+            else:
+                return False
+        pass_tests.append(pval_pass)
+
+    def pass_row(row):
+        if len(pass_tests)==0:
+            return True
+        for f in pass_tests:
+            if not f(row):
+                return False
+        return True
+
+    def generate():
+        yield "\t".join(header) + "\n"
+        next(indata) #skip header
+        for row in indata:
+            if pass_row(row):
+                yield "\t".join(row)
+
+    return Response(generate(), mimetype="text/plain")
 
 def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None):
     try:
@@ -531,16 +578,28 @@ def get_api_phenos_all():
 @api.route("/users", methods=["POST"])
 @admin_required
 def add_user():
-    return admin_handlers.add_user() 
+    try: 
+        result = User.create(request.values)
+        result["user"] = result["user"].as_object()
+        result["created"] = True
+        return json_resp(result)
+    except Exception as e:
+        json_resp({"created": False, "error": str(e)}), 450
 
 @api.route("/jobs/<job_id>/purge", methods=["DELETE"])
 @admin_required
-def purge_api_job(job_id):
-    return job_handlers.purge_job(job_id)
+def purge_job(job_id):
+    try:
+        result = Job.purge(job_id, current_app.config)
+        result["purged"] = True
+        return json_resp(result)
+    except Exception as e:
+        json_resp({"purged": False, "error": str(e)}), 450
+        return json_resp(result), 404
 
-@api.route("/pheno/<pheno_id>/purge", methods=["DELETE"])
+@api.route("/phenos/<pheno_id>/purge", methods=["DELETE"])
 @admin_required
-def purge_api_pheno(pheno_id):
+def purge_pheno(pheno_id):
     try: 
         result = Phenotype.purge(pheno_id, current_app.config)
         result["purged"] = True

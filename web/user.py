@@ -75,22 +75,19 @@ class User(UserMixin):
         bad_fields = [x for x in fields if x not in updateable_fields]
         if db is None:
             db = sql_pool.get_conn()
-        try:
-            if len(bad_fields)>0:
-                raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
-            sql = "INSERT INTO users (" + \
-                ", ".join(fields)+ \
-                ") values (" + \
-                ", ".join(["%s"] * len(values)) + \
-                ")"
-            cur = db.cursor(MySQLdb.cursors.DictCursor)
-            cur.execute(sql, values)
-            db.commit()
-            new_id = cur.lastrowid
-            new_user = User.__get_by_sql_where(db, "id=%s", (new_id,))
-            result = {"created": True, "user": new_user}
-        except Exception as e:
-            result = {"created": False, "error": str(e)}
+        if len(bad_fields)>0:
+            raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
+        sql = "INSERT INTO users (" + \
+            ", ".join(fields)+ \
+            ") values (" + \
+            ", ".join(["%s"] * len(values)) + \
+            ")"
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute(sql, values)
+        db.commit()
+        new_id = cur.lastrowid
+        new_user = User.__get_by_sql_where(db, "id=%s", (new_id,))
+        result = {"user": new_user}
         return result
 
     @staticmethod

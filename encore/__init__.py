@@ -19,6 +19,7 @@ def create_app(config=None):
         app.config.update(config)
     else:
         raise Exception("Unknown config type")
+
     app.config["PROPAGATE_EXCEPTIONS"] = True
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60*5 # seconds
 

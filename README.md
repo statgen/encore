@@ -20,6 +20,32 @@ To install all the required python modules use
 	 # source venv/bin/activate
      pip install -r requirements.txt
 
+# Run dev instance
+
+To run a simple dev instance of Encore, you can run
+
+    ./rundev.sh
+
+# Apache Configuration
+
+Currently Encore is deployed using WSGI with apache. You can 
+install apache and the WSGI module with
+
+    apt-get install apache2 python-setuptools libapache2-mod-wsgi
+
+A sample wsgi file is included at encore.wsgi.example. You should
+copy this file to encore.wsgi and fill in the correct path
+for your server.
+
+A sample apache conf file is included at encore.conf.example. You should
+copy this file to /etc/apache2/sites-available/encore.conf and
+fill in the correct URL and path for your server.
+
+You can enable the configuration with
+
+    sudo a2enconf wsgi
+
+
 # Building Executable tools
 
      mkdir build

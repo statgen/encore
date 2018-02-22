@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(gasp-utils)
+project(encore-utils)
 
 include(ExternalProject)
 
@@ -43,10 +43,10 @@ ExternalProject_Add(htslib
 ExternalProject_Get_Property(htslib SOURCE_DIR)
 set(HTSLIB_SRC_DIR ${SOURCE_DIR})
 
-include_directories("gasp-utils/include" "${HTSLIB_SRC_DIR}/htslib")
+include_directories("encore-utils/include" "${HTSLIB_SRC_DIR}/htslib")
 
 
-add_executable(vcf-stat gasp-utils/src/vcf_stat.cpp)
+add_executable(vcf-stat encore-utils/src/vcf_stat.cpp)
 add_dependencies(vcf-stat htslib)
 set_target_properties(vcf-stat PROPERTIES COMPILE_FLAGS "-pthread -fopenmp" LINK_FLAGS "-pthread -fopenmp")
 target_link_libraries(vcf-stat ${HTSLIB_SRC_DIR}/libhts.a)
@@ -54,13 +54,13 @@ target_link_libraries(vcf-stat z)
 
 
 add_executable(validate-ped
-               gasp-utils/src/validate_ped.cpp)
+               encore-utils/src/validate_ped.cpp)
 
 
 add_executable(jobstatusd
-               gasp-utils/src/jobstatusd.cpp
-               gasp-utils/src/job_tracker.cpp
-               gasp-utils/include/job_tracker.hpp)
+               encore-utils/src/jobstatusd.cpp
+               encore-utils/src/job_tracker.cpp
+               encore-utils/include/job_tracker.hpp)
 
 target_include_directories(jobstatusd PRIVATE ${MYSQL_INCLUDE_DIR})
 target_link_libraries(jobstatusd ${MYSQL_LIBRARY})

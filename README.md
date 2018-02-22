@@ -2,7 +2,7 @@
 
 Encore allows scientists to test hypotheses using large scale sequencing data
 while hiding many of the complicated technical issues associated with working
-on petabyte scale data.  In addition to performing the most common association
+on terabyte scale data.  In addition to performing the most common association
 tests for single variants and groups of rare variants, Encore enables users to
 annotate, share and interact with results.  Access to Encore is controlled by a
 white list of users who can upload phenotypes and request analyses.  All
@@ -43,7 +43,8 @@ fill in the correct URL and path for your server.
 
 You can enable the configuration with
 
-    sudo a2enconf wsgi
+    sudo a2ensite encore
+    sudo systemctl restart apache2
 
 
 # Building Executable tools

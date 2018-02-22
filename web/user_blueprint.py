@@ -15,9 +15,13 @@ def before_request():
     # Just here to trigger the login_required before any request
     pass
 
+@user_area.route("/")
+def index():
+    return render_template("home.html")
+
 @user_area.route("/jobs", methods=["GET"])
 def get_jobs():
-    return redirect(url_for("index"))
+    return redirect(url_for("user.index"))
 
 @user_area.route("/jobs/<job_id>", methods=["GET"])
 @check_view_job

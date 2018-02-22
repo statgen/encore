@@ -18,6 +18,7 @@ import shutil
 import collections
 import sys, traceback
 import subprocess
+import requests
 import numpy as np
 
 api = Blueprint("api", __name__)
@@ -607,6 +608,24 @@ def purge_pheno(pheno_id):
     except Exception as e:
         json_resp({"purged": False, "error": str(e)}), 450
         return json_resp(result), 404
+
+@api.route('/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
+def get_api_annotations(resource):
+    if resource == "ld-results":
+        ldresp =  requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/results/', params=request.args)
+        if ldresp.status_code != 500:
+            return ldresp.content
+        else:
+            empty = "{\"data\": {\"position2\": []}}"
+            return empty
+    elif resource == "gene":
+        return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/genes/', params=request.args).content
+    elif resource == "recomb":
+        return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/recomb/results/', params=request.args).content
+    elif resource == "constraint":
+        return requests.post('http://exac.broadinstitute.org/api/constraint', data=request.form).content
+    else:
+        return "Not Found", 404
 
 def json_resp(data):
     resp = Response(mimetype='application/json')

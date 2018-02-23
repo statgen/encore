@@ -27,9 +27,13 @@ def create_app(config=None):
     app.register_blueprint(user_area)
     app.register_blueprint(admin_area, url_prefix="/admin")
     app.register_blueprint(api, url_prefix="/api")
+
     app.register_blueprint(auth)
     from auth_blueprint import login_manager
     login_manager.init_app(app)
+
+    from sql_pool import register_db
+    register_db(app)
 
     register_helpers(app)
     register_info(app)

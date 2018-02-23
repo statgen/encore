@@ -1,8 +1,9 @@
 .DS_Store
 .idea
 venv/
-*.wsgi
+.pytest_cache/
 flask_config.py
+*.wsgi
 *.pyc
 bin/
 build/

@@ -24,8 +24,8 @@ def get_sign_in_view(target):
     signin_url = request.url_root + target
     oauth_service = OAuth2Service(
         name="google",
-        client_id=current_app.config["GOOGLE_LOGIN_CLIENT_ID"],
-        client_secret=current_app.config["GOOGLE_LOGIN_CLIENT_SECRET"],
+        client_id=current_app.config.get("GOOGLE_LOGIN_CLIENT_ID", None),
+        client_secret=current_app.config.get("GOOGLE_LOGIN_CLIENT_SECRET", None),
         authorize_url=google_params.get("authorization_endpoint"),
         base_url=google_params.get("userinfo_endpoint"),
         access_token_url=google_params.get("token_endpoint"))

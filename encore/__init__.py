@@ -15,8 +15,10 @@ def create_app(config=None):
 
     if isinstance(config, basestring):
         app.config.from_pyfile(config)
-    elif isinstance(x, basestring):
+    elif isinstance(config, dict):
         app.config.update(config)
+    elif config is None:
+        pass
     else:
         raise Exception("Unknown config type")
 

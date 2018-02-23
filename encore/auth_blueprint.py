@@ -1,4 +1,5 @@
-from flask import render_template, request, json, current_app, redirect, session, url_for
+from flask import Blueprint, render_template, request, json, current_app, redirect, session, url_for, redirect
+from flask_login import LoginManager, logout_user
 import urllib2
 from rauth import OAuth2Service
 from user import User
@@ -7,6 +8,30 @@ import sql_pool
 
 googleinfo = urllib2.urlopen("https://accounts.google.com/.well-known/openid-configuration")
 google_params = json.load(googleinfo)
+
+auth = Blueprint("auth", __name__)
+
+login_manager = LoginManager()
+
+@login_manager.user_loader
+def user_loader(email):
+    return load_user(email)
+
+@auth.route("/sign-in", methods=["GET"])
+def get_sign_in():
+    return get_sign_in_view("sign-in") 
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    if request.path.startswith("/api"):
+        return "UNAUTHORIZED", 401
+    else:
+        return redirect(url_for("auth.get_sign_in", orig=request.path))
+
+@auth.route("/sign-out", methods=["GET"])
+def sign_out():
+    logout_user()
+    return redirect(url_for("index"))
 
 def load_user(email):
     db = sql_pool.get_conn()

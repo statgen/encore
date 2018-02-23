@@ -1,9 +1,8 @@
 from flask import request, Response, Flask, render_template, redirect, url_for
-from flask_login import LoginManager, logout_user
-import sign_in_handler
 from user_blueprint import user_area
 from admin_blueprint import admin_area
 from api_blueprint import api, ApiResult, ApiException
+from auth_blueprint import auth
 import job_tracking
 import atexit
 import subprocess
@@ -28,38 +27,22 @@ def create_app(config=None):
     app.register_blueprint(user_area)
     app.register_blueprint(admin_area, url_prefix="/admin")
     app.register_blueprint(api, url_prefix="/api")
+    app.register_blueprint(auth)
+    from auth_blueprint import login_manager
+    login_manager.init_app(app)
 
-    register_login(app)
     register_helpers(app)
     register_info(app)
 
     launch_tracker(app.config)
     return app
 
-def register_login(app):
-    login_manager = LoginManager()
-    login_manager.init_app(app)
 
-    @login_manager.user_loader
-    def user_loader(email):
-        return sign_in_handler.load_user(email)
-
-    @app.route("/sign-in", methods=["GET"])
-    @login_manager.unauthorized_handler
-    def get_sign_in():
-        return sign_in_handler.get_sign_in_view("sign-in") 
-
-    @app.route("/sign-out", methods=["GET"])
-    def sign_out():
-        logout_user()
-        return redirect(url_for("index"))
-
+def register_helpers(app):
     @app.route('/favicon.ico')
     def favicon():
         return app.send_static_file('favicon.ico')
 
-
-def register_helpers(app):
     @app.context_processor
     def template_helpers():
         def guess_tab(path):
@@ -90,7 +73,7 @@ def register_helpers(app):
                 links["left"].append(("pheno", "Phenotypes", url_for("user.get_phenos")))
                 if (user is not None) and hasattr(user, "is_admin") and user.is_admin():
                     links["right"].append(("admin","Admin", url_for("admin.get_admin_page")))
-            links["right"].append(("logout","Logout", url_for("sign_out")))
+            links["right"].append(("logout","Logout", url_for("auth.sign_out")))
             return links
 
         return dict(guess_tab = guess_tab, 

@@ -40,26 +40,26 @@ def get_genotypes():
         s["id"] = x["id"]
         return s
     stats = [get_stats(x) for x in genos]
-    return json_resp(stats)
+    return ApiResult(stats)
 
 @api.route("/genos/<geno_id>", methods=["GET"])
 def get_genotype(geno_id):
     g = Genotype.get(geno_id, current_app.config)
-    return json_resp(g.as_object())
+    return ApiResult(g.as_object())
 
 @api.route("/genos/<geno_id>/info", methods=["GET"])
 def get_genotype_info_stats(geno_id):
     g = Genotype.get(geno_id, current_app.config)
-    return json_resp(g.get_info_stats())
+    return ApiResult(g.get_info_stats())
 
 @api.route("/jobs", methods=["POST"])
 def create_new_job():
     user = current_user
     if not user.can_analyze:
-        return "User Action Not Allowed", 403
+        raise ApiException("USER ACTION NOT ALLOWED", 403)
     job_desc = dict()
     if request.method != 'POST':
-        return json_resp({"error": "NOT A POST REQUEST"}), 405
+        raise ApiException("NOT A POST REQUEST", 405)
     form_data = request.form
     genotype_id = form_data["genotype"]
     phenotype_id = form_data["phenotype"]
@@ -76,7 +76,7 @@ def create_new_job():
     job_id = str(uuid.uuid4())
 
     if not job_id:
-        return json_resp({"error": "COULD NOT GENERATE JOB ID"}), 500
+        raise ApiException("COULD NOT GENERATE JOB ID")
     job_directory =  os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
 
     job = SlurmJob(job_id, job_directory, current_app.config) 
@@ -87,7 +87,7 @@ def create_new_job():
         with open(job_desc_file, "w") as outfile:
             json.dump(job_desc, outfile)
     except Exception:
-        return json_resp({"error": "COULD NOT SAVE JOB DESCRIPTION"}), 500
+        raise ApiException("COULD NOT SAVE JOB DESCRIPTION")
     # file has been saved to disc
     try:
         job.submit_job(job_desc)
@@ -95,43 +95,43 @@ def create_new_job():
         print e
         traceback.print_exc(file=sys.stdout)
         shutil.rmtree(job_directory)
-        return json_resp({"error": "COULD NOT ADD JOB TO QUEUE"}), 500 
+        raise ApiException("COULD NOT ADD JOB TO QUEUE")
     # job submitted to queue
     try:
         Job.create(job_id, job_desc)
     except:
         shutil.rmtree(job_directory)
-        return json_resp({"error": "COULD NOT SAVE TO DATABASE"}), 500 
+        return ApiException("COULD NOT SAVE TO DATABASE")
     # everything worked
-    return json_resp({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
+    return ApiResult({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
 
 @api.route("/jobs", methods=["GET"])
 def get_jobs():
     jobs = Job.list_all_for_user(current_user.rid, current_app.config)
-    return json_resp(jobs)
+    return ApiResult(jobs)
 
 @api.route("/jobs/<job_id>", methods=["GET"])
 @check_view_job
 def get_job(job_id, job=None):
-    return json_resp(job.as_object())
+    return ApiResult(job.as_object())
 
 @api.route("/jobs/<job_id>", methods=["DELETE"])
 @check_edit_job
 def retire_job(job_id, job=None):
     try:
         Job.retire(job_id, current_app.config)
-        return json_resp({"retired": True})
+        return ApiResult({"retired": True})
     except Exception as e:
-        return json_resp({"retired": False, "error": str(e)}), 450
+        raise ApiException("COULD NOT RETIRE JOB", details=str(e))
 
 @api.route("/jobs/<job_id>", methods=["POST"])
 @check_edit_job
 def update_job(job_id, job=None):
     try:
         Job.update(job_id, request.values)
-        json_resp({"updated": True})
+        return ApiResult({"updated": True})
     except Exception as e:
-        json_resp({"updated": False, "error": str(e)}), 450
+        raise ApiException("COULD NOT UPDATE JOB", details=str(e))
 
 @api.route("/jobs/<job_id>/share", methods=["POST"])
 @check_edit_job
@@ -143,7 +143,7 @@ def share_job(job_id, job=None):
         Job.share_add_email(job_id, address, current_user)
     for address in (x for x in drop if len(x)>0):
         Job.share_drop_email(job_id, address, current_user)
-    return json_resp({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
+    return ApiResult({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
 
 @api.route("/jobs/<job_id>/resubmit", methods=["POST"])
 @check_edit_job
@@ -151,28 +151,26 @@ def resubmit_job(job_id, job=None):
     sjob = SlurmJob(job_id, job.root_path, current_app.config) 
     try:
         sjob.resubmit()
-    except Exception as exception:
-        print exception
-        raise Exception("Could not resubmit job ({})".format(exception));
+    except Exception as e:
+        raise ApiException("Could not resubmit job", details=str(e));
     try:
         Job.resubmit(job_id)
     except:
-        raise Exception("Could not update job status");
-    return json_resp({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
+        raise ApiException("Could not update job status");
+    return ApiResult({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
 
 @api.route("/jobs/<job_id>/cancel_request", methods=["POST"])
 @check_edit_job
 def cancel_job(job_id, job=None):
     if job is None:
-        return json_resp({"error": "JOB NOT FOUND"}), 404
-    else:
-        slurmjob = SlurmJob(job_id, job.root_path, current_app.config) 
-        try:
-            slurmjob.cancel_job()
-        except Exception as exception:
-            print exception
-            return json_resp({"error": "COULD NOT CANCEL JOB"}), 500 
-    return json_resp({"message": "Job canceled"})
+        raise ApiException("JOB NOT FOUND", 404)
+    slurmjob = SlurmJob(job_id, job.root_path, current_app.config) 
+    try:
+        slurmjob.cancel_job()
+    except Exception as exception:
+        print exception
+        return ApiException("COULD NOT CANCEL JOB")
+    return ApiResult({"message": "Job canceled"})
 
 @api.route("/jobs/<job_id>/results", methods=["get"])
 @check_view_job
@@ -301,7 +299,7 @@ def get_job_zoom(job_id, job=None):
     end_pos = int(request.args.get("end_pos", "0"))
 
     if chrom == "":
-        return json_resp({"header": {"variant_columns": header}})
+        return ApiResult(None, header={"variant_columns": header})
 
     headerpos = {x:i for i,x in enumerate(header)}
     tb = tabix.open(output_filename)
@@ -352,8 +350,7 @@ def get_job_zoom(job_id, job=None):
                 json_response_data["MAF"].append(str(maf))
             if "BETA" in headerpos:
                 json_response_data["BETA"].append(r[headerpos["BETA"]])
-    return json_resp({"header": {"variant_columns": json_response_data.keys()}, \
-        "data": json_response_data})
+    return ApiResult(json_response_data, header={"variant_columns": json_response_data.keys()}) 
 
 def merge_info_stats(info, info_stats):
     info_extract = re.compile(r'([A-Z0-9_]+)(?:=([^;]+))?(?:;|$)')
@@ -379,14 +376,14 @@ def get_job_variant_pheno(job_id, job=None):
     pos = request.args.get("pos", None)
     variant_id = request.args.get("variant_id", None)
     if (chrom is None or pos is None):
-        return json_resp({"error": "MISSING REQUIRED PARAMETER (chrom, pos)"}), 405
+        raise ApiException("MISSING REQUIRED PARAMETER (chrom, pos)", 405)
     pos = int(pos)
     geno = Genotype.get(job.meta["genotype"], current_app.config)
     reader = geno.get_geno_reader(current_app.config)
     try:
         variant = reader.get_variant(chrom, pos, variant_id)
     except Exception as e:
-        return json_resp({"error": "Unable to retrieve genotypes ({})".format(e)})
+        raise ApiException("Unable to retrieve genotypes", details=str(e))
     info_stats = geno.get_info_stats()
     info = variant["INFO"]
     calls = variant["GENOS"]
@@ -418,14 +415,13 @@ def get_job_variant_pheno(job_id, job=None):
             "n":  obs_array.size,
             "outliers": outliers
         }
-    return json_resp({"header": variant,
-        "data": summary})
+    return ApiResult(summary, header=variant)
 
 @api.route("/jobs/<job_id>/progress", methods=["GET"])
 @check_view_job
 def get_job_progress(job_id, job=None):
     sej = SlurmJob(job_id, job.root_path, current_app.config)
-    return json_resp(sej.get_progress())
+    return ApiResult(sej.get_progress())
 
 @api.route("/queue", methods=["GET"])
 @api.route("/queue/<job_id>", methods=["GET"])
@@ -439,35 +435,35 @@ def get_queue_status(job_id=None):
             summary["position"] = position
         except:
             pass
-    return json_resp(summary) 
+    return ApiResult(summary) 
 
 @api.route("/phenos", methods=["GET"])
 def get_phenotypes():
     phenos = Phenotype.list_all_for_user(current_user.rid)
-    return json_resp(phenos)
+    return ApiResult(phenos)
 
 @api.route("/phenos/<pheno_id>", methods=["GET"])
 def get_pheno(pheno_id):
     p = Phenotype.get(pheno_id, current_app.config)
-    return json_resp(p.as_object())
+    return ApiResult(p.as_object())
 
 @api.route("/phenos/<pheno_id>", methods=["POST"])
 @check_edit_pheno
 def update_pheno(pheno_id, pheno=None):
     try:
         Phenotype.update(pheno_id, request.values)
-        json_resp({"updated": True})
+        return ApiResult({"updated": True})
     except Exception as e:
-        json_resp({"updated": False, "error": str(e)}), 450
+        raise ApiException("COULD NOT UPDATE PHENO", details=str(e))
 
 @api.route("/phenos/<pheno_id>", methods=["DELETE"])
 @check_edit_pheno
 def retire_pheno(pheno_id, pheno=None):
     try:
         Phenotype.retire(pheno_id, current_app.config)
-        return json_resp({"retired": True})
+        return ApiResult({"retired": True})
     except Exception as e:
-        return json_resp({"retired": False, "error": str(e)}), 450
+        return ApiException("COULD NOT RETURE PHENO", details=str(e))
 
 def suggest_pheno_name(filename):
     base, ext = os.path.splitext(os.path.basename(filename))
@@ -487,14 +483,12 @@ def hashfile(afile, hasher=None, blocksize=65536):
 def post_pheno():
     user = current_user
     if not user.can_analyze:
-        return "User Action Not Allowed", 403
-    if request.method != 'POST':
-        return json_resp({"error": "NOT A POST REQUEST"}), 405
+        raise ApiException("User Action Not Allowed")
     if "pheno_file" not in request.files:
-        return json_resp({"error": "FILE NOT SENT"}), 400
+        raise ApiException("FILE NOT SENT")
     pheno_id = str(uuid.uuid4())
     if not pheno_id:
-        return json_resp({"error": "COULD NOT GENERATE PHENO ID"}), 500
+        raise ApiException("COULD NOT GENERATE PHENO ID")
     pheno_file = request.files["pheno_file"]
     orig_file_name = pheno_file.filename
     pheno_name = suggest_pheno_name(orig_file_name)
@@ -507,7 +501,7 @@ def post_pheno():
         md5 =  hashfile(open(pheno_file_path, "rb")).encode("hex")
     except Exception as e:
         print "File saving error: %s" % e
-        return json_resp({"error": "COULD NOT SAVE FILE"}), 500
+        raise ApiException("COULD NOT SAVE FILE")
     # file has been saved to server
     existing_pheno = Phenotype.get_by_hash_user(md5, user.rid, current_app.config)
     if existing_pheno:
@@ -518,14 +512,14 @@ def post_pheno():
         pheno_dict["url_model"] = url_for("get_model_build", pheno=pheno_id)
         pheno_dict["url_view"] = url_for("get_pheno", pheno_id=pheno_id)
         pheno_dict["existing"] = True
-        return json_resp(pheno_dict)
+        return ApiResult(pheno_dict)
     # file has not been uploaded before
     istext, filetype, mimetype = PhenoReader.is_text_file(pheno_file_path)
     if not istext:
         shutil.rmtree(pheno_directory)
-        return json_resp({"error": "NOT A RECOGNIZED TEXT FILE",
-            "filetype": filetype,
-            "mimetype": mimetype}), 400
+        raise ApiException("NOT A RECOGNIZED TEXT FILE",
+            details = {"filetype": filetype,
+                "mimetype": mimetype})
     try:
         Phenotype.add({"id": pheno_id,
             "user_id": user.rid,
@@ -535,7 +529,7 @@ def post_pheno():
     except Exception as e:
         print "Databse error: %s" % e
         shutil.rmtree(pheno_directory)
-        return json_resp({"error": "COULD NOT SAVE TO DATABASE"}), 500
+        raise ApiException("COULD NOT SAVE TO DATABASE")
     # file has been saved to DB
     pheno = PhenoReader(pheno_file_path)
     if pheno.meta:
@@ -546,7 +540,7 @@ def post_pheno():
     meta["records"] = line_count
     with open(pheno_meta_path, "w") as f:
         json.dump(meta, f)
-    return json_resp({"id": pheno_id,  \
+    return ApiResult({"id": pheno_id,  \
         "url_model": url_for("user.get_model_build", pheno=pheno_id), \
         "url_view": url_for("user.get_pheno", pheno_id=pheno_id)})
 
@@ -554,7 +548,7 @@ def post_pheno():
 @login_required
 def get_models():
     models = ModelFactory.list(current_app.config)
-    return json_resp(models)
+    return ApiResult(models)
 
 # ADMIN ENDPOINTS
 
@@ -562,19 +556,19 @@ def get_models():
 @admin_required
 def get_jobs_all():
     jobs = Job.list_all(current_app.config)
-    return json_resp(jobs)
+    return ApiResult(jobs)
 
 @api.route("/users-all", methods=["GET"])
 @admin_required
 def get_users_all():
     users = User.list_all(current_app.config)
-    return json_resp(users)
+    return ApiResult(users)
 
 @api.route("/phenos-all", methods=["GET"])
 @admin_required
 def get_api_phenos_all():
     phenos = Phenotype.list_all(current_app.config)
-    return json_resp(phenos)
+    return ApiResult(phenos)
 
 @api.route("/users", methods=["POST"])
 @admin_required
@@ -583,9 +577,9 @@ def add_user():
         result = User.create(request.values)
         result["user"] = result["user"].as_object()
         result["created"] = True
-        return json_resp(result)
+        return ApiResult(result)
     except Exception as e:
-        json_resp({"created": False, "error": str(e)}), 450
+        raise ApiException("COULD NOT ADD USER", details=str(e))
 
 @api.route("/jobs/<job_id>/purge", methods=["DELETE"])
 @admin_required
@@ -593,10 +587,9 @@ def purge_job(job_id):
     try:
         result = Job.purge(job_id, current_app.config)
         result["purged"] = True
-        return json_resp(result)
+        return ApiResult(result)
     except Exception as e:
-        json_resp({"purged": False, "error": str(e)}), 450
-        return json_resp(result), 404
+        raise ApiException("COULD NOT PURGE JOB", details=str(e))
 
 @api.route("/phenos/<pheno_id>/purge", methods=["DELETE"])
 @admin_required
@@ -604,10 +597,9 @@ def purge_pheno(pheno_id):
     try: 
         result = Phenotype.purge(pheno_id, current_app.config)
         result["purged"] = True
-        return json_resp(result)
+        return ApiResult(result)
     except Exception as e:
-        json_resp({"purged": False, "error": str(e)}), 450
-        return json_resp(result), 404
+        raise ApiException("COULD NOT PURGE PHENO", details=str(e))
 
 @api.route('/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
 def get_api_annotations(resource):
@@ -627,8 +619,26 @@ def get_api_annotations(resource):
     else:
         return "Not Found", 404
 
-def json_resp(data):
-    resp = Response(mimetype='application/json')
-    resp.set_data(json.dumps(data))
-    return resp
+class ApiResult(object):
+    def __init__(self, value, status=200, header=None):
+        self.value = value
+        self.status = status
+        self.header = header
+    def to_response(self):
+        data = self.value
+        if self.header:
+            data = {"header": self.header, "data": self.value}
+        return Response(json.dumps(data),
+            status=self.status,
+            mimetype='application/json')
+
+class ApiException(Exception):
+    def __init__(self, message, status=400, details=None):
+        self.message = message
+        self.status = status
+        self.details = details
+
+    def to_result(self):
+        return ApiResult({'error': self.message},
+            status=self.status)
 

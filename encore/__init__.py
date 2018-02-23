@@ -3,14 +3,14 @@ from flask_login import LoginManager, logout_user
 import sign_in_handler
 from user_blueprint import user_area
 from admin_blueprint import admin_area
-from api_blueprint import api
+from api_blueprint import api, ApiResult, ApiException
 import job_tracking
 import atexit
 import subprocess
 
 def create_app(config=None):
 
-    app = Flask(__name__)
+    app = ApiFlask(__name__)
     app.url_map.strict_slashes = False
 
     if isinstance(config, basestring):
@@ -107,4 +107,14 @@ def launch_tracker(config):
         config.get("MYSQL_PASSWORD"), config.get("MYSQL_DB")))
     job_tracker.start()
     atexit.register(lambda:job_tracker.cancel())
+
+class ApiFlask(Flask):
+    def __init__(self, *args, **kwds):
+       super(ApiFlask, self).__init__(*args, **kwds)
+       self.register_error_handler(ApiException, lambda err: err.to_result())
+
+    def make_response(self, rv):
+        if isinstance(rv, ApiResult):
+            return rv.to_response()
+        return Flask.make_response(self, rv)
 

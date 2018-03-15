@@ -107,9 +107,10 @@ class BinaryColumn(Column):
         super(BinaryColumn, self).__init__(coldef, pr)
         self.levels = coldef["levels"]
         self.ref_level = self.levels[0]
+        self.alt_level = self.levels[1]
 
     def headers(self):
-        return [self.name + "_" + self.ref_level]
+        return [self.name + "_" + self.alt_level]
 
     def values(self, index):
         val = self.value(index) 
@@ -117,7 +118,7 @@ class BinaryColumn(Column):
             return None
         if val==self.ref_level:
             return ["0"]
-        elif val==self.levels[1]:
+        elif val==self.alt_level:
             return ["1"]
         else:
             raise Exception("Found unexpected value in binary column")

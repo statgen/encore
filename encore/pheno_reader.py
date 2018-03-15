@@ -8,6 +8,13 @@ from collections import defaultdict, Counter
 # attempt to identify the type of variable in each of the columns
 # of a phenotype file
 
+def atof(text):
+    try:
+        retval = float(text)
+    except ValueError:
+        retval = text
+    return retval
+
 def guess_raw_type(s):
     # return one of "int","float","str","bool","_empty_"
     if re.match(r'^\s*$', s):
@@ -31,7 +38,10 @@ def guess_atomic_column_class(rawtype, obs):
     if n_uniq_vals == 1:
         return {"class": "fixed", "type": rawtype, "value": obs.keys()[0]}
     if n_uniq_vals == 2:
-        return {"class": "binary", "type": rawtype, "levels": obs.keys()}
+        levels = obs.keys()
+        if rawtype in ["int", "float"]:
+            levels.sort(key = lambda x: atof(x))
+        return {"class": "binary", "type": rawtype, "levels": levels}
     if rawtype == "str":
         if float(n_uniq_vals)/n_vals > .75:
             return {"class": "descr", "type": "str"}

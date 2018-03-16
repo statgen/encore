@@ -57,6 +57,12 @@ class SlurmJob:
                 raise Exception("Could not find sbatch")
         return True
 
+    def get_model(self, model_spec = None):
+        if not model_spec:
+            model_spec = self.load_model_spec()
+        model = ModelFactory.get_for_model_spec(model_spec, self.job_directory, self.config)
+        return model
+
     def resubmit(self):
         sbatch = self.config.get("QUEUE_JOB_BINARY", "sbatch")
         batch_script_path = self.relative_path("batch_script.sh")
@@ -93,8 +99,7 @@ class SlurmJob:
         return True
 
     def get_progress(self):
-        model_spec = self.load_model_spec()
-        model = ModelFactory.get_for_model_spec(model_spec, self.job_directory, self.config)
+        model = self.get_model()
         return model.get_progress()
 
     def load_model_spec(self):

@@ -80,7 +80,13 @@ def create_new_job():
     job_directory =  os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
 
     job = SlurmJob(job_id, job_directory, current_app.config) 
+    model = job.get_model(job_desc)
 
+    try:
+        model.validate_model_spec(job_desc)
+    except:
+        raise ApiException("INVALID MODEL REQUEST")
+    # valid model request
     try:
         os.mkdir(job_directory)
         job_desc_file = os.path.join(job_directory, "job.json")

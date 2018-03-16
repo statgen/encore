@@ -33,3 +33,6 @@ class BaseModel(object):
             "if [ $EXIT_STATUS == 0 ]; then"
             ] + ifsuccess + ["fi", "exit $EXIT_STATUS"]
         return cmds
+
+    def validate_model_spec(self, model_spec):
+        pass

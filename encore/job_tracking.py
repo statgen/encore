@@ -78,20 +78,27 @@ class Tracker(object):
     @staticmethod
     def update_job_statuses(db, jobs):
         # job_names_param = ",".join("gasp_" + x.id for x in jobs)
-        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", pwd.getpwuid(os.getuid())[0], "--format", "jobid,state,exitcode,jobname", "--noheader", "-P", "-S", (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", pwd.getpwuid(os.getuid())[0], "--format", "jobid,state,exitcode,jobname,submit", "--noheader", "-P", "-S", (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         squeue_out, squeue_err = p.communicate()
 
         fake_data = """29646434            PENDING             0
 29646435            COMPLETED             0
 """
 
-        # only keep last record for jobs that were re-run
+        # keep only most recent submission date for each job
         slurm_jobs_found = dict()
         for line in squeue_out.rstrip().split("\n"):
             if line:
                 slurm_job = line.strip().split("|")
                 # strip off "gasp_"
-                slurm_jobs_found[slurm_job[3][5:]] = slurm_job
+                job_name = slurm_job[3][5:]
+                if job_name in slurm_jobs_found:
+                    prev_date = datetime.strptime(slurm_jobs_found[job_name][4], '%Y-%m-%dT%H:%M:%S')
+                    curr_date = datetime.strptime(slurm_job[4], '%Y-%m-%dT%H:%M:%S')
+                    if curr_date > prev_date:
+                        slurm_jobs_found[job_name] = slurm_job
+                else:
+                    slurm_jobs_found[job_name] = slurm_job
         for slurm_job in slurm_jobs_found.values():
             for j in jobs:
                 if slurm_job[3][5:] == j.id:

@@ -93,8 +93,8 @@ class Tracker(object):
                 # strip off "gasp_"
                 job_name = slurm_job[3][5:]
                 if job_name in slurm_jobs_found:
-                    prev_date = datetime.strptime(slurm_jobs_found[job_name][4], '%Y-%m-%dT%H:%M:%S')
-                    curr_date = datetime.strptime(slurm_job[4], '%Y-%m-%dT%H:%M:%S')
+                    prev_date = datetime.datetime.strptime(slurm_jobs_found[job_name][4], '%Y-%m-%dT%H:%M:%S')
+                    curr_date = datetime.datetime.strptime(slurm_job[4], '%Y-%m-%dT%H:%M:%S')
                     if curr_date > prev_date:
                         slurm_jobs_found[job_name] = slurm_job
                 else:

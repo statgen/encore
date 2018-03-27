@@ -288,13 +288,14 @@
 			$.when(d1, d2, d3).done(function(g, p, m) {
 				var promise;
 				if (qs.like) {
+					var nm = function(x) {return x.name || x;}
 					promise = $.getJSON("/api/jobs/" + qs.like).then(function(x){
 						var opts = {p: p, g: g};
 						if (x.details) {
 							opts.p = x.details.phenotype;
 							opts.g = x.details.genotype;
 							opts.m = x.details.type;
-							opts.r = x.details.response;
+							opts.r = nm(x.details.response);
 							opts.inv = x.details.response_invnorm || false;
 							opts.c = x.details.covariates;
 							opts.gp = x.details.genopheno || [];

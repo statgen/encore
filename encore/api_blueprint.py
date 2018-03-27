@@ -84,7 +84,8 @@ def create_new_job():
 
     try:
         model.validate_model_spec(job_desc)
-    except:
+    except Exception as e:
+        print e
         raise ApiException("INVALID MODEL REQUEST")
     # valid model request
     try:

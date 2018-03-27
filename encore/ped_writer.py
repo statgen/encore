@@ -9,8 +9,13 @@ def sanitize(x):
 class ColumnFactory:
     @staticmethod
     def get_by_name(name, pr):
+        if isinstance(name, dict):
+            options = name
+            name = name.get("name", "")
+        else:
+            options = None
         coldef = next((x for x in pr.meta["columns"] if x["name"]==name), None)
-        return ColumnFactory.__get_column_class(coldef, pr) 
+        return ColumnFactory.__get_column_class(coldef, pr, options) 
 
     @staticmethod
     def get_by_special_class(colclass, pr):
@@ -26,19 +31,19 @@ class ColumnFactory:
         return col 
 
     @staticmethod
-    def __get_column_class(coldef, pr):
+    def __get_column_class(coldef, pr, options=None):
         if not "class" in coldef:
             raise Exception("Invalid Column Definition")
         colclass = coldef["class"]
         if colclass=="categorical":
-            return CategoricalColumn(coldef, pr)
+            return CategoricalColumn(coldef, pr, options=options)
         elif colclass=="binary":
-            return BinaryColumn(coldef, pr)
+            return BinaryColumn(coldef, pr, options=options)
         else:
-            return Column(coldef, pr)
+            return Column(coldef, pr, options=options)
 
 class Column(object):
-    def __init__(self, coldef, pr):
+    def __init__(self, coldef, pr, options=None):
         self.coldef = coldef
         self._raw_values = []
         if self.coldef:
@@ -79,8 +84,8 @@ class Column(object):
         return len(self._raw_values)
 
 class CategoricalColumn(Column):
-    def __init__(self, coldef, pr):
-        super(CategoricalColumn, self).__init__(coldef, pr)
+    def __init__(self, coldef, pr, options=None):
+        super(CategoricalColumn, self).__init__(coldef, pr, options)
         self.levels = coldef["levels"]
         self.ref_level = self.levels[0]
         self.contr_levels = self.levels[1:]
@@ -103,11 +108,13 @@ class CategoricalColumn(Column):
 
 class BinaryColumn(Column):
     
-    def __init__(self, coldef, pr):
-        super(BinaryColumn, self).__init__(coldef, pr)
+    def __init__(self, coldef, pr, options=None):
+        super(BinaryColumn, self).__init__(coldef, pr, options)
         self.levels = coldef["levels"]
-        self.ref_level = self.levels[0]
-        self.alt_level = self.levels[1]
+        if options and "reference" in options:
+            self.set_reference(options["reference"])
+        else:
+            self.set_reference(self.levels[0])
 
     def headers(self):
         return [self.name + "_" + self.alt_level]
@@ -116,12 +123,18 @@ class BinaryColumn(Column):
         val = self.value(index) 
         if val is None:
             return None
-        if val==self.ref_level:
+        if val == self.ref_level:
             return ["0"]
-        elif val==self.alt_level:
+        elif val == self.alt_level:
             return ["1"]
         else:
             raise Exception("Found unexpected value in binary column")
+
+    def set_reference(self, level):
+        if not level in self.levels:
+            raise Exception("Invalid reference level: {}".format(level))
+        self.ref_level = level
+        self.alt_level = [x for x in self.levels if x != self.ref_level][0]
 
 class PedRequiredColumn(Column):
     def __init__(self, coldef, field, pr):

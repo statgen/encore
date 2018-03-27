@@ -29,6 +29,13 @@ class Phenotype:
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))
 
+    def get_covar_levels(self, covar_name):
+        covar = [x for x in self.meta.get("columns", []) if x.get("name", "")==covar_name]
+        if len(covar) != 1:
+            raise Exception("Could not find column: {}".format(covar_name))
+        covar = covar[0]
+        return covar.get("levels", [])
+
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields if hasattr(self, key)} 
         obj["pheno_id"] = self.pheno_id

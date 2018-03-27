@@ -70,7 +70,7 @@
 		{% if job.details.response %}
 		<tr>
 			<th>Response</th>
-			<td>{{ job.details["response"] }}</td>
+			<td>{{ job.details["response_desc"] or job.details["response"] }}</td>
 		</tr>
 		{% endif %}
 		{% if job.details.covariates %}

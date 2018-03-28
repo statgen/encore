@@ -288,3 +288,46 @@ class Job:
         if ex is not None:
             raise ex
         return True
+
+    @staticmethod
+    def counts(by=None, config=None):
+        join_users = False
+        join_status = False
+        if not by:
+            by = []
+        elif isinstance(by, basestring):
+            by = by.split(",")
+        select = []
+        group_by = []
+        for field in by:
+            if field=="month":
+                select += [ "DATE_FORMAT(jobs.creation_date, '%Y-%m') as month"]
+                group_by += [ "DATE_FORMAT(jobs.creation_date, '%Y-%m')"]
+            elif field == "year":
+                select += ["year(jobs.creation_date) as year"]
+                group_by += ["year(jobs.creation_date)"]
+            elif field == "user":
+                select += ["COALESCE(users.full_name, users.email) as user"]
+                group_by += ["users.id"]
+                join_users = True
+            elif field == "status":
+                select += ["statuses.name as status"]
+                group_by += ["statuses.name"]
+                join_status = True
+            else:
+                raise Exception("Unrecognized field: {}".format(field))
+        select += ["COUNT(*) as count"]
+        sql = "SELECT " + ", ".join(select)
+        sql += " FROM jobs"
+        if join_users:
+            sql += " JOIN users on jobs.user_id = users.id"
+        if join_status:
+            sql += " JOIN statuses on jobs.status_id = statuses.id"
+        if len(group_by):
+            sql += " GROUP BY " + ", ".join(group_by)
+
+        db = sql_pool.get_conn()
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute(sql)
+        results = cur.fetchall()
+        return results

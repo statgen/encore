@@ -111,30 +111,29 @@ class BinaryColumn(Column):
     def __init__(self, coldef, pr, options=None):
         super(BinaryColumn, self).__init__(coldef, pr, options)
         self.levels = coldef["levels"]
-        if options and "reference" in options:
-            self.set_reference(options["reference"])
+        if options and "event" in options:
+            self.set_event_level(options["event"])
         else:
-            self.set_reference(self.levels[0])
+            self.set_event_level(self.levels[0])
 
     def headers(self):
-        return [self.name + "_" + self.alt_level]
+        return [self.name + "_" + self.event_level]
 
     def values(self, index):
         val = self.value(index) 
         if val is None:
             return None
-        if val == self.ref_level:
-            return ["0"]
-        elif val == self.alt_level:
+        if not val in self.levels:
+            raise Exception("Found unexpected value in binary column")
+        if val == self.event_level:
             return ["1"]
         else:
-            raise Exception("Found unexpected value in binary column")
+            return ["0"]
 
-    def set_reference(self, level):
+    def set_event_level(self, level):
         if not level in self.levels:
-            raise Exception("Invalid reference level: {}".format(level))
-        self.ref_level = level
-        self.alt_level = [x for x in self.levels if x != self.ref_level][0]
+            raise Exception("Invalid event level: {}".format(level))
+        self.event_level = level
 
 class PedRequiredColumn(Column):
     def __init__(self, coldef, field, pr):

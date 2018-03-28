@@ -122,25 +122,24 @@ class BinarySaigeModel(SaigeModel):
         if not isinstance(resp, dict):
             resp = {"name": resp}
         resp_name = resp.get("name", None)
-        resp_reference = resp.get("reference", None)
+        resp_event = resp.get("event", None)
 
         pheno = self.get_pheno(model_spec)
-        levels = pheno.get_covar_levels(resp_name)
+        levels = pheno.get_column_levels(resp_name)
         if not levels:
             raise Exception("Variable {} does not appear to be a binary trait " + 
                 "(No levels found)".format(resp_name))
         if len(levels) != 2:
             raise Exception("Response must have exactly 2 levels, found {}: {}", 
                 format(len(levels), ",".join(levels)))
-        if resp_reference:
-            if not resp_reference in levels:
-                raise Exception("Requested refererence level does not match data. " + 
-                    "Requested: {}; Data: {}".format(resp_reference, ",".join(levels)))
+        if resp_event:
+            if not resp_event in levels:
+                raise Exception("Requested event level does not match data. " + 
+                    "Requested: {}; Data: {}".format(resp_event, ",".join(levels)))
         else:
-            resp_reference = levels[0]
-        alt_level = [x for x in levels if x != resp_reference][0]
+            resp_event = levels[1]
 
-        resp["reference"] = resp_reference
+        resp["event"] = resp_event
         model_spec["response"] = resp
-        model_spec["response_desc"] = "Pr({} = {})".format(resp_name, alt_level)
+        model_spec["response_desc"] = "Pr({} = {})".format(resp_name, resp_event)
 

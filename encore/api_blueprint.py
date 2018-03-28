@@ -317,7 +317,6 @@ def get_job_zoom(job_id, job=None):
             chrom = chrom.replace("chr","")
         else:
             chrom = "chr" + chrom
-        print [chrom, start_pos, end_pos]
         results = tb.query(chrom, start_pos, end_pos)
 
     json_response_data = dict()

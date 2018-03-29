@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+{% block header %}
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
+
+	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+
+<script type="text/javascript">
+		var baseurl = "{{ url_for('api.get_job_counts') }}";
+		var reports = [
+			{title: "Total Counts By Status", action: draw_totals},
+			{title: "Total Jobs By User", action: draw_users},
+			{title: "Total Jobs By Month", action: draw_months}
+		];
+		function draw_table(data, columns) {
+			cols = columns.map(function(x) {return {title: x, data: x}})
+			$("#results-table").DataTable({
+				data: data,
+				columns: cols,
+				destroy: true
+			})
+		}
+		function fetch_and_draw(url) {
+			$.ajax(url).done(function(data) {
+				draw_table(data.data, data.header.columns)
+			})
+		}
+		function draw_totals() {
+			var url = baseurl + "?by=status";
+			fetch_and_draw(url);
+		}
+		function draw_users() {
+			var url = baseurl + "?by=user";
+			fetch_and_draw(url);
+		}
+		function draw_months() {
+			var url = baseurl + "?by=month";
+			fetch_and_draw(url);
+		}
+		function init_report_selector() {
+			var $rep = $("#reports");
+			reports.forEach(function(x, i) {
+				$rep.append($("<option>", {
+					value: i,
+					text: x.title
+				}))
+			})
+			$rep.change(function() {
+				var id = this.value;
+				reports[id].action();
+			})
+			reports[0].action();
+		}
+		function init_page() {
+			init_report_selector();
+		}
+		$(document).ready(function() {
+			init_page();
+		});
+	</script>
+{% endblock %}
+{% block content %}
+
+        <div class="section">
+            <div class="section-title row">
+				<div class="col-md-10">
+					<h2>Counts</h2>
+				</div>
+				<div class="col-md-2">
+				</div>
+            </div>
+			<div style="text-align: center">
+				Choose Report: <select id="reports"></select>
+			</div>
+            <table id="results-table"></table>
+        </div>
+
+{% endblock %}

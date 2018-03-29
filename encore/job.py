@@ -290,44 +290,63 @@ class Job:
         return True
 
     @staticmethod
-    def counts(by=None, config=None):
+    def counts(by=None, filters=None, config=None):
         join_users = False
         join_status = False
         if not by:
             by = []
         elif isinstance(by, basestring):
             by = by.split(",")
+        if not filters:
+            filters = []
+        elif isinstance(filters, basestring):
+            filters = filters.split(",")
         select = []
         group_by = []
+        columns = []
+        wheres = []
         for field in by:
             if field=="month":
                 select += [ "DATE_FORMAT(jobs.creation_date, '%Y-%m') as month"]
                 group_by += [ "DATE_FORMAT(jobs.creation_date, '%Y-%m')"]
+                columns += ["month"]
             elif field == "year":
                 select += ["year(jobs.creation_date) as year"]
                 group_by += ["year(jobs.creation_date)"]
+                columns += ["year"]
             elif field == "user":
                 select += ["COALESCE(users.full_name, users.email) as user"]
                 group_by += ["users.id"]
+                columns += ["user"]
                 join_users = True
             elif field == "status":
                 select += ["statuses.name as status"]
                 group_by += ["statuses.name"]
+                columns += ["status"]
                 join_status = True
             else:
                 raise Exception("Unrecognized field: {}".format(field))
+        for filt in filters:
+            if filt == "successful":
+                wheres += ["jobs.status_id = (select id from statuses where name = 'succeeded')"]
+            else:
+                raise Exception("Unrecognized filter: {}".format(filt))
         select += ["COUNT(*) as count"]
+        columns += ["count"]
         sql = "SELECT " + ", ".join(select)
         sql += " FROM jobs"
         if join_users:
             sql += " JOIN users on jobs.user_id = users.id"
         if join_status:
             sql += " JOIN statuses on jobs.status_id = statuses.id"
+        if len(wheres):
+            sql += " WHERE (" + "), (".join(wheres) + ")"
         if len(group_by):
             sql += " GROUP BY " + ", ".join(group_by)
+
 
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         cur.execute(sql)
         results = cur.fetchall()
-        return results
+        return {"header": {"columns": columns}, "data": results}

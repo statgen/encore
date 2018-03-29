@@ -599,10 +599,11 @@ def purge_job(job_id):
 
 @api.route("/jobs/counts", methods=["GET"])
 @admin_required
-def job_counts():
+def get_job_counts():
     try:
         by = request.args.get("by")
-        results = Job.counts(by=by, config=current_app.config)
+        filters = request.args.get("filter")
+        results = Job.counts(by=by, filters=filters, config=current_app.config)
         return ApiResult(results)
     except Exception as e:
         print e

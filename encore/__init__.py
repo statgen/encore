@@ -60,6 +60,8 @@ def register_helpers(app):
                 return "user"
             elif path.startswith("/admin/phenos"):
                 return "pheno"
+            elif path.startswith("/admin/counts"):
+                return "counts"
             elif path.startswith("/admin"):
                 return "job"
             else:
@@ -71,6 +73,7 @@ def register_helpers(app):
                 links["left"].append(("job", "Jobs", url_for("admin.get_admin_page")))
                 links["left"].append(("user", "Users", url_for("admin.get_admin_user_page")))
                 links["left"].append(("pheno", "Phenos", url_for("admin.get_admin_pheno_page")))
+                links["left"].append(("counts", "Counts", url_for("admin.get_admin_counts_page")))
                 links["right"].append(("return","Return to App", url_for("user.index")))
             else:
                 links["left"].append(("job", "Jobs", url_for("user.index")))

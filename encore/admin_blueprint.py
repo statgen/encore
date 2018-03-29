@@ -33,6 +33,10 @@ def get_admin_user_page():
 def get_admin_pheno_page():
     return render_template("admin_phenos.html")
 
+@admin_area.route("/counts/", methods=["GET"])
+def get_admin_counts_page():
+    return render_template("admin_counts.html")
+
 @admin_area.route("/log/<job_id>/<log_name>", methods=["GET"])
 def get_job_log(job_id, log_name):
     tail = request.args.get("tail", 0)

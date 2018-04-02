@@ -185,6 +185,8 @@ class PedWriter:
     def merge_covar(self, phenoreader=None, covar=None):
         datacols =  [ColumnFactory.get_by_name(x, phenoreader) for x in covar]
         matchcol = ColumnFactory.get_by_special_class("sample_id", phenoreader)
+        if matchcol is None:
+            raise Exception("Unable to find Sample ID column")
         lookup = dict()
         for idx, row in enumerate(phenoreader.row_extractor()):
             id = matchcol.append(row)
@@ -194,6 +196,8 @@ class PedWriter:
 
         reindex = []
         matchcol = ColumnFactory.find_id_column(self.allcols)
+        if matchcol is None:
+            raise Exception("Unable to find Sample ID column")
         for idx in range(len(matchcol)):
             sample = matchcol.value(idx)
             if sample in lookup:

@@ -510,6 +510,22 @@ function create_qq_plot(selector, qq_plot_data, qq_plot_meta, on_variant_click) 
                     }
                 });
             }
+        } else if (layers.length == 1) {
+            var p = qq_container.append("p")
+                .style("width","auto")
+                .style("vertical-align", "top")
+                .style("display","inline-block");
+            var d = layers[0];
+            var txt; 
+            if (d.gc && d.gc["50"]) {
+                txt = fmt("N={0}, \u03BB={1}",
+                    d.count,
+                    d.gc["50"].toFixed(3));
+            } else {
+                txt = fmt("N={0}",
+                    d.count);
+            }
+            p.text(txt);
         }
 
         // Axes

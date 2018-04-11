@@ -9,16 +9,21 @@
 <script type="text/javascript">
 		var baseurl = "{{ url_for('api.get_job_counts') }}";
 		var reports = [
-			{title: "Total Counts By Status", action: draw_totals},
+			{title: "Total Jobs By Status", action: draw_totals},
 			{title: "Successful Jobs By User", action: draw_users},
-			{title: "Successful Jobs By Month", action: draw_months}
+			{title: "Successful Jobs By Month", action: draw_months},
+			{title: "Successful Jobs By User/Month", action: draw_user_months}
 		];
+		var table;
 		function draw_table(data, columns) {
 			cols = columns.map(function(x) {return {title: x, data: x}})
-			$("#results-table").DataTable({
+			if (table) {
+				table.clear();
+				table.destroy();
+			}
+			table = $("#results-table").empty().DataTable({
 				data: data,
-				columns: cols,
-				destroy: true
+				columns: cols
 			})
 		}
 		function fetch_and_draw(url) {
@@ -36,6 +41,10 @@
 		}
 		function draw_months() {
 			var url = baseurl + "?by=month&filter=successful";
+			fetch_and_draw(url);
+		}
+		function draw_user_months() {
+			var url = baseurl + "?by=month,user&filter=successful";
 			fetch_and_draw(url);
 		}
 		function init_report_selector() {

@@ -31,7 +31,7 @@ def unauthorized():
 @auth.route("/sign-out", methods=["GET"])
 def sign_out():
     logout_user()
-    return redirect(url_for("index"))
+    return redirect(url_for("user.index"))
 
 def load_user(email):
     db = sql_pool.get_conn()

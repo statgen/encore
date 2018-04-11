@@ -515,8 +515,8 @@ def post_pheno():
         pheno_id = existing_pheno.pheno_id
         pheno_dict = existing_pheno.as_object()
         pheno_dict["id"] = pheno_id
-        pheno_dict["url_model"] = url_for("get_model_build", pheno=pheno_id)
-        pheno_dict["url_view"] = url_for("get_pheno", pheno_id=pheno_id)
+        pheno_dict["url_model"] = url_for("user.get_model_build", pheno=pheno_id)
+        pheno_dict["url_view"] = url_for("user.get_pheno", pheno_id=pheno_id)
         pheno_dict["existing"] = True
         return ApiResult(pheno_dict)
     # file has not been uploaded before

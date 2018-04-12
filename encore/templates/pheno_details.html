@@ -9,6 +9,7 @@
 		pheno_id = "{{ pheno.pheno_id }}"
 		pheno_can_edit = {{ pheno.can_edit|default(False)|tojson }}
 		pheno_is_active = {{ pheno.is_active|default(False)|tojson }}
+		pheno_error = "{{ pheno.error }}"
 		pheno_api_url = "{{url_for("api.get_pheno", pheno_id=pheno.pheno_id) }}"
 		$(document).ready(function() {
 			$(".link-button").click(function() {
@@ -19,7 +20,7 @@
 			});
 			if (pheno_can_edit && pheno_is_active) {
 				init_editform(pheno_id, pheno_api_url);
-				init_new_job_button();
+				init_new_job_button("button[name=new_job]", pheno_error);
 				init_pheno_delete_button();
 			}
 		});

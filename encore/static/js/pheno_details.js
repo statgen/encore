@@ -35,13 +35,18 @@ function init_editform(pheno_id, pheno_api_url) {
     });
 }
 
-function init_new_job_button(selector) {
+function init_new_job_button(selector, pheno_error) {
     selector = selector || "button[name=new_job]";
-    $(selector).click(function(evt) {
-        evt.preventDefault();
-        var url = $(evt.target).data("link");
-        document.location = url;
-    });
+    if (!pheno_error) {
+        $(selector).click(function(evt) {
+            evt.preventDefault();
+            var url = $(evt.target).data("link");
+            document.location = url;
+        });
+    } else {
+        $(selector).prop("title", pheno_error)
+            .prop("disabled", true);
+    }
 }
 
 function init_pheno_delete_button(selector) {

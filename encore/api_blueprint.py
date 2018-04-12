@@ -537,18 +537,26 @@ def post_pheno():
         shutil.rmtree(pheno_directory)
         raise ApiException("COULD NOT SAVE TO DATABASE")
     # file has been saved to DB
-    pheno = PhenoReader(pheno_file_path)
+    pheno = Phenotype.get(pheno_id, current_app.config)
+    pheno_reader = pheno.get_pheno_reader()
     if pheno.meta:
-        meta = pheno.meta
+        meta = pheno_reader.meta
     else:
-        meta = pheno.infer_meta()
-    line_count = sum(1 for _ in pheno.row_extractor()) 
+        meta = pheno_reader.infer_meta()
+    pheno.meta = meta
+    line_count = sum(1 for _ in pheno_reader.row_extractor()) 
     meta["records"] = line_count
     with open(pheno_meta_path, "w") as f:
         json.dump(meta, f)
-    return ApiResult({"id": pheno_id,  \
+    result = {"id": pheno_id,  \
         "url_model": url_for("user.get_model_build", pheno=pheno_id), \
-        "url_view": url_for("user.get_pheno", pheno_id=pheno_id)})
+        "url_view": url_for("user.get_pheno", pheno_id=pheno_id)}
+    # check that it's a "valid" phenotype
+    is_usable, usable_error = pheno.check_usable()
+    if not is_usable:
+        result["error"] = usable_error 
+        del result["url_model"]
+    return ApiResult(result)
 
 @api.route("/models", methods=["GET"])
 @login_required

@@ -83,6 +83,9 @@ def get_pheno(pheno_id, pheno=None):
     pheno_obj = pheno.as_object()
     if can_user_edit_pheno(current_user, pheno):
         pheno_obj["can_edit"] = True
+    is_usable, usable_error = pheno.check_usable()
+    if not is_usable:
+        pheno_obj["error"] = usable_error
     return render_template("pheno_details.html", pheno=pheno_obj)
 
 @user_area.route("/pheno-upload", methods=["GET"])

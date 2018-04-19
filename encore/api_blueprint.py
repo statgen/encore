@@ -108,7 +108,7 @@ def create_new_job():
         Job.create(job_id, job_desc)
     except:
         shutil.rmtree(job_directory)
-        return ApiException("COULD NOT SAVE TO DATABASE")
+        raise ApiException("COULD NOT SAVE TO DATABASE")
     # everything worked
     return ApiResult({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
 
@@ -176,7 +176,7 @@ def cancel_job(job_id, job=None):
         slurmjob.cancel_job()
     except Exception as exception:
         print exception
-        return ApiException("COULD NOT CANCEL JOB")
+        raise ApiException("COULD NOT CANCEL JOB")
     return ApiResult({"message": "Job canceled"})
 
 @api.route("/jobs/<job_id>/results", methods=["get"])
@@ -469,7 +469,7 @@ def retire_pheno(pheno_id, pheno=None):
         Phenotype.retire(pheno_id, current_app.config)
         return ApiResult({"retired": True})
     except Exception as e:
-        return ApiException("COULD NOT RETURE PHENO", details=str(e))
+        raise ApiException("COULD NOT RETURE PHENO", details=str(e))
 
 def suggest_pheno_name(filename):
     base, ext = os.path.splitext(os.path.basename(filename))

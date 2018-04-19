@@ -24,7 +24,13 @@ class SaigeModel(BaseModel):
         return ped_writer
 
     def get_analysis_commands(self, model_spec, geno, ped):
-        cmd = "{}".format(self.app_config.get("SAIGE_BINARY", "saige")) + \
+        pipeline = model_spec.get("pipeline_version", "saige-0.26")
+        binary = self.app_config.get("SAIGE_BINARY", None)
+        if isinstance(binary, dict):
+            binary = binary.get(pipeline, None)
+        if not binary:
+            raise Exception("Unable to find SAIGE binary (pipeline: {})".format(pipeline))
+        cmd = "{}".format(binary) + \
             " -j{} ".format(self.cores_per_job) + \
             " THREADS={}".format(self.cores_per_job) + \
             " SAVFILE={}".format(geno.get_sav_path(1)) + \
@@ -87,6 +93,10 @@ class SaigeModel(BaseModel):
         resp = get_chr_chunk_progress(output_file_glob, fre)
         return resp
 
+    def validate_model_spec(self, model_spec):
+        if not "pipeline_version" in model_spec:
+            if "SAIGE_VERSION" in self.app_config:
+                model_spec["pipeline_version"] = self.app_config["SAIGE_VERSION"]
         
 class LinearSaigeModel(SaigeModel):
     model_code = "saige-qt"
@@ -115,6 +125,7 @@ class BinarySaigeModel(SaigeModel):
         return opts
 
     def validate_model_spec(self, model_spec):
+        super(self.__class__, self).validate_model_spec(model_spec) 
         resp = model_spec.get("response", None)
         if not resp:
             raise Exception("Missing model response")

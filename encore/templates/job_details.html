@@ -107,6 +107,12 @@
 			<td>{{ job.error_message }}</td>
 		</tr>
 		{% endif %}
+		{% if job.details.pipeline_version %}
+		<tr>
+			<th>Pipeline</th>
+			<td>{{ job.details.pipeline_version }}</td>
+		</tr>
+		{% endif %}
 		<tr>
 			<th>Date Created</th>
 			<td>{{ job.creation_date }}</td>

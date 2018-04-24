@@ -593,6 +593,7 @@ def add_user():
         result["created"] = True
         return ApiResult(result)
     except Exception as e:
+        print e
         raise ApiException("COULD NOT ADD USER", details=str(e))
 
 @api.route("/jobs/<job_id>/purge", methods=["DELETE"])

@@ -69,6 +69,9 @@ class User(UserMixin):
 
     @staticmethod
     def create(new_values, db=None):
+        new_values = new_values.to_dict(flat=True) 
+        if "can_analyze" in new_values:
+            new_values["can_analyze"] = new_values["can_analyze"]=="true"
         updateable_fields = [x for x in User.__dbfields if x != "id"]
         fields = new_values.keys() 
         values = new_values.values()

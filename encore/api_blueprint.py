@@ -265,7 +265,7 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
         return "File Not Found", 404
 
 @api.route("/jobs/<job_id>/tables/top", methods=["GET"])
-@check_edit_job
+@check_view_job
 def get_job_tophits(job_id, job=None):
     return get_job_output(job, "tophits.json", False)
 

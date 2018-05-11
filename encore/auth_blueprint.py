@@ -43,7 +43,7 @@ def decode_auth_token(auth_token):
 @login_manager.request_loader
 def user_loader_from_request(request):
     auth_header = request.headers.get("Authorization")
-    if auth_header.startswith("Bearer "):
+    if auth_header and auth_header.startswith("Bearer "):
         auth_token = auth_header.split(" ")[1]
     else:
         auth_token = ""

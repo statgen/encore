@@ -32,6 +32,7 @@
     WSGIDaemonProcess encore.url processes=1 threads=1 user=encore group=encore home=encore-path
     WSGIProcessGroup encore.url
     WSGIScriptAlias / /encore-path/encore.wsgi
+	WSGIPassAuthorization On
 
     <Location /server-info>
       SetHandler server-info

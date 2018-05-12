@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, request, json, current_app, redirect, session, url_for, redirect
-from flask_login import LoginManager, logout_user
+from flask_login import LoginManager, logout_user, login_required, current_user
 import urllib2
 from rauth import OAuth2Service
 from user import User
 import flask_login
 import sql_pool
+import jwt
+import datetime
 
 googleinfo = urllib2.urlopen("https://accounts.google.com/.well-known/openid-configuration")
 google_params = json.load(googleinfo)
@@ -13,6 +15,46 @@ auth = Blueprint("auth", __name__)
 
 login_manager = LoginManager()
 
+def encode_auth_token(user_id):
+    try:
+        payload = {
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7, seconds=0),
+            'iat': datetime.datetime.utcnow(),
+            'sub': user_id
+        }
+        return jwt.encode(
+            payload,
+            current_app.config.get('JWT_SECRET_KEY'),
+            algorithm='HS256'
+        )
+    except Exception as e:
+        print(e)
+        return None
+
+def decode_auth_token(auth_token):
+    try:
+        payload = jwt.decode(auth_token, current_app.config.get('JWT_SECRET_KEY'))
+        return payload['sub']
+    except jwt.ExpiredSignatureError:
+        return 'Signature expired. Please log in again.'
+    except jwt.InvalidTokenError:
+        return 'Invalid token. Please log in again.'
+
+@login_manager.request_loader
+def user_loader_from_request(request):
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        auth_token = auth_header.split(" ")[1]
+    else:
+        auth_token = ""
+    if auth_token:
+        try:
+            email = decode_auth_token(auth_token)
+            return load_user(email)
+        except Exception as e:
+            print(e)
+    return None
+
 @login_manager.user_loader
 def user_loader(email):
     return load_user(email)
@@ -20,6 +62,11 @@ def user_loader(email):
 @auth.route("/sign-in", methods=["GET"])
 def get_sign_in():
     return get_sign_in_view("sign-in") 
+
+@auth.route("/get-auth-token", methods=["GET"])
+@login_required
+def get_auth_token():
+    return encode_auth_token(current_user.email)
 
 @login_manager.unauthorized_handler
 def unauthorized():

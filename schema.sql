@@ -67,12 +67,12 @@ CREATE TABLE IF NOT EXISTS `jobs` (
     FOREIGN KEY (`status_id`)
     REFERENCES `statuses` (`id`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION),
+    ON UPDATE NO ACTION,
   CONSTRAINT `fk_jobs_geno`
     FOREIGN KEY (`geno_id`)
     REFERENCES `genotypes` (`id`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION),
+    ON UPDATE NO ACTION,
   CONSTRAINT `fk_jobs_pheno`
     FOREIGN KEY (`pheno_id`)
     REFERENCES `phenotyes` (`id`)

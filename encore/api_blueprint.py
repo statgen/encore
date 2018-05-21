@@ -588,7 +588,8 @@ def get_api_phenos_all():
 @admin_required
 def add_user():
     try: 
-        result = User.create(request.values)
+        values = request.values.to_dict(flat=True)
+        result = User.create(values)
         result["user"] = result["user"].as_object()
         result["created"] = True
         return ApiResult(result)

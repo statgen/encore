@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS `jobs` (
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_jobs_pheno`
     FOREIGN KEY (`pheno_id`)
-    REFERENCES `phenotyes` (`id`)
+    REFERENCES `phenotypes` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;

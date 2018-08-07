@@ -9,6 +9,7 @@
 		.chklabel {font-weight: normal;}
 		label .radio-title {display: block; font-weight: bold;}
 		label .radio-desc {display: block; padding: 5px 0}
+		.not-available {color: #cecece;}
 	</style>
 	<script type="text/javascript">
 		var phenoSelect;
@@ -19,17 +20,22 @@
 		var covariateSelect;
 		var genophenoSelect;
 		var userHasNamedJob = false;
+		var modelList;
 
 		function validateForm(form) {
 			var errors = [];
 			var resp =  responseSelect.val();
 			var covar = covariateSelect.val() || [];
+			var model = $("input[name=model]:checked", "#model-form").attr("disabled");
 			if (resp == "") {
 				errors.push("Missing response");
 			}
-			if( covar.indexOf(resp)>-1) {
+			if (covar.indexOf(resp)>-1) {
 				errors.push("Response cannot also be a covariate");
 			}
+			if (model=="disabled") {
+				errors.push("Requested model not available for selected genotypes");
+			}	
 			return errors;
 		}
 
@@ -38,13 +44,12 @@
 			var form = $("#model-form");
 			var formErrors = validateForm(form);
 			if (formErrors.length) {
-				alert("Invalid model:\n" + formErrors[0]);
+				alert("Invalid model:\n" + formErrors.join("\n"));
 				return false;
 			}
 			form = form[0];
 			var fd = new FormData(form);
 			var xhr = new XMLHttpRequest();
-			//TODO: Add error handling
 			xhr.addEventListener("load", function () {
 				var resp;
 				if (xhr.status >= 200 && xhr.status < 300) {
@@ -69,8 +74,6 @@
 				}
 			//	submitButton.prop("disabled", false);
 			}.bind(this), false);
-			//xhr.addEventListener("error", uploadFailed, false);
-			//xhr.addEventListener("abort", uploadCanceled, false);
 			xhr.open("POST", form.action);
 			xhr.send(fd);
 		}
@@ -196,8 +199,30 @@
 					genophenoSelect.html("").select2({"data": opts});
 					$("#genopheno_input").hide();
 				}
+				updateModels(geno.avail);
 				formChanged();
 			});
+		}
+
+		function updateModels(avail) {
+			function canDo(req) {
+				if (!avail) {return true;}
+				if (!req) {return true;}
+				for( var i in req ) {
+					if (!(avail[req[i]])) {return false;}
+				}
+				return true;
+			}
+			modelList.forEach(function(model) {
+				var $input = $("#model-" + model.code, "#model-form");
+				if (canDo(model.depends)) {
+					$input.attr('disabled', false);
+					$input.closest("div").removeClass("not-available");
+				} else {
+					$input.attr('disabled', true);
+					$input.closest("div").addClass("not-available");
+				}
+			})
 		}
 
 		function getQuerystring () {
@@ -280,6 +305,7 @@
 				return resp[0].id;
 			});
 			var d3 = $.getJSON("{{url_for('api.get_models')}}").then(function(resp) {
+				modelList = resp;
 				var modelSelect = $("#model-type");
 				var template = document.getElementById("model-radio-group").innerText;
 				modelSelect.html(ejs.render(template, {"models" : resp }));

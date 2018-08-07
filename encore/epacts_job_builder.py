@@ -120,6 +120,7 @@ class LMEpactsModel(EpactsModel):
     model_code = "lm"
     model_name = "Linear Wald Test"
     model_desc = "A simple linear model"
+    depends = ["vcf"]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "single", "lm")
@@ -135,6 +136,7 @@ class LMMEpactsModel(EpactsModel):
     model_code = "lmm"
     model_name = "Linear Mixed Model"
     model_desc = "Adjust for potential relatedness using kinship matrix"
+    depends = ["vcf", "kinship"]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "single", "lmm")
@@ -151,6 +153,7 @@ class SkatOEpactsModel(EpactsModel):
     model_code = "skato"
     model_name = "SKAT-O Test"
     model_desc = "Adaptive burden test"
+    depends = ["vcf", "group_nonsyn"]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "skato")
@@ -169,6 +172,7 @@ class MMSkatOEpactsModel(EpactsModel):
     model_code = "mmskato"
     model_name = "Mixed Model SKAT-O Test"
     model_desc = "Adaptive burden test that adjusts for potential relatedness using kinship matrix"
+    depends = ["vcf", "group_nonsyn", "kinship"]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmskato")
@@ -188,6 +192,7 @@ class MMSkatEpactsModel(EpactsModel):
     model_code = "mmskat"
     model_name = "Mixed Model SKAT Test"
     model_desc = "Burden test that adjusts for potential relatedness using kinship matrix"
+    depends = ["vcf", "group_nonsyn", "kinship"]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmskat")
@@ -206,6 +211,7 @@ class MMVTEpactsModel(EpactsModel):
     model_code = "mmVT"
     model_name = "Mixed Model Variable-Threshold Test"
     model_desc = "Variable-threshold burden test that adjusts for potential relatedness using kinship matrix"
+    depends = ["vcf", "group_nonsyn", "kinship"]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmVT")
@@ -224,6 +230,7 @@ class MMCMCEpactsModel(EpactsModel):
     model_code = "mmCMC"
     model_name = "Mixed Model Collapsing Burden Test"
     model_desc = "Collapsing burden test that adjusts for potential relatedness using kinship matrix"
+    depends = ["vcf", "group_nonsyn", "kinship"]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmCMC")

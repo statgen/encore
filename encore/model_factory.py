@@ -7,7 +7,8 @@ class ModelFactory:
     @staticmethod
     def list(config = {}):
         def desc(x):
-            return {"code": x.model_code, "name": x.model_name, "description": x.model_desc}
+            return {"code": x.model_code, "name": x.model_name, "description": x.model_desc,
+                "depends": getattr(x, "depends",  [])}
         show_models = {x: 1 for x in config.get("AVAIL_MODELS", [])}
         def can_show(x):
             return len(show_models)==0 or x.model_code in show_models

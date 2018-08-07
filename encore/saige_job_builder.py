@@ -102,6 +102,7 @@ class LinearSaigeModel(SaigeModel):
     model_code = "saige-qt"
     model_name = "Saige Linear Mixed Model"
     model_desc = "Fast linear mixed model with kinship adjustment"
+    depends = ["sav", "snps"]
 
     def __init__(self, working_directory, config):
         SaigeModel.__init__(self, working_directory, config) 
@@ -115,6 +116,7 @@ class BinarySaigeModel(SaigeModel):
     model_code = "saige-bin"
     model_name = "Saige Logistic Mixed Model"
     model_desc = "Fast logistic regression model with kinship adjustment"
+    depends = ["sav", "snps"]
 
     def __init__(self, working_directory, config):
         SaigeModel.__init__(self, working_directory, config)

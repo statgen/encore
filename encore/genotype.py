@@ -122,13 +122,12 @@ class Genotype:
         else:
             return None
 
-    def get_pca_genotypes_path(self):
+    def get_pca_genotypes_path(self, must_exist=False):
         geno_path = self.meta.get("pca_genotypes_path", None)
         geno_path = self.relative_path(geno_path)
-        if os.path.exists(geno_path):
-            return geno_path
-        else:
+        if must_exist and not os.path.exists(geno_path):
             return None
+        return geno_path
 
     def get_build_info(self, config, build):
         if build in config.get("BUILD_REF", {}):
@@ -181,8 +180,14 @@ class Genotype:
         obj = {"geno_id": self.geno_id, "name": self.name, "build": self.build}
         obj["stats"] = self.get_stats()
         obj["phenos"] = self.get_phenotypes()
+        avail = dict()
+        avail["vcf"] = True if self.get_vcf_path(must_exist=True) else False
+        avail["sav"] = True if self.get_sav_path(must_exist=True) else False
+        avail["kinship"] = True if self.get_kinship_path(must_exist=True) else False
+        avail["snps"] = True if self.get_pca_genotypes_path(must_exist=True) else False
+        avail["group_nonsyn"] = True if self.get_groups_path("nonsyn", must_exist=True) else False
+        obj["avail"] = avail
         return obj
-
 
     @staticmethod
     def get(geno_id, config):

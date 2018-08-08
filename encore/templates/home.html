@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block header %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
-    <script type="text/javascript" src="{{ url_for('static', filename='js/job_list.js') }}"></script>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/job_list.js') }}"></script>
 
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
@@ -38,7 +38,7 @@
 
 {% endblock %}
 {% block content %}
-        <div class="section row">
+		<div class="section row">
 			<div class="col-sm-6">
 				<h2>Welcome</h2>
 				{% if current_user.can_analyze %}
@@ -52,42 +52,48 @@
 				<p>Browse available jobs below</p>
 				{% endif %}
 			</div>
-            <div id="carousel" class="col-sm-6" style="text-align: center">
+			{% if notices %}
+			<div id="carousel" class="col-sm-6" style="text-align: center">
+				{{ notices[0].message}}
+			</div>
+			{% else %} 
+			<div id="carousel" class="col-sm-6 vcf-stats" style="text-align: center">
 				<h3 class="name">Dataset</h3>
-                <table>
-                    <tr class="genotype_count">
-                        <td>
-                            0
-                        </td>
-                        <td>
-                            &nbsp;Genotypes
-                        </td>
-                    </tr>
-                    <tr class="record_count">
-                        <td>
-                            0
-                        </td>
-                        <td>
-                            &nbsp;Markers
-                        </td>
-                    </tr>
-                    <tr class="sample_count">
-                        <td>
-                            0
-                        </td>
-                        <td>
-                            &nbsp;Individuals
-                        </td>
-                    </tr>
-                </table>
-                <b style="color: rgb(1, 45, 107);">Ready For Analysis!</b>
-            </div>
-        </div>
+				<table>
+					<tr class="genotype_count">
+						<td>
+							0 
+						</td>
+						<td>
+							&nbsp;Genotypes
+						</td>
+					</tr>
+					<tr class="record_count">
+						<td>
+							0
+						</td>
+						<td>
+							&nbsp;Markers
+						</td>
+					</tr>
+					<tr class="sample_count">
+						<td>
+							0
+						</td>
+						<td>
+							&nbsp;Individuals
+						</td>
+					</tr>
+				</table>
+				<b style="color: rgb(1, 45, 107);">Ready For Analysis!</b>
+			</div>
+			{% endif %}
+		</div>
 
-        <div class="section">
-            <div class="section-title">
-                <h2>Jobs</h2>
-            </div>
-            <table id="jobs-table" width="100%"></table>
-        </div>
+		<div class="section">
+			<div class="section-title">
+				<h2>Jobs</h2>
+			</div>
+			<table id="jobs-table" width="100%"></table>
+		</div>
 {% endblock %}

@@ -2,6 +2,7 @@ from flask import Blueprint, Response, json, render_template, current_app, reque
 from flask_login import current_user, login_required
 from genotype import Genotype
 from phenotype import Phenotype
+from notice import Notice
 from job import Job 
 from user import User
 from auth import check_view_job, check_edit_job, can_user_edit_job, access_pheno_page, check_edit_pheno, can_user_edit_pheno
@@ -18,7 +19,8 @@ def before_request():
 @user_area.route("/")
 def index():
     phenos = Phenotype.list_all_for_user(current_user.rid)
-    return render_template("home.html", phenos=phenos)
+    notices = Notice.list_current()
+    return render_template("home.html", phenos=phenos, notices=notices)
 
 @user_area.route("/jobs", methods=["GET"])
 def get_jobs():

@@ -5,6 +5,7 @@ from job import Job
 from auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno, admin_required
 from genotype import Genotype
 from phenotype import Phenotype
+from notice import Notice
 from pheno_reader import PhenoReader
 from slurm_queue import SlurmJob, get_queue
 from model_factory import ModelFactory
@@ -646,6 +647,11 @@ def get_api_annotations(resource):
         return requests.post('http://exac.broadinstitute.org/api/constraint', data=request.form).content
     else:
         return "Not Found", 404
+
+@api.route("/notices", methods=["GET"])
+def get_api_notices():
+    notices = Notice.list_current(current_app.config)
+    return ApiResult(notices)
 
 class ApiResult(object):
     def __init__(self, value, status=200, header=None):

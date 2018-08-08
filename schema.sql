@@ -147,6 +147,17 @@ CREATE TABLE IF NOT EXISTS `genotypes` (
   PRIMARY KEY (`id`));
 
 -- -----------------------------------------------------
+-- Table `notices`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `notices` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `message` VARCHAR(1000) NOT NULL,
+  `start_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `end_date` DATETIME NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+-- -----------------------------------------------------
 -- function uuid_to_bin
 -- -----------------------------------------------------
 

@@ -45,7 +45,7 @@ class Notice:
             DATE_FORMAT(start_date, '%Y-%m-%d %H:%i:%s') AS creation_date,
             DATE_FORMAT(end_date, '%Y-%m-%d %H:%i:%s') AS end_date
             FROM notices 
-            WHERE start_date <= CURDATE() and (end_date is NULL or end_date > CURDATE())
+            WHERE start_date <= CURRENT_TIMESTAMP() and (end_date is NULL or end_date > CURRENT_TIMESTAMP())
             ORDER BY start_date DESC
             """
         cur.execute(sql)

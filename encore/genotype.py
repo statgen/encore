@@ -15,6 +15,7 @@ class Genotype:
         self.name = None
         self.build = None
         self.creation_date = None
+        self.is_active = None
         self.root_path = ""
         self.build_info = {} 
        
@@ -124,7 +125,8 @@ class Genotype:
 
     def get_pca_genotypes_path(self, must_exist=False):
         geno_path = self.meta.get("pca_genotypes_path", None)
-        geno_path = self.relative_path(geno_path)
+        if not geno_path:
+            return None
         if must_exist and not os.path.exists(geno_path):
             return None
         return geno_path
@@ -177,7 +179,11 @@ class Genotype:
         return os.path.expanduser(os.path.join(self.root_path, *args))
 
     def as_object(self):
-        obj = {"geno_id": self.geno_id, "name": self.name, "build": self.build}
+        obj = {"geno_id": self.geno_id, 
+            "name": self.name, 
+            "build": self.build, 
+            "creation_date": self.creation_date,
+            "is_active": self.is_active}
         obj["stats"] = self.get_stats()
         obj["phenos"] = self.get_phenotypes()
         avail = dict()
@@ -199,20 +205,14 @@ class Genotype:
         else:
            meta = dict()
         db = sql_pool.get_conn()
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT bin_to_uuid(id) AS id, name, build, 
-            DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
-            FROM genotypes
-            WHERE id = uuid_to_bin(%s)
-            """
-        cur.execute(sql, (geno_id,))
-        result = cur.fetchone()
+        results = Genotype.__list_by_sql_where(db, "id=uuid_to_bin(%s)", (geno_id,))
+        result = results[0] if results else None
         if result is not None:
             g = Genotype(geno_id, meta)
             g.name = result["name"]
             g.build = result["build"]
             g.creation_date = result["creation_date"]
+            g.is_active = result["is_active"]
             g.root_path = geno_folder
             g.build_info = g.get_build_info(config, g.build)
         else:
@@ -220,15 +220,30 @@ class Genotype:
         return g
         
     @staticmethod
-    def list_all():
+    def list_all_for_user(user_id=None):
         db = sql_pool.get_conn()
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT bin_to_uuid(id) AS id, name, build, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date 
-            FROM genotypes 
-            ORDER BY creation_date DESC
-            """
-        cur.execute(sql)
-        results = cur.fetchall()
+        results = Genotype.__list_by_sql_where(db, "is_active=1")
         return results
 
+    @staticmethod
+    def list_all():
+        db = sql_pool.get_conn()
+        results = Genotype.__list_by_sql_where(db)
+        return results
+
+    @staticmethod
+    def __list_by_sql_where(db, where="", vals=(), order=""):
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = """
+            SELECT bin_to_uuid(id) AS id, name, build, is_active,
+              DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date
+            FROM genotypes"""
+        if where:
+            sql += " WHERE " + where
+        if order:
+            sql += " ORDER BY " + order
+        else:
+            sql += " ORDER BY creation_date DESC"
+        cur.execute(sql, vals)
+        results = cur.fetchall()
+        return results

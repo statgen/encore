@@ -32,7 +32,7 @@ def before_request():
 
 @api.route("/genos", methods=["GET"])
 def get_genotypes():
-    genos = Genotype.list_all()
+    genos = Genotype.list_all_for_user(current_user.rid)
     def get_stats(x):
         s = Genotype.get(x["id"],current_app.config).get_stats() 
         s["name"] = x["name"]

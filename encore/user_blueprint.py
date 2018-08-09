@@ -98,6 +98,19 @@ def get_pheno_upload():
     else:
         return render_template("not_authorized_to_analyze.html")
 
+@user_area.route("/genos", methods=["GET"])
+def get_genos():
+    return render_template("geno_list.html")
+
+@user_area.route("/genos/<geno_id>", methods=["GET"])
+def get_geno(geno_id):
+    geno = Genotype.get(geno_id, config=current_app.config)
+    if geno:
+        geno_obj = geno.as_object()
+    else:
+        geno_obj = None 
+    return render_template("geno_details.html", geno=geno_obj)
+
 @user_area.route("/model-build", methods=["GET"])
 def get_model_build():
     if current_user.can_analyze:

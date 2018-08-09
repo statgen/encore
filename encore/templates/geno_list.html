@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+{% block header %}
+	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+
+	<style>
+		.home-nav-list li {padding: 10px 0}
+	</style>
+	<script type="text/javascript">
+		function init_geno_table() {
+			$("#geno-table").DataTable({
+				ajax: {url: "{{ url_for("api.get_genotypes")}}", dataSrc: ""},
+				order: [[1, "desc"]],
+				columns: [
+					{data: "name", title: "Name"},
+					{data: "creation_date", title: "Date Created"},
+					{data: "build", title: "Genome Build"},
+					{title: "View", data: "id", render: function(data) {
+						var url = "{{ url_for('user.get_geno', geno_id=':ID:') }}".replace(":ID:", data);
+						return "<a href='" + url + "'>View</a>" 
+					}, orderable: false, className: "dt-body-center"}
+				]
+			})
+		};
+		$(document).ready(function() {
+			init_geno_table();
+		});
+	</script>
+
+{% endblock %}
+{% block content %}
+        <div class="section">
+            <div class="section-title">
+                <h2>Genotypes</h2>
+            </div>
+            <table id="geno-table" width="100%"></table>
+        </div>
+{% endblock %}

@@ -98,6 +98,12 @@
 		</tr>
 		{% endif %}
 		{% endif %}
+		{% if job.details.variant_filter %}
+		<tr>
+			<th>Variant Filter</th>
+			<td>{{ job.details.variant_filter }}</td>
+		</tr>
+		{% endif %}
 		<tr>
 			<th>Status</th>
 			<td>{{ job.status }}</td>

@@ -127,6 +127,7 @@ class Genotype:
         geno_path = self.meta.get("pca_genotypes_path", None)
         if not geno_path:
             return None
+        geno_path = self.relative_path(geno_path)
         if must_exist and not os.path.exists(geno_path):
             return None
         return geno_path

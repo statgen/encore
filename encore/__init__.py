@@ -56,6 +56,8 @@ def register_helpers(app):
                 return "pheno"
             elif path.startswith("/jobs") or path == "/":
                 return "job"
+            elif path.startswith("/geno"):
+                return "geno"
             elif path.startswith("/admin/user"):
                 return "user"
             elif path.startswith("/admin/phenos"):
@@ -78,6 +80,7 @@ def register_helpers(app):
             else:
                 links["left"].append(("job", "Jobs", url_for("user.index")))
                 links["left"].append(("pheno", "Phenotypes", url_for("user.get_phenos")))
+                links["left"].append(("geno", "Genotypes", url_for("user.get_genos")))
                 if (user is not None) and hasattr(user, "is_admin") and user.is_admin():
                     links["right"].append(("admin","Admin", url_for("admin.get_admin_page")))
             links["right"].append(("logout","Logout", url_for("auth.sign_out")))

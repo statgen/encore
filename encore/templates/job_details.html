@@ -86,14 +86,15 @@
 		{% if job.details.phenotype %}
 		<tr>
 			<th>Phenotype</th>
-			<td><a href={{url_for("user.get_pheno", pheno_id=job.details.phenotype.pheno_id) }}>
+			<td><a href={{ url_for("user.get_pheno", pheno_id=job.details.phenotype.pheno_id) }}>
 			{{ job.details.phenotype.name }}</a></td>
 		</tr>
 		{% endif %}
 		{% if job.details.genotype %}
 		<tr>
 			<th>Genotype</th>
-			<td>{{ job.details.genotype.name }} ( {{ job.details.genotype.build }} )</td>
+			<td><a href="{{ url_for("user.get_geno", geno_id=job.details.genotype.geno_id) }}">
+			{{ job.details.genotype.name }} ( {{ job.details.genotype.build }} )</a></td>
 		</tr>
 		{% endif %}
 		{% endif %}

@@ -53,6 +53,11 @@ def get_genotype_info_stats(geno_id):
     g = Genotype.get(geno_id, current_app.config)
     return ApiResult(g.get_info_stats())
 
+@api.route("/genos/<geno_id>/jobs", methods=["GET"])
+def get_genotype_jobs(geno_id):
+    jobs = Job.list_all_for_user_by_genotype(current_user.rid, geno_id, current_app.config)
+    return ApiResult(jobs)
+
 @api.route("/jobs", methods=["POST"])
 def create_new_job():
     user = current_user
@@ -471,6 +476,11 @@ def retire_pheno(pheno_id, pheno=None):
         return ApiResult({"retired": True})
     except Exception as e:
         raise ApiException("COULD NOT RETURE PHENO", details=str(e))
+
+@api.route("/phenos/<pheno_id>/jobs", methods=["GET"])
+def get_phenotype_jobs(pheno_id):
+    jobs = Job.list_all_for_phenotype(pheno_id, current_app.config)
+    return ApiResult(jobs)
 
 def suggest_pheno_name(filename):
     base, ext = os.path.splitext(os.path.basename(filename))

@@ -84,6 +84,7 @@ def get_phenos():
 @access_pheno_page
 def get_pheno(pheno_id, pheno=None):
     pheno_obj = pheno.as_object()
+    pheno_obj["jobs"] = Job.list_all_for_phenotype(pheno_id, current_app.config)
     if can_user_edit_pheno(current_user, pheno):
         pheno_obj["can_edit"] = True
     is_usable, usable_error = pheno.check_usable()
@@ -109,6 +110,7 @@ def get_geno(geno_id):
         geno_obj = geno.as_object()
     else:
         geno_obj = None 
+    geno_obj["jobs"] = Job.list_all_for_user_by_genotype(current_user.rid, geno_id, current_app.config)
     return render_template("geno_details.html", geno=geno_obj)
 
 @user_area.route("/model-build", methods=["GET"])

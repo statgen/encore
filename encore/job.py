@@ -126,6 +126,14 @@ class Job:
         return results 
 
     @staticmethod
+    def list_all_for_user_by_genotype(user_id, geno_id, config=None):
+        db = sql_pool.get_conn()
+        results = Job.__list_by_sql_where(db, "jobs.geno_id = uuid_to_bin(%s) " + 
+            "AND jobs.id IN (SELECT job_id from job_users where user_id=%s) " + 
+            "AND jobs.is_active=1", (geno_id, user_id))
+        return results 
+
+    @staticmethod
     def list_pending(config=None):
         db = sql_pool.get_conn()
         results = Job.__list_by_sql_where(db, "(statuses.name='queued' OR statuses.name='started')")

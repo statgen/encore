@@ -245,7 +245,7 @@ class Job:
                 except:
                     pass
 
-            result = {"recrods": affected, "users": users, "files": removed}
+            result = {"records": affected, "users": users, "files": removed}
             return result
         else:
             raise Exception("Job {} Not Found".format(job_id))

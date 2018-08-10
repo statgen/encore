@@ -15,6 +15,16 @@ class EpactsModel(BaseModel):
         opts = []
         if model.get("response_invnorm", False):
             opts.append("--inv-norm")
+        if model.get("variant_filter", False):
+            vf = model.get("variant_filter")
+            if vf == "min-maf-001":
+                opts.append("--min-maf 0.001")
+            elif vf == "min-mac-20":
+                opts.append("--min-mac 20")
+            elif vf == "max-maf-05":
+                opts.append("--max-maf 0.05")
+            else:
+                raise Exception("Unrecognized variant filter ({})".format(vf))
         return opts 
 
     def get_ped_writer(self, model_spec, geno, pheno):
@@ -115,12 +125,25 @@ class EpactsModel(BaseModel):
             resp = get_chr_chunk_progress(output_file_glob, fre)
         return resp
 
+    def validate_model_spec(self, model_spec):
+        if "variant_filter" in model_spec:
+            if hasattr(self, "filters"):
+                vf = model_spec["variant_filter"]
+                if not any([vf == x[0] for x in self.filters]):
+                    raise Exception("Did not recognize variant filter ({})".format(vf))
+            else:
+                raise Exception("No variant filters defined but one was requested ({})".format(e))
+        else:
+            if hasattr(self, "filters"):
+                model_spec["variant_filter"] = self.filters[0][0]
+
         
 class LMEpactsModel(EpactsModel):
     model_code = "lm"
     model_name = "Linear Wald Test"
     model_desc = "A simple linear model"
     depends = ["vcf"]
+    filters = [("min-maf-001", "MAF > 0.1%"), ("min-mac-20", "MAC > 20")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "single", "lm")
@@ -128,8 +151,7 @@ class LMEpactsModel(EpactsModel):
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno) 
         opts += ["--test q.linear",
-            "--unit 500000", 
-            "--min-maf 0.001" ]
+            "--unit 500000"]
         return opts
 
 class LMMEpactsModel(EpactsModel):
@@ -137,6 +159,7 @@ class LMMEpactsModel(EpactsModel):
     model_name = "Linear Mixed Model"
     model_desc = "Adjust for potential relatedness using kinship matrix"
     depends = ["vcf", "kinship"]
+    filters = [("min-maf-001", "MAF > 0.1%"), ("min-mac-20","MAC > 20")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "single", "lmm")
@@ -145,8 +168,7 @@ class LMMEpactsModel(EpactsModel):
         opts = super(self.__class__, self).get_opts(model, geno) 
         opts += ["--test q.emmax",
             "--kin {}".format(geno.get_kinship_path()), 
-            "--unit 500000",
-            "--min-maf 0.001"] 
+            "--unit 500000"]
         return opts
 
 class SkatOEpactsModel(EpactsModel):
@@ -154,6 +176,7 @@ class SkatOEpactsModel(EpactsModel):
     model_name = "SKAT-O Test"
     model_desc = "Adaptive burden test"
     depends = ["vcf", "group_nonsyn"]
+    filters = [("max-maf-05", "MAF < 5%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "skato")
@@ -164,8 +187,7 @@ class SkatOEpactsModel(EpactsModel):
         opts += ["--test skat",
             "--skat-o",
             "--groupf {}".format(geno.get_groups_path(group)),
-            "--unit 500",
-            "--max-maf 0.05"] 
+            "--unit 500"]
         return opts
     
 class MMSkatOEpactsModel(EpactsModel):
@@ -173,6 +195,7 @@ class MMSkatOEpactsModel(EpactsModel):
     model_name = "Mixed Model SKAT-O Test"
     model_desc = "Adaptive burden test that adjusts for potential relatedness using kinship matrix"
     depends = ["vcf", "group_nonsyn", "kinship"]
+    filters = [("max-maf-05", "MAF < 5%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmskato")
@@ -184,8 +207,7 @@ class MMSkatOEpactsModel(EpactsModel):
             "--skat-o",
             "--groupf {}".format(geno.get_groups_path(group)),
             "--kin {}".format(geno.get_kinship_path()),
-            "--unit 500",
-            "--max-maf 0.05"] 
+            "--unit 500"]
         return opts
 
 class MMSkatEpactsModel(EpactsModel):
@@ -193,6 +215,7 @@ class MMSkatEpactsModel(EpactsModel):
     model_name = "Mixed Model SKAT Test"
     model_desc = "Burden test that adjusts for potential relatedness using kinship matrix"
     depends = ["vcf", "group_nonsyn", "kinship"]
+    filters = [("max-maf-05", "MAF < 5%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmskat")
@@ -203,8 +226,7 @@ class MMSkatEpactsModel(EpactsModel):
         opts += ["--test mmskat",
             "--groupf {}".format(geno.get_groups_path(group)),
             "--kin {}".format(geno.get_kinship_path()),
-            "--unit 300",
-            "--max-maf 0.05"] 
+            "--unit 300"]
         return opts
 
 class MMVTEpactsModel(EpactsModel):
@@ -212,6 +234,7 @@ class MMVTEpactsModel(EpactsModel):
     model_name = "Mixed Model Variable-Threshold Test"
     model_desc = "Variable-threshold burden test that adjusts for potential relatedness using kinship matrix"
     depends = ["vcf", "group_nonsyn", "kinship"]
+    filters = [("max-maf-05", "MAF < 5%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmVT")
@@ -222,8 +245,7 @@ class MMVTEpactsModel(EpactsModel):
         opts += ["--test emmaxVT",
             "--groupf {}".format(geno.get_groups_path(group)),
             "--kin {}".format(geno.get_kinship_path()),
-            "--unit 300",
-            "--max-maf 0.05"] 
+            "--unit 300"]
         return opts
 
 class MMCMCEpactsModel(EpactsModel):
@@ -231,6 +253,7 @@ class MMCMCEpactsModel(EpactsModel):
     model_name = "Mixed Model Collapsing Burden Test"
     model_desc = "Collapsing burden test that adjusts for potential relatedness using kinship matrix"
     depends = ["vcf", "group_nonsyn", "kinship"]
+    filters = [("max-maf-05", "MAF < 5%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmCMC")
@@ -241,6 +264,5 @@ class MMCMCEpactsModel(EpactsModel):
         opts += ["--test emmaxCMC",
             "--groupf {}".format(geno.get_groups_path(group)),
             "--kin {}".format(geno.get_kinship_path()),
-            "--unit 300",
-            "--max-maf 0.05"] 
+            "--unit 300"]
         return opts

@@ -5,14 +5,28 @@ from chunk_progress import get_chr_chunk_progress
 
 
 class SaigeModel(BaseModel):
+    filters = [("min-maf-001", "MAF > 0.1%"),
+        ("min-mac-20", "MAC > 20"),
+        ("min-maf-001-mac-20","MAF > 0.1% AND MAC > 20")]
+
     def __init__(self, working_directory="./", app_config=None):
         BaseModel.__init__(self, working_directory, app_config) 
         self.cores_per_job = 56
 
-    def get_opts(self, model_spec, geno):
+    def get_opts(self, model, geno):
         opts = []
-        if model_spec.get("response_invnorm", False):
+        if model.get("response_invnorm", False):
             opts.append("INVNORM=TRUE")
+        if model.get("variant_filter", False):
+            vf = model.get("variant_filter")
+            if vf == "min-maf-001-mac-20":
+                opts.append("STEP2OPT='--min-maf 0.001 --min-mac 20 --IsOutputAFinCaseCtrl=FALSE'")
+            elif vf == "min-maf-001":
+                opts.append("STEP2OPT='--min-maf 0.001 --IsOutputAFinCaseCtrl=FALSE'")
+            elif vf == "min-mac-20":
+                opts.append("STEP2OPT='--min-mac 20 --IsOutputAFinCaseCtrl=FALSE'")
+            else:
+                raise Exception("Unrecognized variant filter ({})".format(vf))
         return opts 
 
     def get_ped_writer(self, model, geno, pheno):
@@ -97,6 +111,16 @@ class SaigeModel(BaseModel):
         if not "pipeline_version" in model_spec:
             if "SAIGE_VERSION" in self.app_config:
                 model_spec["pipeline_version"] = self.app_config["SAIGE_VERSION"]
+        if "variant_filter" in model_spec:
+            if hasattr(self, "filters"):
+                vf = model_spec["variant_filter"]
+                if not any([vf == x[0] for x in self.filters]):
+                    raise Exception("Did not recognize variant filter ({})".format(vf))
+            else:
+                raise Exception("No variant filters defined but one was requested ({})".format(e))
+        else:
+            if hasattr(self, "filters"):
+                model_spec["variant_filter"] = self.filters[0][0]
         
 class LinearSaigeModel(SaigeModel):
     model_code = "saige-qt"

@@ -47,7 +47,6 @@ class SlurmJob:
         with open(batch_output_path, "w") as f:
             try:
                 subprocess.check_call([sbatch, batch_script_path], stdout=f)
-
             except subprocess.CalledProcessError as e:
                 # log to server log
                 print "SBATCH ERROR"

@@ -20,11 +20,11 @@ class SaigeModel(BaseModel):
         if model.get("variant_filter", False):
             vf = model.get("variant_filter")
             if vf == "min-maf-001-mac-20":
-                opts.append("STEP2OPT='--min-maf 0.001 --min-mac 20 --IsOutputAFinCaseCtrl=FALSE'")
+                opts.append("STEP2OPT='--minMAF 0.001 --minMAC 20 --IsOutputAFinCaseCtrl=FALSE'")
             elif vf == "min-maf-001":
-                opts.append("STEP2OPT='--min-maf 0.001 --IsOutputAFinCaseCtrl=FALSE'")
+                opts.append("STEP2OPT='--minMAF 0.001 --IsOutputAFinCaseCtrl=FALSE'")
             elif vf == "min-mac-20":
-                opts.append("STEP2OPT='--min-mac 20 --IsOutputAFinCaseCtrl=FALSE'")
+                opts.append("STEP2OPT='--minMAC 20 --IsOutputAFinCaseCtrl=FALSE'")
             else:
                 raise Exception("Unrecognized variant filter ({})".format(vf))
         return opts 

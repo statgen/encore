@@ -36,3 +36,11 @@ class BaseModel(object):
 
     def validate_model_spec(self, model_spec):
         pass
+
+    def get_filter_desc(self, vfilter):
+        if not hasattr(self, "filters"):
+            return None
+        for x in self.filters:
+            if x[0] == vfilter:
+                return x[1]
+        return None

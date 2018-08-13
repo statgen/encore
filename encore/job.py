@@ -6,6 +6,7 @@ import MySQLdb
 import sys
 import re
 from user import User
+from model_factory import ModelFactory
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
@@ -34,6 +35,9 @@ class Job:
     def get_genotype_id(self):
         return self.meta.get("genotype", None) 
 
+    def get_model(self):
+        return ModelFactory.get(self.meta.get("type", None), self.root_path, None)
+
     def get_output_files(self):
         files = []
         def add_if_exists(rel_path, display_name, primary=False):
@@ -59,7 +63,13 @@ class Job:
         obj["users"] = self.users
         obj["output_files"] = self.get_output_files()
         if self.meta:
-            obj["details"] = self.meta
+            details = self.meta.copy()
+            model = self.get_model()
+            if model:
+                details["model_desc"] = model.model_desc
+                if "variant_filter" in details:
+                    details["variant_filter_desc"] = model.get_filter_desc(details["variant_filter"])
+            obj["details"] = details
         return obj
 
     @staticmethod

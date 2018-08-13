@@ -81,7 +81,7 @@
 		{% endif %}
 		<tr>
 			<th>Model Type</th>
-			<td>{{ job.details.get("type","?") }}</td>
+			<td>{{ job.details.get("model_desc") }} ({{ job.details.get("type","?") }})</td>
 		</tr>
 		{% if job.details.phenotype %}
 		<tr>
@@ -101,7 +101,7 @@
 		{% if job.details.variant_filter %}
 		<tr>
 			<th>Variant Filter</th>
-			<td>{{ job.details.variant_filter }}</td>
+			<td>{{ job.details.variant_filter_desc or job.details.variant_filter }}</td>
 		</tr>
 		{% endif %}
 		<tr>

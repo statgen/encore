@@ -19,8 +19,25 @@
 		var responseSelect;
 		var covariateSelect;
 		var genophenoSelect;
+		var filterSelect;
 		var userHasNamedJob = false;
 		var modelList;
+
+		function bumpFront(val, arr) {
+			var at = arr.indexOf(val);
+			if (at != -1) {
+				arr.splice(at, 1);
+			}
+			arr.unshift(val);
+		}
+
+		function firstMatchOfAinB(arr1, arr2) {
+			for(var i=0; i<arr1.length; i++) {
+				var idx = arr2.indexOf(arr1[i]);
+				if(idx != -1) return arr1[i];
+			}
+			return null;
+		}
 
 		function validateForm(form) {
 			var errors = [];
@@ -307,8 +324,36 @@
 			var d3 = $.getJSON("{{url_for('api.get_models')}}").then(function(resp) {
 				modelList = resp;
 				var modelSelect = $("#model-type");
+				var userChoices = [];
+				function findModel(model) {
+					return modelList.find(function(x) {return x.code && x.code==model;})
+				};
+				filterSelect = $("#filter-type").select2({
+					data: [""],
+					minimumResultsForSearch: 10
+				});
 				var template = document.getElementById("model-radio-group").innerText;
 				modelSelect.html(ejs.render(template, {"models" : resp }));
+				modelSelect.find("input[type='radio']").on("change", function() {
+					var newModel = this.value;
+					var model = findModel(newModel);
+					bumpFront(filterSelect.val(), userChoices);
+					if (model && model.filters && model.filters.length) {
+						$("#filter_input").show();
+						var opts = model.filters.map(function(x) {return {id: x[0], text: x[1]}});
+						filterSelect.html("").select2({
+							data: opts,
+							minimumResultsForSearch: 10
+						}).width("100%");
+						var setOpt = firstMatchOfAinB(userChoices, model.filters.map(function(x) {return x[0]}));
+						if (setOpt) {
+							filterSelect.val(setOpt).trigger("change");
+						}
+					} else {
+						$("#filter_input").hide();
+						filterSelect.html("").select2({data:[""]}).val("")
+					}
+				})
 			}); 
 			var qs = getQuerystring();
 			$.when(d1, d2, d3).done(function(g, p, m) {
@@ -325,6 +370,7 @@
 							opts.inv = x.details.response_invnorm || false;
 							opts.c = x.details.covariates;
 							opts.gp = x.details.genopheno || [];
+							opts.f = x.details.variant_filter;
 						}
 						return $.when(opts);
 					}, function() {
@@ -366,6 +412,9 @@
 					} else {
 						$("input[type=radio]", "#model-form").
 							first().prop("checked", true).trigger("change");
+					}
+					if (opts.f) {
+						filterSelect.val(opts.f).trigger("change");
 					}
 				}).then(function() {
 					$("#model-form").css("visibility","visible").hide().fadeIn();
@@ -432,26 +481,12 @@
 				</div>
 				<div class="form-group">
 					<label class="control-label col-xs-2">Model</label>
-					<div class="col-xs-10" id="model-type"> 
-						<div class="radio">
-							<label for="model-lm">
-							<input type="radio" name="model" id="model-lm" value="lm" />
-							<span class="radio-title">Linear Wald Test (LM)</span>
-							<span class="radio-desc">A simple linear model</span></label>
-						</div>
-						<div class="radio">
-							<label for="model-lmm">
-							<input type="radio" name="model" id="model-lmm" value="lmm" checked="checked" />
-							<span class="radio-title">Linear Mixed Model (LMM)</span>
-							<span class="radio-desc">Adjust for potential relatedness using
-							kinship matrix</span></label>
-						</div>
-						<div class="radio">
-							<label for="model-burden">
-							<input type="radio" name="model" id="model-burden" value="burden" />
-							<span class="radio-title">Burden</span>
-							<span class="radio-desc">A simple burden test</span></label>
-						</div>
+					<div class="col-xs-10" id="model-type"></div>
+				</div>
+				<div class="form-group" id="filter_input">
+					<label for="response" class="control-label col-xs-2">Filter</label>
+					<div class="col-xs-10">
+						<select id="filter-type" name="variant_filter" class="form-control"></select>
 					</div>
 				</div>
 				<div class="form-group">

@@ -78,6 +78,8 @@ def create_new_job():
     job_desc["covariates"] =  form_data.getlist("covariates")
     job_desc["genopheno"] =  form_data.getlist("genopheno")
     job_desc["type"] = form_data["model"]
+    if form_data.get("variant_filter", "").strip() != "":
+        job_desc["variant_filter"] = form_data["variant_filter"]
     job_desc["user_id"] = current_user.rid
     job_id = str(uuid.uuid4())
 

@@ -39,6 +39,26 @@ class Genotype:
             return None
         return vcf_path
 
+    def get_vcf_anno_path(self, chrom=1, must_exist=False):
+        anno_stub = ""
+        chrom = str(chrom).replace("chr","")
+        if "annovcfs" in self.meta:
+            anno = self.meta["annovcfs"]
+            if type(anno) is dict:
+                if chrom in anno:
+                    anno_stub = anno[chrom]
+                elif "*" in anno:
+                    anno_stub = anno["*"]
+            else:
+                anno_stub = anno
+        anno_stub = anno_stub.replace("*","{0}").format(chrom)
+        if anno_stub == "":
+            return None
+        anno_path = self.relative_path(anno_stub)
+        if must_exist and not os.path.exists(anno_path):
+            return None
+        return anno_path
+
     def get_sav_path(self, chrom=1, must_exist=False):
         sav_stub = ""
         chrom = str(chrom).replace("chr","")

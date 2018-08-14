@@ -9,8 +9,20 @@ class GenoReader:
         self.geno = geno
         self.config = config
 
-    def get_variant(self, chrom, pos, variant_id=None):
+    def get_variant(self, chrom, pos, variant_id=None, annotate=False):
         vcf_path = self.geno.get_vcf_path(chrom)
+        variant = self.get_vcf_row(vcf_path, chrom, pos, variant_id)
+        if annotate:
+            anno_path = self.geno.get_vcf_anno_path(chrom)
+            if anno_path:
+                anno = self.get_vcf_row(anno_path, chrom, pos, variant_id)
+                if variant["INFO"]:
+                    variant["INFO"] = variant["INFO"] + ";" + anno["INFO"]
+                elif anno["INFO"]:
+                    variant["INFO"] = anno["INFO"]
+        return variant
+
+    def get_vcf_row(self, vcf_path, chrom, pos, variant_id):
         cmd = [self.config.get("TABIX_BINARY", "tabix"),
             "-h",
             vcf_path,
@@ -36,7 +48,10 @@ class GenoReader:
                 current_variant = get_epacts_variant_id(data)
         if len(lines)>2:
             raise Exception("Multiple variants found, no ID given")
-        variant_data = dict(zip(headers[0:9], data[0:9]))
-        variant_data["GENOS"] = dict(zip(headers[9:], data[9:]))
+        if len(headers)>8:
+            variant_data = dict(zip(headers[0:9], data[0:9]))
+            variant_data["GENOS"] = dict(zip(headers[9:], data[9:]))
+        else:
+            variant_data = dict(zip(headers, data))
         return variant_data
 

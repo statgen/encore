@@ -5,8 +5,8 @@ from chunk_progress import get_chr_chunk_progress
 
 
 class SaigeModel(BaseModel):
-    filters = [("min-maf-001", "MAF > 0.1%"),
-        ("min-mac-20", "MAC > 20"),
+    filters = [("min-mac-20", "MAC > 20"),
+        ("min-maf-001", "MAF > 0.1%"),
         ("min-maf-001-mac-20","MAF > 0.1% AND MAC > 20")]
 
     def __init__(self, working_directory="./", app_config=None):

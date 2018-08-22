@@ -1,0 +1,99 @@
+{% extends "layout.html" %}
+{% block header %}
+<script type="text/javascript">
+	$(function() {
+		$("#helpForm").submit(function(evt) {evt.preventDefault();})
+		$("button.submit-message").click(function(evt) {
+			evt.preventDefault();
+			var data = ["message", "from_page", "user_address", "user_fullname"].reduce(function(obj, x) {
+				var ele = $("#helpForm").find("#" + x);
+				var val = ele.val().trim();
+				if(val) { obj[x] = val;}
+				return obj;
+			}, {});
+			function linkButton($button, url) {
+				if (url) {
+					$button.click(function(evt) {
+						evt.preventDefault()
+						document.location.href = url;
+					});
+				} else {
+					$button.hide();
+				}
+
+			}
+			var submit_url = $(this).data("action");
+			$.post(submit_url, data).done( function(data) {
+				$("#helpForm #message").val("");
+				var $modal = $("#messageModal")
+				$modal.find(".modal-message").text("Message successfully sent")
+				linkButton($modal.find("button.go-main"), "{{url_for("user.index")}}");
+				linkButton($modal.find("button.go-return"), data.from_page);
+				$modal.modal();
+			}).fail(function(data) {
+				var $modal = $("#messageModal")
+				errorMsg = data.responseJSON && data.responseJSON.error || "Unknown error";
+				$modal.find(".modal-message").text("ERROR: " + errorMsg)
+				linkButton($modal.find("button.go-main"), "{{url_for("user.index")}}");
+				linkButton($modal.find("button.go-return"), "");
+				$modal.modal();
+			});
+		});
+	})
+</script>
+{% endblock %}
+{% block content %}
+        <div class="section">
+            <div class="section-title">
+                <h2>Help</h2>
+            </div>
+			<p>For help, you can either e-mail us at 
+			<a href="mailto:{{config["HELP_EMAIL"]}}">{{config["HELP_EMAIL"]}}</a></p>
+
+			<p>...or fill out this form to send us your feedback</p>
+			<form class="form-horizontal" id="helpForm">
+				<div class="form-group">
+					<label for="message" class="control-label col-xs-2">Name</label>
+					<div class="col-xs-10">
+						<input type="text" class="form-control" id="user_fullname" value="{{user.full_name or ''}}"></input>	
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="message" class="control-label col-xs-2">Reply-To</label>
+					<div class="col-xs-10">
+						<input type="text" class="form-control" id="user_address" value="{{user.email or ''}}"></input>	
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="message" class="control-label col-xs-2">Message</label>
+					<div class="col-xs-10">
+						<textarea class="form-control" id="message" rows="8"></textarea>	
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-xs-offset-2 col-xs-10">
+						<button class="btn-success submit-message"
+							data-action="{{url_for("api.post_help")}}">Submit</button>
+					</div>
+				</div>
+				<input type="hidden" id="from_page" value="{{request.referrer}}"/>
+			</form>
+        </div>
+		<div class="modal fade" id="messageModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Get Help</h4>
+					</div>
+					<div class="modal-body">
+					<p class="modal-message"></p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default go-main">Main Page</button>
+						<button type="button" class="btn btn-success go-return">Return</button>
+					</div>
+				</div>
+			</div>
+		</div>
+{% endblock %}

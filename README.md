@@ -46,6 +46,21 @@ You can enable the configuration with
     sudo a2ensite encore
     sudo systemctl restart apache2
 
+# Email configuration
+
+Encore will try to send email via localhost. You can set up
+postfix to send or redirect these emails how you like. You can
+install postfix with
+
+    sudo apt-get install postfix
+
+A simple installation would just choose "Internet Site" and set
+
+    inet_interfaces = localhost
+
+in the `/etc/postfix/main.cf` config file.
+
+
 
 # Building Executable tools
 

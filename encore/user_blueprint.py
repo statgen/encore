@@ -113,6 +113,10 @@ def get_geno(geno_id):
     geno_obj["jobs"] = Job.list_all_for_user_by_genotype(current_user.rid, geno_id, current_app.config)
     return render_template("geno_details.html", geno=geno_obj)
 
+@user_area.route("/help", methods=["GET"])
+def get_help():
+    return render_template("help.html", user=current_user)
+
 @user_area.route("/model-build", methods=["GET"])
 def get_model_build():
     if current_user.can_analyze:

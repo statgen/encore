@@ -21,6 +21,8 @@ import sys, traceback
 import subprocess
 import requests
 import numpy as np
+import smtplib
+from email.mime.text import MIMEText
 
 api = Blueprint("api", __name__)
 
@@ -660,6 +662,41 @@ def get_api_annotations(resource):
         return requests.post('http://exac.broadinstitute.org/api/constraint', data=request.form).content
     else:
         return "Not Found", 404
+
+@api.route("/help", methods=["POST"])
+def post_help():
+    to_address = current_app.config.get("HELP_EMAIL", None)
+    from_address = "do-not-reply@encore.sph.umich.edu"
+    if not to_address:
+        raise ApiException("HELP EMAIL NOT CONFIGURED") 
+    form_data = request.form
+    user_address = form_data.get("user_address", current_user.email)
+    user_fullname = form_data.get("user_fullname", current_user.full_name)
+    user_id = current_user.rid
+    user_message = form_data.get("message", None)
+    from_page = form_data.get("from_page", None)
+    if not user_message:
+        raise ApiException("EMPTY MESSAGE") 
+    message = MIMEText(user_message + \
+        "\n\nUser Info:\n" + \
+        "Name: {}\nEmail: {}\nID:{}".format(user_fullname, user_address, user_id) +  \
+        "\n\nFrom Page:\n" + \
+        from_page + \
+        "\n")
+    message["subject"] = "Encore User Feedback ({})".format(user_fullname)
+    message["from"] = from_address
+    message["to"] = to_address
+    message.add_header('reply-to', user_address)
+    smtp = smtplib.SMTP()
+    smtp.connect(current_app.config.get("SMTP_SERVER", 'localhost'))
+    try:
+        smtp.sendmail(from_address, to_address, message.as_string())
+        return ApiResult({"sent": True, "from_page": from_page})
+    except Exception as e:
+        print e
+        raise ApiException("FAILED TO SEND MESSAGE", details=str(e)) 
+    finally:
+        smtp.quit()
 
 @api.route("/notices", methods=["GET"])
 def get_api_notices():

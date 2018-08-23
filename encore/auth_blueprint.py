@@ -61,6 +61,8 @@ def user_loader(email):
 
 @auth.route("/sign-in", methods=["GET"])
 def get_sign_in():
+    if request.args.get("orig", None):
+        session["post_login_page"] = request.args.get("orig")
     return get_sign_in_view("sign-in") 
 
 @auth.route("/get-auth-token", methods=["GET"])
@@ -73,12 +75,15 @@ def unauthorized():
     if request.path.startswith("/api"):
         return "UNAUTHORIZED", 401
     else:
-        return redirect(url_for("auth.get_sign_in", orig=request.path))
+        orig = request.full_path
+        if orig == "/?":
+            orig = None
+        return redirect(url_for("auth.get_sign_in", orig=orig))
 
 @auth.route("/sign-out", methods=["GET"])
 def sign_out():
     logout_user()
-    return redirect(url_for("user.index"))
+    return redirect(url_for("auth.get_sign_in"))
 
 def load_user(email):
     db = sql_pool.get_conn()
@@ -112,7 +117,15 @@ def get_sign_in_view(target):
         user = load_user(user_data["email"])
         if user:
             flask_login.login_user(user)
-            return redirect(url_for("user.index"))
+            redirect_to = session.pop("post_login_page", None)
+            try:
+                endpoint, arguments = current_app.url_map.bind('localhost').match(redirect_to)
+            except Exception as e:
+                redirect_to = None
+            if redirect_to:
+                return redirect(redirect_to)
+            else:
+                return redirect(url_for("user.index"))
         else:
             error_message = "Not an authorized user ({})".format(user_data["email"])
             return render_template("/sign_in.html", error_message=error_message)

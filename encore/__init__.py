@@ -85,7 +85,7 @@ def register_helpers(app):
                 links["left"].append(("geno", "Genotypes", url_for("user.get_genos")))
                 if (user is not None) and hasattr(user, "is_admin") and user.is_admin():
                     links["right"].append(("admin","Admin", url_for("admin.get_admin_page")))
-            links["right"].append(("help","Help", url_for("user.get_help")))
+                links["right"].append(("help","Help", url_for("user.get_help")))
             links["right"].append(("logout","Logout", url_for("auth.sign_out")))
             return links
 

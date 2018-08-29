@@ -310,6 +310,7 @@ class Job:
     @staticmethod
     def counts(by=None, filters=None, config=None):
         join_users = False
+        join_geno = False
         join_status = False
         if not by:
             by = []
@@ -342,6 +343,11 @@ class Job:
                 group_by += ["statuses.name"]
                 columns += ["status"]
                 join_status = True
+            elif field == "geno":
+                select += ["genotypes.name as geno"]
+                group_by += ["genotypes.name"]
+                columns += ["geno"]
+                join_geno = True
             else:
                 raise Exception("Unrecognized field: {}".format(field))
         for filt in filters:
@@ -357,6 +363,8 @@ class Job:
             sql += " JOIN users on jobs.user_id = users.id"
         if join_status:
             sql += " JOIN statuses on jobs.status_id = statuses.id"
+        if join_geno:
+            sql += " JOIN genotypes on jobs.geno_id = genotypes.id"
         if len(wheres):
             sql += " WHERE (" + "), (".join(wheres) + ")"
         if len(group_by):

@@ -12,7 +12,8 @@
 			{title: "Total Jobs By Status", action: draw_totals},
 			{title: "Successful Jobs By User", action: draw_users},
 			{title: "Successful Jobs By Month", action: draw_months},
-			{title: "Successful Jobs By User/Month", action: draw_user_months}
+			{title: "Successful Jobs By User/Month", action: draw_user_months},
+			{title: "Successful Jobs By Genotype", action: draw_genos}
 		];
 		var table;
 		function draw_table(data, columns) {
@@ -45,6 +46,10 @@
 		}
 		function draw_user_months() {
 			var url = baseurl + "?by=month,user&filter=successful";
+			fetch_and_draw(url);
+		}
+		function draw_genos() {
+			var url = baseurl + "?by=geno&filter=successful";
 			fetch_and_draw(url);
 		}
 		function init_report_selector() {

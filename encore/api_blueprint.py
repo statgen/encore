@@ -9,7 +9,7 @@ from notice import Notice
 from pheno_reader import PhenoReader
 from slurm_queue import SlurmJob, get_queue
 from model_factory import ModelFactory
-from notifier import Notifier
+from notifier import get_notifier
 import os
 import re
 import gzip
@@ -672,8 +672,8 @@ def post_help():
     if not user_message:
         raise ApiException("EMPTY MESSAGE") 
     try:
-        Notifier.send_user_feedback(user_email, user_fullname, user_message, from_page, 
-            current_user, current_app.config)
+        get_notifier().send_user_feedback(user_email, user_fullname, user_message, from_page, 
+            current_user)
         return ApiResult({"sent": True, "from_page": from_page})
     except Exception as e:
         print e

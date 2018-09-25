@@ -21,13 +21,13 @@ class DatabaseCredentials(object):
 
 class Tracker(object):
 
-    def __init__(self, interval, db_credentials):
+    def __init__(self, interval, db_credentials, notifier=None):
         self.interval = interval
         self.credentials = db_credentials
+        self.notifier = notifier
         self.timer = None
 
-    @staticmethod
-    def query_pending_jobs(db):
+    def query_pending_jobs(self, db):
 
         sql = ("SELECT bin_to_uuid(jobs.id) AS id, statuses.name AS status FROM jobs "
                "LEFT JOIN statuses ON statuses.id = jobs.status_id "
@@ -41,8 +41,7 @@ class Tracker(object):
             jobs.append(Job(row["id"], row["status"]))
         return jobs
 
-    @staticmethod
-    def update_job_status(db, job, slurm_status, exit_code):
+    def update_job_status(self, db, job, slurm_status, exit_code):
         status = ""
         reason = ""
         if slurm_status == "RUNNING":
@@ -74,16 +73,19 @@ class Tracker(object):
                     "modified_date = NOW() WHERE id = uuid_to_bin(%s)"
                 cur.execute(sql, (status, job.id))
             db.commit()
+            if self.notifier:
+                try:
+                    if status == "failed":
+                        self.notifier.send_failed_job(job.id)
+                except:
+                    pass
 
-    @staticmethod
-    def update_job_statuses(db, jobs):
-        # job_names_param = ",".join("gasp_" + x.id for x in jobs)
-        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", pwd.getpwuid(os.getuid())[0], "--format", "jobid,state,exitcode,jobname,submit", "--noheader", "-P", "-S", (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    def update_job_statuses(self, db, jobs):
+        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", pwd.getpwuid(os.getuid())[0], \
+            "--format", "jobid,state,exitcode,jobname,submit", "--noheader", "-P", \
+            "-S", (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")], \
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         squeue_out, squeue_err = p.communicate()
-
-        fake_data = """29646434            PENDING             0
-29646435            COMPLETED             0
-"""
 
         # keep only most recent submission date for each job
         slurm_jobs_found = dict()
@@ -102,15 +104,14 @@ class Tracker(object):
         for slurm_job in slurm_jobs_found.values():
             for j in jobs:
                 if slurm_job[3][5:] == j.id:
-                    Tracker.update_job_status(db, j, slurm_job[1], slurm_job[2])
+                    self.update_job_status(db, j, slurm_job[1], slurm_job[2])
                     break
 
     def routine(self):
         db = MySQLdb.connect(host=self.credentials.host, user=self.credentials.user, passwd=self.credentials.pw, db=self.credentials.db)
-        jobs = Tracker.query_pending_jobs(db)
+        jobs = self.query_pending_jobs(db)
         if len(jobs) != 0:
-            Tracker.update_job_statuses(db, jobs)
-
+            self.update_job_statuses(db, jobs)
 
     def timer_callback(self):
         try:

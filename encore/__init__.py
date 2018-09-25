@@ -3,6 +3,7 @@ from user_blueprint import user_area
 from admin_blueprint import admin_area
 from api_blueprint import api, ApiResult, ApiException
 from auth_blueprint import auth
+from notifier import get_notifier
 import job_tracking
 import atexit
 import subprocess
@@ -38,7 +39,8 @@ def create_app(config=None):
     register_helpers(app)
     register_info(app)
 
-    launch_tracker(app.config)
+    with app.app_context():
+        launch_tracker(app.config)
     return app
 
 
@@ -102,7 +104,8 @@ def register_info(app):
 def launch_tracker(config):
     job_tracker = job_tracking.Tracker(5*60.0, \
         job_tracking.DatabaseCredentials("localhost", config.get("MYSQL_USER"), 
-        config.get("MYSQL_PASSWORD"), config.get("MYSQL_DB")))
+        config.get("MYSQL_PASSWORD"), config.get("MYSQL_DB")),
+        get_notifier())
     job_tracker.start()
     atexit.register(lambda:job_tracker.cancel())
 

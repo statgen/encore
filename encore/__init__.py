@@ -39,8 +39,8 @@ def create_app(config=None):
     register_helpers(app)
     register_info(app)
 
-    with app.app_context():
-        launch_tracker(app.config)
+    launch_tracker(app)
+
     return app
 
 
@@ -101,11 +101,11 @@ def register_info(app):
     except:
         pass
 
-def launch_tracker(config):
+def launch_tracker(app):
     job_tracker = job_tracking.Tracker(5*60.0, \
-        job_tracking.DatabaseCredentials("localhost", config.get("MYSQL_USER"), 
-        config.get("MYSQL_PASSWORD"), config.get("MYSQL_DB")),
-        get_notifier())
+        job_tracking.DatabaseCredentials("localhost", app.config.get("MYSQL_USER"), 
+        app.config.get("MYSQL_PASSWORD"), app.config.get("MYSQL_DB")),
+        app)
     job_tracker.start()
     atexit.register(lambda:job_tracker.cancel())
 

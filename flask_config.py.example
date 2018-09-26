@@ -1,3 +1,5 @@
+SERVER_NAME = "encore.sph.umich.edu"
+
 JOB_DATA_FOLDER = "./"
 PHENO_DATA_FOLDER = "./"
 GENO_DATA_FOLDER = "./"

@@ -1,6 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
-from flask import current_app, g
+from flask import current_app, g, url_for
 
 def get_notifier():
     if "notifier" not in g:
@@ -24,7 +24,6 @@ class Notifier:
             "\n\nUser Info:\n" + \
             "Name: {}\nEmail: {}\nID:{}".format(user_fullname, user_email, user_id) +  \
             "\n\nReferring Page:\n" + \
-            from_page + \
             "\n"
         subject = "Encore User Feedback ({})".format(user_fullname)
         self.send_mail(to_address, subject, message, {"reply-to": user_email})
@@ -33,6 +32,10 @@ class Notifier:
         to_address = self.help_email 
         subject = "Encore Failed Job ({})".format(job_id[:8])
         message = "The following job has failed:\n\n{}".format(job_id)
+        try:
+            message += "\n\n" + url_for("user.get_job", job_id=job_id)
+        except Exception as e:
+            pass
         self.send_mail(to_address, subject, message)
 
     def send_mail(self, to_address, subject, body, headers=None):

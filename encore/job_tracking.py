@@ -6,6 +6,7 @@ import subprocess
 import os
 import datetime
 import pwd
+from notifier import get_notifier
 
 class Job(object):
     def __init__(self, rid, status):
@@ -21,10 +22,10 @@ class DatabaseCredentials(object):
 
 class Tracker(object):
 
-    def __init__(self, interval, db_credentials, notifier=None):
+    def __init__(self, interval, db_credentials, app):
         self.interval = interval
         self.credentials = db_credentials
-        self.notifier = notifier
+        self.app = app
         self.timer = None
 
     def query_pending_jobs(self, db):
@@ -73,10 +74,11 @@ class Tracker(object):
                     "modified_date = NOW() WHERE id = uuid_to_bin(%s)"
                 cur.execute(sql, (status, job.id))
             db.commit()
-            if self.notifier:
+            notifier = get_notifier()
+            if notifier:
                 try:
                     if status == "failed":
-                        self.notifier.send_failed_job(job.id)
+                        notifier.send_failed_job(job.id)
                 except:
                     pass
 
@@ -108,10 +110,11 @@ class Tracker(object):
                     break
 
     def routine(self):
-        db = MySQLdb.connect(host=self.credentials.host, user=self.credentials.user, passwd=self.credentials.pw, db=self.credentials.db)
-        jobs = self.query_pending_jobs(db)
-        if len(jobs) != 0:
-            self.update_job_statuses(db, jobs)
+        with self.app.app_context():
+            db = MySQLdb.connect(host=self.credentials.host, user=self.credentials.user, passwd=self.credentials.pw, db=self.credentials.db)
+            jobs = self.query_pending_jobs(db)
+            if len(jobs) != 0:
+                self.update_job_statuses(db, jobs)
 
     def timer_callback(self):
         try:

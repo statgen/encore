@@ -1,6 +1,7 @@
 import smtplib
 from email.mime.text import MIMEText
 from flask import current_app, g, url_for
+from job import Job
 
 def get_notifier():
     if "notifier" not in g:
@@ -34,7 +35,9 @@ class Notifier:
         message = "The following job has failed:\n\n{}".format(job_id)
         try:
             message += "\n\n" + url_for("user.get_job", job_id=job_id)
-        except Exception as e:
+            job = Job.get(job_id, current_app.config)
+            message += "\n\nName:{}".format(job.name)
+        except:
             pass
         self.send_mail(to_address, subject, message)
 

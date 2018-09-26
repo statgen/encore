@@ -103,18 +103,23 @@ class Tracker(object):
                         slurm_jobs_found[job_name] = slurm_job
                 else:
                     slurm_jobs_found[job_name] = slurm_job
+        jobs_updated = 0
         for slurm_job in slurm_jobs_found.values():
             for j in jobs:
                 if slurm_job[3][5:] == j.id:
                     self.update_job_status(db, j, slurm_job[1], slurm_job[2])
+                    jobs_updated += 1
                     break
+        return jobs_updated
 
     def routine(self):
         with self.app.app_context():
             db = MySQLdb.connect(host=self.credentials.host, user=self.credentials.user, passwd=self.credentials.pw, db=self.credentials.db)
             jobs = self.query_pending_jobs(db)
             if len(jobs) != 0:
-                self.update_job_statuses(db, jobs)
+                return self.update_job_statuses(db, jobs)
+            else:
+                return 0
 
     def timer_callback(self):
         try:
@@ -124,7 +129,8 @@ class Tracker(object):
         self.start()
 
     def cancel(self):
-        self.timer.cancel()
+        if self.timer:
+            self.timer.cancel()
 
     def start(self):
         self.timer = Timer(self.interval, self.timer_callback)

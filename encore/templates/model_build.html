@@ -56,12 +56,28 @@
 			return errors;
 		}
 
+		function SubmitOnce(button) {
+			this.button = button;
+			this.origText = button.text();
+			this.enable = function() {
+				this.button.text(this.origText);
+				this.button.prop("disabled", false);
+			};
+			this.disable = function() {
+				this.button.text("Submitting...");
+				this.button.prop("disabled", true);
+			};
+		}
+
 		function submitModel(e) {
 			e.preventDefault();
 			var form = $("#model-form");
+			var button = new SubmitOnce(form.find(".submit-button"));
+			button.disable()
 			var formErrors = validateForm(form);
 			if (formErrors.length) {
 				alert("Invalid model:\n" + formErrors.join("\n"));
+				button.enable();
 				return false;
 			}
 			form = form[0];
@@ -78,7 +94,7 @@
 					} catch (ex) {
 						console.warn(ex);
 					}
-					document.window.location = "/";
+					window.location = "/";
 				} else {
 					var message;
 					try {
@@ -89,7 +105,7 @@
 					}
 					alert(message);
 				}
-			//	submitButton.prop("disabled", false);
+				button.enable();
 			}.bind(this), false);
 			xhr.open("POST", form.action);
 			xhr.send(fd);
@@ -497,7 +513,7 @@
 				</div>
 				<div class="form-group">
 					<div class="col-xs-offset-2 col-xs-10">
-						<button class="btn-success">Submit</button>
+						<button class="btn-success submit-button">Submit</button>
 					</div>
 				</div>
             </form>

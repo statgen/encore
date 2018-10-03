@@ -57,6 +57,9 @@ class Job:
         else:
             return None
 
+    def get_owner(self):
+        return User.from_id(self.user_id) 
+
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields  + self.__extfields if hasattr(self, key)} 
         obj["job_id"] = self.job_id

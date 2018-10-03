@@ -41,15 +41,19 @@ class User(UserMixin):
         return User.__get_by_sql_where(db, "email=%s", (email,))
 
     @staticmethod
-    def from_id(rid, db):
+    def from_id(rid, db = None):
+        if db is None:
+            db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         return User.__get_by_sql_where(db, "id=%s", (rid,))
     
 
     @staticmethod
-    def from_session_key(sess_key, db):
+    def from_session_key(sess_key, db=None):
         if sess_key not in session:
             return None
+        if db is None:
+            db = sql_pool.get_conn()
         return User.from_email(session[sess_key], db)
 
     @staticmethod

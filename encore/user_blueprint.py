@@ -32,6 +32,7 @@ def get_job(job_id, job=None):
     pheno = Phenotype.get(job.meta.get("phenotype", ""), current_app.config)
     geno = Genotype.get(job.meta.get("genotype", ""), current_app.config)
     job_obj = job.as_object()
+    owner = job.get_owner()
     if pheno is not None:
         job_obj["details"]["phenotype"] = pheno.as_object()
     if geno is not None:
@@ -40,7 +41,7 @@ def get_job(job_id, job=None):
         job_obj["can_edit"] = True
     else:
         job_obj["can_edit"] = False
-    return render_template("job_details.html", job=job_obj)
+    return render_template("job_details.html", job=job_obj, owner=owner)
 
 @user_area.route("/jobs/<job_id>/output", methods=["get"])
 @check_view_job

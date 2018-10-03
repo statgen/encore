@@ -37,6 +37,8 @@ class Notifier:
             message += "\n\n" + url_for("user.get_job", job_id=job_id)
             job = Job.get(job_id, current_app.config)
             message += "\n\nName:{}".format(job.name)
+            owner = job.get_owner()
+            message += "\n\nUser:{}".format(owner.email)
         except:
             pass
         self.send_mail(to_address, subject, message)

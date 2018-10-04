@@ -5,6 +5,7 @@ import sql_pool
 import MySQLdb
 import sys
 import re
+import hashlib
 from user import User
 from model_factory import ModelFactory
 
@@ -60,6 +61,9 @@ class Job:
     def get_owner(self):
         return User.from_id(self.user_id) 
 
+    def get_job_hash(self):
+        return Job.calc_job_hash(self.meta)
+
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields  + self.__extfields if hasattr(self, key)} 
         obj["job_id"] = self.job_id
@@ -73,6 +77,7 @@ class Job:
                 if "variant_filter" in details:
                     details["variant_filter_desc"] = model.get_filter_desc(details["variant_filter"])
             obj["details"] = details
+            obj["hash"] = self.get_job_hash()
         return obj
 
     @staticmethod
@@ -379,3 +384,11 @@ class Job:
         cur.execute(sql)
         results = cur.fetchall()
         return {"header": {"columns": columns}, "data": results}
+
+    @staticmethod
+    def calc_job_hash(meta):
+        meta_clean = meta.copy();
+        meta_clean.pop("name")
+        meta_clean.pop("user_id")
+        job_def_string = json.dumps(meta_clean, sort_keys=True)
+        return hashlib.md5(job_def_string).hexdigest()

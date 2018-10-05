@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS `jobs` (
   `status_id` INT UNSIGNED NOT NULL,
   `geno_id` BINARY(16),
   `pheno_id` BINARY(16),
+  `param_hash` VARCHAR(32) NULL,
   `is_active` BOOL DEFAULT 1,
   `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modified_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS `jobs` (
   INDEX `fk_jobs_statuses1_idx` (`status_id` ASC),
   INDEX `fk_jobs_geno_idx` (`geno_id` ASC),
   INDEX `fk_jobs_pheno_idx` (`pheno_id` ASC),
+  INDEX `idx_jobs_param_user` (`param_hash` ASC, `user_id` ASC),
   CONSTRAINT `fk_jobs_users`
     FOREIGN KEY (`user_id`)
     REFERENCES `users` (`id`)

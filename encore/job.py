@@ -152,11 +152,14 @@ class Job:
         return results 
 
     @staticmethod
-    def list_all_for_user_by_hash(user_id, param_hash, config=None):
+    def list_all_for_user_by_hash(user_id, param_hash, find_canceled=False, config=None):
         db = sql_pool.get_conn()
-        results = Job.__list_by_sql_where(db, "jobs.param_hash = %s " + 
-            "AND jobs.id IN (SELECT job_id from job_users where user_id=%s) " + 
-            "AND jobs.is_active=1", (param_hash, user_id))
+        where = ("jobs.param_hash = %s " +
+            "AND jobs.id IN (SELECT job_id from job_users where user_id=%s) " +
+            "AND jobs.is_active=1")
+        if not find_canceled:
+            where += " AND jobs.status_id not in (select id from statuses where name='cancelled')"
+        results = Job.__list_by_sql_where(db, where, (param_hash, user_id))
         return results 
 
     @staticmethod

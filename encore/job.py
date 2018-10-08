@@ -61,8 +61,8 @@ class Job:
     def get_owner(self):
         return User.from_id(self.user_id) 
 
-    def get_job_hash(self):
-        return Job.calc_job_hash(self.meta)
+    def get_param_hash(self):
+        return Job.calc_param_hash(self.meta)
 
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields  + self.__extfields if hasattr(self, key)} 
@@ -77,7 +77,7 @@ class Job:
                 if "variant_filter" in details:
                     details["variant_filter_desc"] = model.get_filter_desc(details["variant_filter"])
             obj["details"] = details
-            obj["hash"] = self.get_job_hash()
+            obj["hash"] = self.get_param_hash()
         return obj
 
     @staticmethod
@@ -149,6 +149,14 @@ class Job:
         results = Job.__list_by_sql_where(db, "jobs.geno_id = uuid_to_bin(%s) " + 
             "AND jobs.id IN (SELECT job_id from job_users where user_id=%s) " + 
             "AND jobs.is_active=1", (geno_id, user_id))
+        return results 
+
+    @staticmethod
+    def list_all_for_user_by_hash(user_id, param_hash, config=None):
+        db = sql_pool.get_conn()
+        results = Job.__list_by_sql_where(db, "jobs.param_hash = %s " + 
+            "AND jobs.id IN (SELECT job_id from job_users where user_id=%s) " + 
+            "AND jobs.is_active=1", (param_hash, user_id))
         return results 
 
     @staticmethod
@@ -386,7 +394,7 @@ class Job:
         return {"header": {"columns": columns}, "data": results}
 
     @staticmethod
-    def calc_job_hash(meta):
+    def calc_param_hash(meta):
         meta_clean = meta.copy();
         meta_clean.pop("name")
         meta_clean.pop("user_id")

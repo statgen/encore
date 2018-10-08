@@ -69,6 +69,17 @@
 			};
 		}
 
+		function showDuplicateMessage(dup_jobs) {
+			$box = $("#duplicateModal");
+			list = $("<ul></ul>").append(dup_jobs.map(function(x) {
+				return $("<li></li>").
+					append($("<a></a>", {text: x.job_name, href: x.url_job})).
+					append(" (" + x.creation_date + ")")
+			}));
+			$box.find(".dup-list").empty().append(list);
+			$box.modal();
+		}
+
 		function submitModel(e) {
 			e.preventDefault();
 			var form = $("#model-form");
@@ -95,6 +106,9 @@
 						console.warn(ex);
 					}
 					window.location = "/";
+				} else if (xhr.status==303) {
+					resp = JSON.parse(xhr.responseText);
+					showDuplicateMessage(resp.duplicates)
 				} else {
 					var message;
 					try {
@@ -518,4 +532,22 @@
 				</div>
             </form>
         </div>
+		<div class="modal fade" id="duplicateModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Duplicate Job</h4>
+					</div>
+					<div class="modal-body">
+						<p>You have previously submitted a job with these same
+						parameters. The results will not be different.</p>
+						<div class="dup-list"></div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
 {% endblock %}

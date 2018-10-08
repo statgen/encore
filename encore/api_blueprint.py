@@ -98,6 +98,24 @@ def create_new_job():
         raise ApiException("INVALID MODEL REQUEST")
     # valid model request
     try:
+        param_hash = Job.calc_param_hash(job_desc)
+        possible_dups = Job.list_all_for_user_by_hash(current_user.rid, param_hash)
+        if len(possible_dups)>0:
+            #already ran
+            dup_jobs = []
+            for dup_job in possible_dups:
+                dup_job_id = dup_job["id"]
+                dup_jobs.append({"id": dup_job_id,
+                    "job_name": dup_job["name"],
+                    "creation_date": dup_job["creation_date"],
+                    "url_job": url_for("user.get_job", job_id=dup_job_id)
+                })
+            return ApiResult({"duplicates": dup_jobs}, 303)
+    except Exception as e:
+        print e
+        raise ApiException("ERROR CHECKING FOR DUPLICATE REQUEST")
+    # is not a duplicate
+    try:
         os.mkdir(job_directory)
         job_desc_file = os.path.join(job_directory, "job.json")
         with open(job_desc_file, "w") as outfile:

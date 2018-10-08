@@ -199,10 +199,11 @@ class Job:
         db = sql_pool.get_conn()
         cur = db.cursor()
         cur.execute("""
-            INSERT INTO jobs (id, name, user_id, geno_id, pheno_id, status_id)
-            VALUES (uuid_to_bin(%s), %s, %s, uuid_to_bin(%s), uuid_to_bin(%s),
+            INSERT INTO jobs (id, name, user_id, geno_id, pheno_id, param_hash, status_id)
+            VALUES (uuid_to_bin(%s), %s, %s, uuid_to_bin(%s), uuid_to_bin(%s), %s,
             (SELECT id FROM statuses WHERE name = 'queued'))
-            """, (job_id, values["name"], values["user_id"], values["genotype"], values["phenotype"]))
+            """, (job_id, values["name"], values["user_id"], values["genotype"],
+            values["phenotype"], values["param_hash"]))
         cur.execute("""
             INSERT INTO job_users(job_id, user_id, created_by, role_id)
             VALUES (uuid_to_bin(%s), %s, %s, (SELECT id FROM job_user_roles WHERE role_name = 'owner'))

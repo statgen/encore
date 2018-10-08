@@ -132,6 +132,7 @@ def create_new_job():
         raise ApiException("COULD NOT ADD JOB TO QUEUE")
     # job submitted to queue
     try:
+        job_desc["param_hash"] = param_hash
         Job.create(job_id, job_desc)
     except:
         shutil.rmtree(job_directory)

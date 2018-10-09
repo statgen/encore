@@ -400,7 +400,8 @@ class Job:
     @staticmethod
     def calc_param_hash(meta):
         meta_clean = meta.copy();
-        meta_clean.pop("name")
-        meta_clean.pop("user_id")
+        meta_clean.pop("name", None)
+        meta_clean.pop("user_id", None)
+        meta_clean.pop("response_desc", None)
         job_def_string = json.dumps(meta_clean, sort_keys=True)
         return hashlib.md5(job_def_string).hexdigest()

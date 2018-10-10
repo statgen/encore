@@ -52,7 +52,8 @@ class Phenotype:
 
     @staticmethod
     def get_by_hash_user(filehash, user_id, config):
-        return Phenotype.__get_by_sql_where("md5sum = %s and user_id=%s", (filehash,user_id), config)
+        where = "md5sum=%s and user_id=%s and is_active=1"
+        return Phenotype.__get_by_sql_where(where, (filehash, user_id), config)
     
     @staticmethod
     def __get_by_sql_where(where, vals, config):

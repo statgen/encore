@@ -78,8 +78,8 @@
 		}
 
 		function showDuplicateMessage(dup_jobs) {
-			$box = $("#duplicateModal");
-			list = $("<ul></ul>").append(dup_jobs.map(function(x) {
+			var $box = $("#duplicateModal");
+			var list = $("<ul></ul>").append(dup_jobs.map(function(x) {
 				return $("<li></li>").
 					append($("<a></a>", {text: x.job_name, href: x.url_job})).
 					append(" (" + x.creation_date + ")")
@@ -95,7 +95,12 @@
 			button.disable()
 			var formErrors = validateForm(form);
 			if (formErrors.length) {
-				alert("Invalid model:\n" + formErrors.join("\n"));
+				var $box = $("#errorModal");
+				var list = $("<ul></ul>").append(formErrors.map(function(x) {
+					return $("<li></li>").append(x)
+				}));
+				$box.find(".err-list").empty().append(list);
+				$box.modal();
 				button.enable();
 				return false;
 			}
@@ -541,6 +546,23 @@
 				</div>
             </form>
         </div>
+		<div class="modal fade" id="errorModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Model Error</h4>
+					</div>
+					<div class="modal-body">
+						<p>The following problems were found with your model:</p>
+						<div class="err-list"></div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
 		<div class="modal fade" id="duplicateModal" role="dialog">
 			<div class="modal-dialog">
 				<div class="modal-content">

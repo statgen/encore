@@ -44,6 +44,7 @@ class Phenotype:
         obj = {key: getattr(self, key) for key in self.__dbfields if hasattr(self, key)} 
         obj["pheno_id"] = self.pheno_id
         obj["meta"] = self.meta
+        obj["is_usable"], obj["usable_result"] = self.check_usable()
         return obj
 
     @staticmethod

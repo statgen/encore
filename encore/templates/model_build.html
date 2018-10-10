@@ -21,6 +21,7 @@
 		var genophenoSelect;
 		var filterSelect;
 		var userHasNamedJob = false;
+		var currentPheno;
 		var modelList;
 
 		function bumpFront(val, arr) {
@@ -52,7 +53,14 @@
 			}
 			if (model=="disabled") {
 				errors.push("Requested model not available for selected genotypes");
-			}	
+			}
+			if (currentPheno && !currentPheno.is_usable) {
+				if (currentPheno.usable_result) {
+					errors.push("Phenotype not usable: " + currentPheno.usable_result);
+				} else {
+					errors.push("Phenotype not usable");
+				}
+			}
 			return errors;
 		}
 
@@ -210,6 +218,7 @@
 		function loadPheno(pheno_id) {
 			var url = "{{ url_for('api.get_pheno', pheno_id=':ID:') }}".replace(":ID:", pheno_id);
 			return $.getJSON(url).done(function(pheno) {
+				currentPheno = pheno;
 				covars = pheno.meta.columns;
 				var opts  = [];
 				var hideCols = ["family_id","sample_id","mother_id","father_id"];

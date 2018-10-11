@@ -158,7 +158,7 @@ class Job:
             "AND jobs.id IN (SELECT job_id from job_users where user_id=%s) " +
             "AND jobs.is_active=1")
         if not find_canceled:
-            where += " AND jobs.status_id not in (select id from statuses where name='cancelled')"
+            where += " AND jobs.status_id not in (select id from statuses where name='canceled')"
         results = Job.__list_by_sql_where(db, where, (param_hash, user_id))
         return results 
 
@@ -227,6 +227,16 @@ class Job:
         db = sql_pool.get_conn()
         cur = db.cursor()
         cur.execute(sql, values + [job_id])
+        db.commit()
+
+    @staticmethod
+    def cancel(job_id):
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute("""
+            UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name = 'canceling')
+            WHERE id = uuid_to_bin(%s)
+            """, (job_id, ))
         db.commit()
 
     @staticmethod

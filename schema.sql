@@ -195,14 +195,14 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 -- Data for table `statuses` and `job_user_roles`
 -- -----------------------------------------------------
 START TRANSACTION;
-INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'created');
-INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'queued');
-INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'started');
-INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'cancel_requested');
-INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'cancelled');
-INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'failed');
-INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'succeeded');
-INSERT INTO `statuses` (`id`, `name`) VALUES (DEFAULT, 'quarantined');
+INSERT INTO `statuses` (`id`, `name`) VALUES (1, 'created');
+INSERT INTO `statuses` (`id`, `name`) VALUES (2, 'queued');
+INSERT INTO `statuses` (`id`, `name`) VALUES (3, 'started');
+INSERT INTO `statuses` (`id`, `name`) VALUES (4, 'canceling');
+INSERT INTO `statuses` (`id`, `name`) VALUES (5, 'canceled');
+INSERT INTO `statuses` (`id`, `name`) VALUES (6, 'failed');
+INSERT INTO `statuses` (`id`, `name`) VALUES (7, 'succeeded');
+INSERT INTO `statuses` (`id`, `name`) VALUES (8, 'quarantined');
 
 INSERT INTO `job_user_roles` (`id`, `role_name`) VALUES (0, 'viewer');
 INSERT INTO `job_user_roles` (`id`, `role_name`) VALUES (1, 'owner');

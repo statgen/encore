@@ -32,7 +32,7 @@ class Tracker(object):
 
         sql = ("SELECT bin_to_uuid(jobs.id) AS id, statuses.name AS status FROM jobs "
                "LEFT JOIN statuses ON statuses.id = jobs.status_id "
-               "WHERE (statuses.name='queued' OR statuses.name='started')")
+               "WHERE (statuses.name='queued' OR statuses.name='started' or statuses.name='canceling')")
 
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         cur.execute(sql)
@@ -51,7 +51,7 @@ class Tracker(object):
             status = "failed"
             reason = "Insufficient resource allocation"
         elif slurm_status.startswith("CANCELLED"):
-            status = "cancelled"
+            status = "canceled"
         elif slurm_status == "PENDING" or slurm_status == "QUEUED":
             status = "queued"
         elif slurm_status == "TIMEOUT":

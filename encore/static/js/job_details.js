@@ -86,8 +86,7 @@ function init_job_cancel_button(job_id, selector) {
         evt.preventDefault();
         var url = $(evt.target).data("action");
         $.post(url).done( function() {
-            alert("Cancellation in progress..."); 
-            document.location = "../";
+            document.location.reload();
         }).fail(function(resp) {
             var msg = "Cancellation Failed";
             if(resp && resp.responseJSON && resp.responseJSON.error) {

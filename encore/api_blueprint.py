@@ -205,6 +205,11 @@ def cancel_job(job_id, job=None):
     except Exception as exception:
         print exception
         raise ApiException("COULD NOT CANCEL JOB")
+    try:
+        Job.cancel(job_id)
+    except Exception as exception:
+        print exception
+        raise ApiException("COULD NOT UPDATE DB")
     return ApiResult({"message": "Job canceled"})
 
 @api.route("/jobs/<job_id>/results", methods=["get"])

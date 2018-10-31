@@ -36,7 +36,13 @@ class EpactsModel(BaseModel):
         return ped_writer
 
     def get_analysis_commands(self, model_spec, geno, ped):
-        cmd = "{} {}".format(self.app_config.get("ANALYSIS_BINARY", "epacts"), self.cmd) + \
+        pipeline = model_spec.get("pipeline_version", "epacts-3.3")
+        binary = self.app_config.get("EPACTS_BINARY", None)
+        if isinstance(binary, dict):
+            binary = binary.get(pipeline, None)
+        if not binary:
+            raise Exception("Unable to find EPACTS binary (pipeline: {})".format(pipeline))
+        cmd = "{} {}".format(binary, self.cmd) + \
             " --vcf {}".format(geno.get_vcf_path(1)) + \
             " --ped {}".format(ped.get("path")) +  \
             " --field GT" + \
@@ -126,6 +132,9 @@ class EpactsModel(BaseModel):
         return resp
 
     def validate_model_spec(self, model_spec):
+        if not "pipeline_version" in model_spec:
+            if "EPACTS_VERSION" in self.app_config:
+                model_spec["pipeline_version"] = self.app_config["EPACTS_VERSION"]
         if "variant_filter" in model_spec:
             if hasattr(self, "filters"):
                 vf = model_spec["variant_filter"]

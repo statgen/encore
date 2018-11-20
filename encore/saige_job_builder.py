@@ -62,6 +62,9 @@ class SaigeModel(BaseModel):
 
     def get_postprocessing_commands(self, geno, result_file="./results.txt.gz"):
         cmds = []
+        cmds.append("zcat -f {} | ".format(result_file) + \
+            'awk -F"\\t" \'NR==1 || ($8 > 0 && $12 < 0.001) {OFS="\\t"; print }\' | ' + \
+            "{} -c > output.filtered.001.gz".format(self.app_config.get("BGZIP_BINARY", "bgzip")))
         if self.app_config.get("MANHATTAN_BINARY"):
             cmd  = "{} {} ./manhattan.json".format(self.app_config.get("MANHATTAN_BINARY", ""), result_file)
             cmds.append(cmd)

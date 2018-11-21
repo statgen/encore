@@ -510,6 +510,18 @@ def get_phenotype_jobs(pheno_id):
     jobs = Job.list_all_for_phenotype(pheno_id, current_app.config)
     return ApiResult(jobs)
 
+@api.route("/phenos/<pheno_id>/overlap/<geno_id>", methods=["GET"])
+@check_edit_pheno
+def get_pheno_sample_overlap(pheno_id, geno_id, pheno=None):
+    try:
+        p = Phenotype.get(pheno_id, current_app.config)
+        samples = p.get_pheno_reader().get_samples()
+        g = set(Genotype.get(geno_id, current_app.config).get_samples())
+        overlap = [sample for sample in samples if sample in g]
+        return ApiResult({"samples": len(overlap)})
+    except Exception as e:
+        raise ApiException("COULD NOT FIND OVERLAP", details=str(e))
+
 def suggest_pheno_name(filename):
     base, ext = os.path.splitext(os.path.basename(filename))
     base = base.replace("_", " ")

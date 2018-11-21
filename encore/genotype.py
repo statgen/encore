@@ -132,8 +132,8 @@ class Genotype:
         samples = None
         if path:
             with open(path) as infile:
-                samples = infile.readlines()
-        return samples
+                for sample in infile:
+                    yield sample.rstrip("\n")
 
     def get_samples_path(self):
         samples_path = self.meta.get("samples_path", None)

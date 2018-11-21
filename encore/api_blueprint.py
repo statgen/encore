@@ -510,6 +510,25 @@ def get_phenotype_jobs(pheno_id):
     jobs = Job.list_all_for_phenotype(pheno_id, current_app.config)
     return ApiResult(jobs)
 
+@api.route("/phenos/<pheno_id>/overlap", methods=["GET"])
+@check_edit_pheno
+def get_pheno_sample_overlap_all(pheno_id, pheno=None):
+    try:
+        genos = Genotype.list_all_for_user(current_user.rid)
+        overlap_all = []
+        for geno in genos:
+            print geno["id"]
+            p = Phenotype.get(pheno_id, current_app.config)
+            samples = p.get_pheno_reader().get_samples()
+            g = set(Genotype.get(geno["id"], current_app.config).get_samples())
+            if len(g)>0:
+                overlap = [sample for sample in samples if sample in g]
+                geno["overlap"] = len(overlap)
+                overlap_all.append(geno)
+        return ApiResult(overlap_all)
+    except Exception as e:
+        raise ApiException("COULD NOT FIND OVERLAP", details=str(e))
+
 @api.route("/phenos/<pheno_id>/overlap/<geno_id>", methods=["GET"])
 @check_edit_pheno
 def get_pheno_sample_overlap(pheno_id, geno_id, pheno=None):
@@ -517,8 +536,11 @@ def get_pheno_sample_overlap(pheno_id, geno_id, pheno=None):
         p = Phenotype.get(pheno_id, current_app.config)
         samples = p.get_pheno_reader().get_samples()
         g = set(Genotype.get(geno_id, current_app.config).get_samples())
-        overlap = [sample for sample in samples if sample in g]
-        return ApiResult({"samples": len(overlap)})
+        if len(g)>0:
+            overlap = [sample for sample in samples if sample in g]
+            return ApiResult({"samples": len(overlap)})
+        else:
+            raise Exception("NO SAMPLES LIST STORED WITH GENOTYPES")
     except Exception as e:
         raise ApiException("COULD NOT FIND OVERLAP", details=str(e))
 

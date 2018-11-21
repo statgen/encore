@@ -129,16 +129,15 @@ class Genotype:
 
     def get_samples(self):
         path = self.get_samples_path()
-        samples = None
         if path:
             with open(path) as infile:
                 for sample in infile:
                     yield sample.rstrip("\n")
 
     def get_samples_path(self):
-        samples_path = self.meta.get("samples_path", None)
+        samples_path = self.meta.get("samples_path", "")
         samples_path = self.relative_path(samples_path)
-        if os.path.exists(samples_path):
+        if os.path.isfile(samples_path):
             return samples_path
         else:
             return None

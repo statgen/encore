@@ -293,6 +293,14 @@ class PhenoReader:
             for row in cvr:
                 yield row
 
+    def get_samples(self):
+        sample_col = next(iter([x for x in self.get_columns() if x["class"]=="sample_id"]), None)
+        if not sample_col:
+            raise "Could not find sample ID column" 
+        sample_col_idx = self.get_column_indexes()[sample_col["name"]]
+        for row in self.row_extractor():
+            yield row[sample_col_idx]
+
     @staticmethod
     def get_file_type(file):
         p = subprocess.Popen(["file", "-b", file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)

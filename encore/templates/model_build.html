@@ -40,18 +40,28 @@
 			return null;
 		}
 
+		function findModel(model) {
+			return modelList.find(function(x) {return x.code && x.code==model;})
+		};
+
 		function validateForm(form) {
 			var errors = [];
 			var resp =  responseSelect.val();
 			var covar = covariateSelect.val() || [];
-			var model = $("input[name=model]:checked", "#model-form").attr("disabled");
+			var modelInput = $("input[name=model]:checked", "#model-form")
 			if (resp == "") {
 				errors.push("Missing response");
 			}
 			if (covar.indexOf(resp)>-1) {
 				errors.push("Response cannot also be a covariate");
 			}
-			if (model=="disabled") {
+			var logtran = $("input[name=response_invnorm]", "#model-form").prop("checked");
+			var modelObj = findModel(modelInput.val());
+			if (modelObj.response_class=="binary" && logtran) {
+				errors.push("Cannot perform normalization on response for binary outcomes");
+			}
+
+			if (modelInput.attr("disabled")=="disabled") {
 				errors.push("Requested model not available for selected genotypes");
 			}
 			if (currentPheno && !currentPheno.is_usable) {
@@ -369,9 +379,6 @@
 				modelList = resp;
 				var modelSelect = $("#model-type");
 				var userChoices = [];
-				function findModel(model) {
-					return modelList.find(function(x) {return x.code && x.code==model;})
-				};
 				filterSelect = $("#filter-type").select2({
 					data: [""],
 					minimumResultsForSearch: 10

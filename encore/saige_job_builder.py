@@ -144,6 +144,7 @@ class BinarySaigeModel(SaigeModel):
     model_name = "Saige Logistic Mixed Model"
     model_desc = "Fast logistic regression model with kinship adjustment"
     depends = ["sav", "snps"]
+    response_class = "binary"
 
     def __init__(self, working_directory, config):
         SaigeModel.__init__(self, working_directory, config)

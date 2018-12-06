@@ -9,7 +9,8 @@ class ModelFactory:
         def desc(x):
             return {"code": x.model_code, "name": x.model_name, "description": x.model_desc,
                 "depends": getattr(x, "depends",  []),
-                "filters": getattr(x, "filters",  [])}
+                "filters": getattr(x, "filters",  []),
+                "response_class": getattr(x, "response_class", "*")}
         show_models = {x: 1 for x in config.get("AVAIL_MODELS", [])}
         def can_show(x):
             return len(show_models)==0 or x.model_code in show_models

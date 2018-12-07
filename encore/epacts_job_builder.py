@@ -42,8 +42,14 @@ class EpactsModel(BaseModel):
             binary = binary.get(pipeline, None)
         if not binary:
             raise Exception("Unable to find EPACTS binary (pipeline: {})".format(pipeline))
+        infile = geno.get_sav_path(1, must_exist=True)
+        if not infile:
+            infile = geno.get_vcf_path(1, must_exist=True)
+        if not infile:
+            raise Exception("Unable to find genotype input (genotype: {})".format(geno.geno_id))
+        infile = geno.get_sav_path(1)
         cmd = "{} {}".format(binary, self.cmd) + \
-            " --vcf {}".format(geno.get_vcf_path(1)) + \
+            " --vcf {}".format(infile) + \
             " --ped {}".format(ped.get("path")) +  \
             " --field GT" + \
             " --sepchr" + \
@@ -196,7 +202,7 @@ class SkatOEpactsModel(EpactsModel):
         opts += ["--test skat",
             "--skat-o",
             "--groupf {}".format(geno.get_groups_path(group)),
-            "--unit 500"]
+            "--unit 350"]
         return opts
     
 class MMSkatOEpactsModel(EpactsModel):
@@ -216,7 +222,7 @@ class MMSkatOEpactsModel(EpactsModel):
             "--skat-o",
             "--groupf {}".format(geno.get_groups_path(group)),
             "--kin {}".format(geno.get_kinship_path()),
-            "--unit 500"]
+            "--unit 350"]
         return opts
 
 class MMSkatEpactsModel(EpactsModel):

@@ -692,6 +692,18 @@ def get_job_counts():
         print e
         raise ApiException("COULD COUNT JOBS", details=str(e))
 
+@api.route("/users/counts", methods=["GET"])
+@admin_required
+def get_user_counts():
+    try:
+        by = request.args.get("by")
+        filters = request.args.get("filter")
+        results = User.counts(by=by, filters=filters, config=current_app.config)
+        return ApiResult(results)
+    except Exception as e:
+        print e
+        raise ApiException("COULD COUNT JOBS", details=str(e))
+
 @api.route("/phenos/<pheno_id>/purge", methods=["DELETE"])
 @admin_required
 def purge_pheno(pheno_id):

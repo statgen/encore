@@ -7,13 +7,15 @@
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 
 <script type="text/javascript">
-		var baseurl = "{{ url_for('api.get_job_counts') }}";
+		var basejoburl = "{{ url_for('api.get_job_counts') }}";
+		var baseuserurl = "{{ url_for('api.get_user_counts') }}";
 		var reports = [
-			{title: "Total Jobs By Status", action: draw_totals},
-			{title: "Successful Jobs By User", action: draw_users},
-			{title: "Successful Jobs By Month", action: draw_months},
-			{title: "Successful Jobs By User/Month", action: draw_user_months},
-			{title: "Successful Jobs By Genotype", action: draw_genos}
+			{title: "Total Jobs By Status", action: draw_job_totals},
+			{title: "Successful Jobs By User", action: draw_job_users},
+			{title: "Successful Jobs By Month", action: draw_job_months},
+			{title: "Successful Jobs By User/Month", action: draw_job_user_months},
+			{title: "Successful Jobs By Genotype", action: draw_job_genos},
+			{title: "New Analysts Jobs By Month", action: draw_user_months}
 		];
 		var table;
 		function draw_table(data, columns) {
@@ -32,24 +34,28 @@
 				draw_table(data.data, data.header.columns)
 			})
 		}
-		function draw_totals() {
-			var url = baseurl + "?by=status";
+		function draw_job_totals() {
+			var url = basejoburl + "?by=status";
 			fetch_and_draw(url);
 		}
-		function draw_users() {
-			var url = baseurl + "?by=user&filter=successful";
+		function draw_job_users() {
+			var url = basejoburl + "?by=user&filter=successful";
 			fetch_and_draw(url);
 		}
-		function draw_months() {
-			var url = baseurl + "?by=month&filter=successful";
+		function draw_job_months() {
+			var url = basejoburl + "?by=month&filter=successful";
+			fetch_and_draw(url);
+		}
+		function draw_job_user_months() {
+			var url = basejoburl + "?by=month,user&filter=successful";
+			fetch_and_draw(url);
+		}
+		function draw_job_genos() {
+			var url = basejoburl + "?by=geno&filter=successful";
 			fetch_and_draw(url);
 		}
 		function draw_user_months() {
-			var url = baseurl + "?by=month,user&filter=successful";
-			fetch_and_draw(url);
-		}
-		function draw_genos() {
-			var url = baseurl + "?by=geno&filter=successful";
+			var url = baseuserurl + "?by=creation-month&filter=can-analyze";
 			fetch_and_draw(url);
 		}
 		function init_report_selector() {

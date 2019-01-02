@@ -113,3 +113,50 @@ class User(UserMixin):
         obj = {key: getattr(self, key) for key in self.__dbfields if hasattr(self, key)} 
         obj["id"] = self.rid
         return obj
+
+    @staticmethod
+    def counts(by=None, filters=None, config=None):
+        if not by:
+            by = []
+        elif isinstance(by, basestring):
+            by = by.split(",")
+        if not filters:
+            filters = []
+        elif isinstance(filters, basestring):
+            filters = filters.split(",")
+        select = []
+        group_by = []
+        columns = []
+        wheres = []
+        for field in by:
+            if field=="creation-month":
+                select += [ "DATE_FORMAT(users.creation_date, '%Y-%m') as month"]
+                group_by += [ "DATE_FORMAT(users.creation_date, '%Y-%m')"]
+                columns += ["month"]
+            elif field == "creation-year":
+                select += ["year(users.creation_date) as year"]
+                group_by += ["year(users.creation_date)"]
+                columns += ["year"]
+            else:
+                raise Exception("Unrecognized field: {}".format(field))
+        for filt in filters:
+            if filt == "can-analyze":
+                wheres += ["users.can_analyze = 1"]
+            elif filt == "active":
+                wheres += ["users.is_active = 1"]
+            else:
+                raise Exception("Unrecognized filter: {}".format(filt))
+        select += ["COUNT(*) as count"]
+        columns += ["count"]
+        sql = "SELECT " + ", ".join(select)
+        sql += " FROM users"
+        if len(wheres):
+            sql += " WHERE (" + "), (".join(wheres) + ")"
+        if len(group_by):
+            sql += " GROUP BY " + ", ".join(group_by)
+
+        db = sql_pool.get_conn()
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute(sql)
+        results = cur.fetchall()
+        return {"header": {"columns": columns}, "data": results}

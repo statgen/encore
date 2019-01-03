@@ -116,6 +116,8 @@ class User(UserMixin):
 
     @staticmethod
     def counts(by=None, filters=None, config=None):
+        join_jobs = False
+        count = "COUNT(DISTINCT users.id)"
         if not by:
             by = []
         elif isinstance(by, basestring):
@@ -137,6 +139,16 @@ class User(UserMixin):
                 select += ["year(users.creation_date) as year"]
                 group_by += ["year(users.creation_date)"]
                 columns += ["year"]
+            elif field == "job-month":
+                select += [ "DATE_FORMAT(jobs.creation_date, '%Y-%m') as month"]
+                group_by += [ "DATE_FORMAT(jobs.creation_date, '%Y-%m')"]
+                columns += ["month"]
+                join_jobs = True
+            elif field == "job-year":
+                select += ["year(jobs.creation_date) as year"]
+                group_by += ["year(jobs.creation_date)"]
+                columns += ["year"]
+                join_jobs = True
             else:
                 raise Exception("Unrecognized field: {}".format(field))
         for filt in filters:
@@ -146,12 +158,17 @@ class User(UserMixin):
                 wheres += ["users.is_active = 1"]
             elif filt == "has-logged-in":
                 wheres += ["users.last_login_date is not null"]
+            elif filt == "successful":
+                wheres += ["jobs.status_id = (select id from statuses where name = 'succeeded')"]
+                join_jobs = True
             else:
                 raise Exception("Unrecognized filter: {}".format(filt))
-        select += ["COUNT(*) as count"]
+        select += [count + " as count"]
         columns += ["count"]
         sql = "SELECT " + ", ".join(select)
         sql += " FROM users"
+        if join_jobs:
+            sql += " JOIN jobs on users.id=jobs.user_id"
         if len(wheres):
             sql += " WHERE (" + "), (".join(wheres) + ")"
         if len(group_by):

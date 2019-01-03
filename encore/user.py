@@ -144,6 +144,8 @@ class User(UserMixin):
                 wheres += ["users.can_analyze = 1"]
             elif filt == "active":
                 wheres += ["users.is_active = 1"]
+            elif filt == "has-logged-in":
+                wheres += ["users.last_login_date is not null"]
             else:
                 raise Exception("Unrecognized filter: {}".format(filt))
         select += ["COUNT(*) as count"]

@@ -15,7 +15,8 @@
 			{title: "Successful Jobs By Month", action: draw_job_months},
 			{title: "Successful Jobs By User/Month", action: draw_job_user_months},
 			{title: "Successful Jobs By Genotype", action: draw_job_genos},
-			{title: "New Analysts By Month", action: draw_user_months}
+			{title: "New Analysts By Month", action: draw_user_months},
+			{title: "Active Users (have logged in)", action: draw_user_active}
 		];
 		var table;
 		function draw_table(data, columns) {
@@ -56,6 +57,10 @@
 		}
 		function draw_user_months() {
 			var url = baseuserurl + "?by=creation-month&filter=can-analyze";
+			fetch_and_draw(url);
+		}
+		function draw_user_active() {
+			var url = baseuserurl + "?filter=has-logged-in";
 			fetch_and_draw(url);
 		}
 		function init_report_selector() {

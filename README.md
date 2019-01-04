@@ -31,7 +31,7 @@ To run a simple dev instance of Encore, you can run
 Currently Encore is deployed using WSGI with apache. You can 
 install apache and the WSGI module with
 
-    apt-get install apache2 python-setuptools libapache2-mod-wsgi
+    apt-get install apache2 python-setuptools libapache2-mod-wsgi python3-dev libmysqlclient-dev
 
 A sample wsgi file is included at encore.wsgi.example. You should
 copy this file to encore.wsgi and fill in the correct path

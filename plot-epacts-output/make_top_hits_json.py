@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-from __future__ import print_function, division, absolute_import
+
 
 import os.path
 import sys
@@ -97,7 +97,7 @@ class AssocResultReader:
             pos = int(v[column_indices["BEGIN"]])
             pval = float(v[column_indices["PVALUE"]])
             marker_id = v[column_indices["MARKER_ID"]]
-            other = { k: v[i] for k,i in column_indices.iteritems()};
+            other = { k: v[i] for k,i in column_indices.items()};
             match = AssocResultReader._single_id_regex.match(marker_id)
             if match:
                 chrom2, pos2, ref2, alt2, name2 = match.groups()

@@ -63,11 +63,11 @@ if __name__ == "__main__":
     a = [10,4,9,2,20,16]
     ec1 = ExtremeCollection(3,a)
     adds = [0,10,50,4,4]
-    print ", ".join(map(str, ec1)) + " [" + str(len(ec1)) + "]"
+    print(", ".join(map(str, ec1)) + " [" + str(len(ec1)) + "]")
     for a in adds:
-        print "adding {}".format(a)
+        print("adding {}".format(a))
         b = ec1.insert(a)
-        print ", ".join(map(str, ec1)) + " [" + str(len(ec1)) + "]"
+        print(", ".join(map(str, ec1)) + " [" + str(len(ec1)) + "]")
         if b:
-            print "bumped: {}".format(b)
+            print("bumped: {}".format(b))
 

@@ -1,9 +1,9 @@
 import os
 import shutil
 import json
-import sql_pool
+from . import sql_pool
 import MySQLdb
-from pheno_reader import PhenoReader
+from .pheno_reader import PhenoReader
 
 class Phenotype:
     __dbfields = ["name","orig_file_name","md5sum","user_id","creation_date", "is_active"]
@@ -79,8 +79,9 @@ class Phenotype:
                meta = dict()
             p = Phenotype(pheno_id, meta)
             p.root_path = pheno_folder
-            map(lambda x: setattr(p, x, result[x]), \
-                (val for val in Phenotype.__dbfields if val in result))
+            for x in Phenotype.__dbfields:
+                if x in result:
+                    setattr(p, x, result[x])
             return p
         else:
             return None
@@ -129,8 +130,8 @@ class Phenotype:
         else:
             raise Exception("Missing required field: id")
         updateable_fields = ["name", "user_id", "orig_file_name", "md5sum"]
-        fields = values.keys() 
-        values = values.values()
+        fields = list(values.keys()) 
+        values = list(values.values())
         bad_fields = [x for x in fields if x not in updateable_fields]
         if len(bad_fields)>0:
             raise Exception("Invalid field: {}".format(", ".join(bad_fields)))
@@ -145,8 +146,8 @@ class Phenotype:
     @staticmethod
     def update(pheno_id, new_values):
         updateable_fields = ["name"]
-        fields = new_values.keys() 
-        values = new_values.values()
+        fields = list(new_values.keys()) 
+        values = list(new_values.values())
         bad_fields = [x for x in fields if x not in updateable_fields]
         if len(bad_fields)>0:
             raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))

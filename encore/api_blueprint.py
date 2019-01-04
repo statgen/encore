@@ -1,15 +1,15 @@
 from flask import Blueprint, Response, json, render_template, current_app, request, send_file, url_for
 from flask_login import current_user, login_required
-from user import User
-from job import Job 
-from auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno, admin_required
-from genotype import Genotype
-from phenotype import Phenotype
-from notice import Notice
-from pheno_reader import PhenoReader
-from slurm_queue import SlurmJob, get_queue
-from model_factory import ModelFactory
-from notifier import get_notifier
+from .user import User
+from .job import Job 
+from .auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno, admin_required
+from .genotype import Genotype
+from .phenotype import Phenotype
+from .notice import Notice
+from .pheno_reader import PhenoReader
+from .slurm_queue import SlurmJob, get_queue
+from .model_factory import ModelFactory
+from .notifier import get_notifier
 import os
 import re
 import gzip
@@ -94,7 +94,7 @@ def create_new_job():
     try:
         model.validate_model_spec(job_desc)
     except Exception as e:
-        print e
+        print(e)
         raise ApiException("INVALID MODEL REQUEST")
     # valid model request
     try:
@@ -112,7 +112,7 @@ def create_new_job():
                 })
             return ApiResult({"duplicates": dup_jobs}, 303)
     except Exception as e:
-        print e
+        print(e)
         raise ApiException("ERROR CHECKING FOR DUPLICATE REQUEST")
     # is not a duplicate
     try:
@@ -126,7 +126,7 @@ def create_new_job():
     try:
         job.submit_job(job_desc)
     except Exception as e:
-        print e
+        print(e)
         traceback.print_exc(file=sys.stdout)
         shutil.rmtree(job_directory)
         raise ApiException("COULD NOT ADD JOB TO QUEUE")
@@ -203,12 +203,12 @@ def cancel_job(job_id, job=None):
     try:
         slurmjob.cancel_job()
     except Exception as exception:
-        print exception
+        print(exception)
         raise ApiException("COULD NOT CANCEL JOB")
     try:
         Job.cancel(job_id)
     except Exception as exception:
-        print exception
+        print(exception)
         raise ApiException("COULD NOT UPDATE DB")
     return ApiResult({"message": "Job canceled"})
 
@@ -294,7 +294,7 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
         else:
             return send_file(output_file, as_attachment=as_attach, mimetype=mimetype)
     except Exception as e:
-        print e
+        print(e)
         return "File Not Found", 404
 
 @api.route("/jobs/<job_id>/tables/top", methods=["GET"])
@@ -389,7 +389,7 @@ def get_job_zoom(job_id, job=None):
                 json_response_data["MAF"].append(str(maf))
             if "BETA" in headerpos:
                 json_response_data["BETA"].append(r[headerpos["BETA"]])
-    return ApiResult(json_response_data, header={"variant_columns": json_response_data.keys()}) 
+    return ApiResult(json_response_data, header={"variant_columns": list(json_response_data.keys())}) 
 
 def merge_info_stats(info, info_stats):
     info_extract = re.compile(r'([A-Z0-9_]+)(?:=([^;]+))?(?:;|$)')
@@ -422,7 +422,7 @@ def get_job_variant_pheno(job_id, job=None):
     try:
         variant = reader.get_variant(chrom, pos, variant_id, annotate=True)
     except Exception as e:
-        print e
+        print(e)
         raise ApiException("Unable to retrieve genotypes", details=str(e))
     info_stats = geno.get_info_stats()
     info = variant["INFO"]
@@ -431,11 +431,11 @@ def get_job_variant_pheno(job_id, job=None):
     variant["INFO"] = merge_info_stats(info, info_stats)
     phenos = job.get_adjusted_phenotypes()
     call_pheno = collections.defaultdict(list) 
-    for sample, value in phenos.iteritems():
+    for sample, value in phenos.items():
         sample_geno = calls[sample]
         call_pheno[sample_geno].append(value)
     summary = {}
-    for genotype, observations in call_pheno.iteritems():
+    for genotype, observations in call_pheno.items():
         obs_array = np.array(observations)
         q1 = np.percentile(obs_array, 25)
         q3 = np.percentile(obs_array, 75)
@@ -517,7 +517,7 @@ def get_pheno_sample_overlap_all(pheno_id, pheno=None):
         genos = Genotype.list_all_for_user(current_user.rid)
         overlap_all = []
         for geno in genos:
-            print geno["id"]
+            print(geno["id"])
             p = Phenotype.get(pheno_id, current_app.config)
             samples = p.get_pheno_reader().get_samples()
             g = set(Genotype.get(geno["id"], current_app.config).get_samples())
@@ -579,7 +579,7 @@ def post_pheno():
         pheno_file.save(pheno_file_path)
         md5 =  hashfile(open(pheno_file_path, "rb")).encode("hex")
     except Exception as e:
-        print "File saving error: %s" % e
+        print("File saving error: %s" % e)
         raise ApiException("COULD NOT SAVE FILE")
     # file has been saved to server
     existing_pheno = Phenotype.get_by_hash_user(md5, user.rid, current_app.config)
@@ -606,7 +606,7 @@ def post_pheno():
             "orig_file_name": orig_file_name,
             "md5sum": md5})
     except Exception as e:
-        print "Databse error: %s" % e
+        print("Databse error: %s" % e)
         shutil.rmtree(pheno_directory)
         raise ApiException("COULD NOT SAVE TO DATABASE")
     # file has been saved to DB
@@ -667,7 +667,7 @@ def add_user():
         result["created"] = True
         return ApiResult(result)
     except Exception as e:
-        print e
+        print(e)
         raise ApiException("COULD NOT ADD USER", details=str(e))
 
 @api.route("/jobs/<job_id>/purge", methods=["DELETE"])
@@ -689,7 +689,7 @@ def get_job_counts():
         results = Job.counts(by=by, filters=filters, config=current_app.config)
         return ApiResult(results)
     except Exception as e:
-        print e
+        print(e)
         raise ApiException("COULD COUNT JOBS", details=str(e))
 
 @api.route("/users/counts", methods=["GET"])
@@ -701,7 +701,7 @@ def get_user_counts():
         results = User.counts(by=by, filters=filters, config=current_app.config)
         return ApiResult(results)
     except Exception as e:
-        print e
+        print(e)
         raise ApiException("COULD COUNT JOBS", details=str(e))
 
 @api.route("/phenos/<pheno_id>/purge", methods=["DELETE"])
@@ -746,7 +746,7 @@ def post_help():
             current_user)
         return ApiResult({"sent": True, "from_page": from_page})
     except Exception as e:
-        print e
+        print(e)
         raise ApiException("FAILED TO SEND MESSAGE", details=str(e)) 
 
 @api.route("/notices", methods=["GET"])

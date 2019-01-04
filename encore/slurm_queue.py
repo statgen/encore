@@ -2,7 +2,7 @@ import json
 import os
 import subprocess
 import pwd
-from model_factory import ModelFactory
+from .model_factory import ModelFactory
 
 class SlurmJob:
 
@@ -49,8 +49,8 @@ class SlurmJob:
                 subprocess.check_call([sbatch, batch_script_path], stdout=f)
             except subprocess.CalledProcessError as e:
                 # log to server log
-                print "SBATCH ERROR"
-                print e
+                print("SBATCH ERROR")
+                print(e)
                 raise Exception("Could not queue job") 
             except OSError:
                 raise Exception("Could not find sbatch")
@@ -73,8 +73,8 @@ class SlurmJob:
                 subprocess.check_call([sbatch, batch_script_path], stdout=f)
             except subprocess.CalledProcessError as e:
                 # log to server log
-                print "SBATCH ERROR"
-                print e
+                print("SBATCH ERROR")
+                print(e)
                 raise Exception("Could not queue job") 
             except OSError:
                 raise Exception("Could not find sbatch")

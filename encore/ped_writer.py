@@ -1,4 +1,5 @@
 import re
+from functools import reduce
 
 def sanitize(x):
     if re.match(r'^[^A-Za-z]', x):
@@ -255,7 +256,7 @@ class PedWriter:
         return row_count
 
 if __name__ == "__main__":
-    from pheno_reader import PhenoReader
+    from .pheno_reader import PhenoReader
     import json
     import os
     import sys
@@ -267,7 +268,7 @@ if __name__ == "__main__":
     def init(filename):
         pr = PhenoReader(filename)
         meta = pr.infer_meta()
-        print json.dumps(meta)
+        print(json.dumps(meta))
 
     def get_pr(filename):
         meta = None

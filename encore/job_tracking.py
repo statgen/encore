@@ -6,7 +6,7 @@ import subprocess
 import os
 import datetime
 import pwd
-from notifier import get_notifier
+from .notifier import get_notifier
 
 class Job(object):
     def __init__(self, rid, status):
@@ -37,7 +37,7 @@ class Tracker(object):
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         cur.execute(sql)
         jobs = []
-        for x in xrange(0, cur.rowcount):
+        for x in range(0, cur.rowcount):
             row = cur.fetchone()
             jobs.append(Job(row["id"], row["status"]))
         return jobs

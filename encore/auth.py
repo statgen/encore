@@ -1,7 +1,7 @@
 import inspect
 from functools import wraps
-from job import Job
-from phenotype import Phenotype
+from .job import Job
+from .phenotype import Phenotype
 from flask import current_app
 from flask_login import current_user
 

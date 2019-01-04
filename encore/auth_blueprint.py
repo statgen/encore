@@ -1,15 +1,15 @@
 from flask import Blueprint, render_template, request, json, current_app, redirect, session, url_for, redirect
 from flask_login import LoginManager, logout_user, login_required, current_user
-import urllib2
+import requests
 from rauth import OAuth2Service
-from user import User
+from .user import User
 import flask_login
-import sql_pool
+from . import sql_pool
 import jwt
 import datetime
 
-googleinfo = urllib2.urlopen("https://accounts.google.com/.well-known/openid-configuration")
-google_params = json.load(googleinfo)
+googleinfo = requests.get("https://accounts.google.com/.well-known/openid-configuration")
+google_params = googleinfo.json()
 
 auth = Blueprint("auth", __name__)
 

@@ -1,11 +1,11 @@
 from flask import Blueprint, Response, json, render_template, current_app, request, send_file
 from flask_login import current_user, login_required
-from genotype import Genotype
-from phenotype import Phenotype
-from notice import Notice
-from job import Job 
-from user import User
-from auth import check_view_job, check_edit_job, can_user_edit_job, access_pheno_page, check_edit_pheno, can_user_edit_pheno
+from .genotype import Genotype
+from .phenotype import Phenotype
+from .notice import Notice
+from .job import Job 
+from .user import User
+from .auth import check_view_job, check_edit_job, can_user_edit_job, access_pheno_page, check_edit_pheno, can_user_edit_pheno
 
 user_area = Blueprint("user", __name__,
     template_folder="templates")
@@ -144,6 +144,6 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
         else:
             return send_file(output_file, as_attachment=as_attach, mimetype=mimetype)
     except Exception as e:
-        print e
+        print(e)
         return "File Not Found", 404
 

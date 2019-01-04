@@ -1,10 +1,10 @@
 from flask import request, Response, Flask, render_template, redirect, url_for
-from user_blueprint import user_area
-from admin_blueprint import admin_area
-from api_blueprint import api, ApiResult, ApiException
-from auth_blueprint import auth
-from notifier import get_notifier
-import job_tracking
+from .user_blueprint import user_area
+from .admin_blueprint import admin_area
+from .api_blueprint import api, ApiResult, ApiException
+from .auth_blueprint import auth
+from .notifier import get_notifier
+from . import job_tracking
 import atexit
 import subprocess
 
@@ -13,7 +13,7 @@ def create_app(config=None):
     app = ApiFlask(__name__)
     app.url_map.strict_slashes = False
 
-    if isinstance(config, basestring):
+    if isinstance(config, str):
         app.config.from_pyfile(config)
     elif isinstance(config, dict):
         app.config.update(config)
@@ -30,10 +30,10 @@ def create_app(config=None):
     app.register_blueprint(api, url_prefix="/api")
 
     app.register_blueprint(auth)
-    from auth_blueprint import login_manager
+    from .auth_blueprint import login_manager
     login_manager.init_app(app)
 
-    from sql_pool import register_db
+    from .sql_pool import register_db
     register_db(app)
 
     register_helpers(app)

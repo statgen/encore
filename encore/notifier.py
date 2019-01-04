@@ -1,7 +1,7 @@
 import smtplib
 from email.mime.text import MIMEText
 from flask import current_app, g, url_for
-from job import Job
+from .job import Job
 
 def get_notifier():
     if "notifier" not in g:

@@ -1,6 +1,6 @@
 from flask import Blueprint, Response, json, render_template, current_app, request
 from flask_login import current_user, login_required
-from user import User
+from .user import User
 from functools import wraps
 
 admin_area = Blueprint("admin", __name__,

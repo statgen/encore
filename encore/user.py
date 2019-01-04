@@ -1,5 +1,5 @@
 import MySQLdb
-import sql_pool
+from . import sql_pool
 from flask import session, current_app
 from flask_login import UserMixin
 
@@ -76,8 +76,8 @@ class User(UserMixin):
         if "can_analyze" in new_values:
             new_values["can_analyze"] = new_values["can_analyze"]=="true"
         updateable_fields = [x for x in User.__dbfields if x != "id"]
-        fields = new_values.keys() 
-        values = new_values.values()
+        fields = list(new_values.keys()) 
+        values = list(new_values.values())
         bad_fields = [x for x in fields if x not in updateable_fields]
         if db is None:
             db = sql_pool.get_conn()
@@ -120,11 +120,11 @@ class User(UserMixin):
         count = "COUNT(DISTINCT users.id)"
         if not by:
             by = []
-        elif isinstance(by, basestring):
+        elif isinstance(by, str):
             by = by.split(",")
         if not filters:
             filters = []
-        elif isinstance(filters, basestring):
+        elif isinstance(filters, str):
             filters = filters.split(",")
         select = []
         group_by = []

@@ -1,4 +1,4 @@
-import sql_pool
+from . import sql_pool
 import MySQLdb
 
 class Notice:

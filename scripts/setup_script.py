@@ -4,24 +4,19 @@ import shlex
 import subprocess
 
 def install_packages():
-    packages = ['apache2',
-                'autoconf',
-                'autotools-dev',
-                'build-essential',
+    packages = [
+                'httpd',
                 'curl',
                 'git',
-                'libapache2-mod-wsgi',
-                'libmysqlclient-dev',
-                'libffi-dev',
-                'libssl-dev',
-                'mysql-client',
-                'mysql-server',
+                'mod_wsgi',
                 'python-pip',
+                'python-devel',
                 'python-setuptools',
                 'unzip']
 
-    subprocess.call(['sudo', 'apt-get', 'update'])
-    subprocess.call(['sudo', 'DEBIAN_FRONTEND=noninteractive', 'apt-get', 'install', '-y'] + packages)
+    subprocess.call(['sudo', 'yum', 'update', '-y'])
+    subprocess.call(['sudo', 'yum', 'install', 'epel-release', '-y'])
+    subprocess.call(['sudo', 'yum', 'install', '-y'] + packages)
 
 
 def setup_encore():
@@ -34,13 +29,14 @@ def setup_encore():
 
 def install_python_requirements():
     subprocess.call(['pip', 'install', '--upgrade', 'pip'])
+    subprocess.call(['pip', 'install', '--upgrade', 'setuptools'])
     subprocess.call(['pip', 'install', '-r', '/srv/encore/requirements.txt'])
 
 
 def setup_mysql():
-    subprocess.call(['mkdir', '-p', '/var/lib/mysqld'])
-    subprocess.call(['chown', '-R', 'mysql:mysql', '/var/lib/mysqld'])
-    subprocess.call(['usermod', '-d', '/var/lib/mysql/', 'mysql'])
+    subprocess.call(['sudo', 'mkdir', '-p', '/var/lib/mysqld'])
+    subprocess.call(['sudo', 'chown', '-R', 'mysql:mysql', '/var/lib/mysqld'])
+    subprocess.call(['sudo', 'usermod', '-d', '/var/lib/mysql/', 'mysql'])
     subprocess.call(shlex.split('sudo service mysql start'))
     subprocess.call(['mysql', '-u', 'root', '-e',
         "CREATE USER 'flask-user'@'localhost' IDENTIFIED BY 'flask-user-pass'"])
@@ -55,15 +51,17 @@ def setup_mysql():
 
 
 def setup_apache():
-    pass
-
+    subprocess.call(['sudo', 'cp', '/srv/encore/encore.conf.example', '/etc/apache2/sites-enabled/encore.conf'])
+    subprocess.call(['sudo', 'a2enmod', 'wsgi'])
+    subprocess.call(['sudo', 'a2ensite', 'encore'])
+    subprocess.call(['sudo', 'service', 'apache2', 'restart'])
 
 def main():
     install_packages()
     setup_encore()
     install_python_requirements()
-    setup_mysql()
-    setup_apache()
+    #setup_mysql()
+    #setup_apache()
 
 
 if __name__ == '__main__':

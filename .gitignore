@@ -1,9 +1,10 @@
 .DS_Store
 .idea
-venv/
 .pytest_cache/
-flask_config.py
-*.wsgi
+.vscode/
 *.pyc
+*.wsgi
 bin/
 build/
+flask_config.py
+venv/

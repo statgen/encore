@@ -9,14 +9,25 @@ def install_packages():
                 'curl',
                 'git',
                 'mod_wsgi',
-                'python-pip',
-                'python-devel',
-                'python-setuptools',
+                'python36u-pip',
+                'python36u-devel',
+                'python36u-setuptools',
                 'unzip']
 
     subprocess.call(['sudo', 'yum', 'update', '-y'])
     subprocess.call(['sudo', 'yum', 'install', 'epel-release', '-y'])
+
+    install_python3()
+
     subprocess.call(['sudo', 'yum', 'install', '-y'] + packages)
+
+
+def install_python3():
+    subprocess.call(['sudo', 'yum', 'update', '-y'])
+    subprocess.call(['sudo', 'yum', 'install', 'yum-utils', '-y'])
+    subprocess.call(['sudo', 'yum', 'groupinstall', '-y', 'development'])
+    subprocess.call(shlex.split('sudo yum -y install https://centos7.iuscommunity.org/ius-release.rpm'))
+    subprocess.call(shlex.split('sudo yum -y install python36u'))
 
 
 def setup_encore():
@@ -28,9 +39,9 @@ def setup_encore():
 
 
 def install_python_requirements():
-    subprocess.call(['pip', 'install', '--upgrade', 'pip'])
-    subprocess.call(['pip', 'install', '--upgrade', 'setuptools'])
-    subprocess.call(['pip', 'install', '-r', '/srv/encore/requirements.txt'])
+    subprocess.call(['pip3.6', 'install', '--upgrade', 'pip'])
+    subprocess.call(['pip3.6', 'install', '--upgrade', 'setuptools'])
+    subprocess.call(['pip3.6', 'install', '-r', '/srv/encore/requirements.txt'])
 
 
 def setup_mysql():

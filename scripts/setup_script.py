@@ -9,6 +9,7 @@ def install_packages():
                 'curl',
                 'git',
                 'mod_wsgi',
+                'mysql-devel',
                 'python36u-pip',
                 'python36u-devel',
                 'python36u-setuptools',
@@ -32,10 +33,10 @@ def install_python3():
 
 def setup_encore():
     subprocess.call(shlex.split('mkdir -p /srv/encore'))
-    subprocess.call(shlex.split('curl -L https://github.com/statgen/encore/archive/master.zip --output /tmp/encore.zip'))
+    subprocess.call(shlex.split('curl -L https://github.com/statgen/encore/archive/encore-gcp.zip --output /tmp/encore.zip'))
     subprocess.call(shlex.split('unzip /tmp/encore.zip -d /tmp/'))
-    subprocess.call(shlex.split('cp -r /tmp/encore-master/. /srv/encore/'))
-    subprocess.call(shlex.split('rm -rf /tmp/encore.zip /tmp/encore-master'))
+    subprocess.call(shlex.split('cp -r /tmp/encore-encore-gcp/. /srv/encore/'))
+    subprocess.call(shlex.split('rm -rf /tmp/encore.zip /tmp/encore-encore-gcp'))
 
 
 def install_python_requirements():

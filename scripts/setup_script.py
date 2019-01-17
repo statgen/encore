@@ -9,7 +9,9 @@ def install_packages():
                 'curl',
                 'git',
                 'mod_wsgi',
-                'mysql-devel',
+                'mariadb',
+                'mariadb-devel',
+                'mariadb-server',
                 'python36u-pip',
                 'python36u-devel',
                 'python36u-setuptools',
@@ -49,7 +51,8 @@ def setup_mysql():
     subprocess.call(['sudo', 'mkdir', '-p', '/var/lib/mysqld'])
     subprocess.call(['sudo', 'chown', '-R', 'mysql:mysql', '/var/lib/mysqld'])
     subprocess.call(['sudo', 'usermod', '-d', '/var/lib/mysql/', 'mysql'])
-    subprocess.call(shlex.split('sudo service mysql start'))
+    subprocess.call(shlex.split('sudo systemctl enable mariadb'))
+    subprocess.call(shlex.split('sudo systemctl start mariadb'))
     subprocess.call(['mysql', '-u', 'root', '-e',
         "CREATE USER 'flask-user'@'localhost' IDENTIFIED BY 'flask-user-pass'"])
     subprocess.call(['mysql', '-u', 'root', '-e',
@@ -72,7 +75,7 @@ def main():
     install_packages()
     setup_encore()
     install_python_requirements()
-    #setup_mysql()
+    setup_mysql()
     #setup_apache()
 
 

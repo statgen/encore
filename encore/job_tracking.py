@@ -91,7 +91,7 @@ class Tracker(object):
 
         # keep only most recent submission date for each job
         slurm_jobs_found = dict()
-        for line in squeue_out.rstrip().split("\n"):
+        for line in squeue_out.decode().rstrip().split("\n"):
             if line:
                 slurm_job = line.strip().split("|")
                 # strip off "gasp_"

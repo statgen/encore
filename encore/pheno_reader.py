@@ -307,7 +307,7 @@ class PhenoReader:
         human, err = p.communicate()
         p = subprocess.Popen(["file","-b","-i", file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         mime, err = p.communicate()
-        return human.rstrip(), mime.rstrip()
+        return human.decode().rstrip(), mime.decode().rstrip()
 
     @staticmethod
     def is_text_file(file):

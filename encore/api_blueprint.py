@@ -285,7 +285,7 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
             count = tail or head
             p = subprocess.Popen([cmd, "-n", count, output_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tail_data, tail_error = p.communicate()
-            resp = make_response(tail_data)
+            resp = make_response(tail_data.decode())
             if as_attach:
                 resp.headers["Content-Disposition"] = "attachment; filename={}".format(filename)
             if mimetype:

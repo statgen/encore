@@ -1,7 +1,7 @@
-from ped_writer import PedWriter
-from base_model import BaseModel
+from .ped_writer import PedWriter
+from .base_model import BaseModel
 import os
-from chunk_progress import get_chr_chunk_progress, get_gene_chunk_progress 
+from .chunk_progress import get_chr_chunk_progress, get_gene_chunk_progress 
 
 class EpactsModel(BaseModel):
 

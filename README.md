@@ -14,10 +14,10 @@ genetic hypotheses.
 
 # Installing python modules
 
-To install all the required python modules use
+To install all the required python modules into a virtal environment
 
-     # If using a virtual environment, activate it first
-	 # source venv/bin/activate
+     python3 -m venv venv/
+     source venv/bin/activate
      pip install -r requirements.txt
 
 # Run dev instance
@@ -31,7 +31,7 @@ To run a simple dev instance of Encore, you can run
 Currently Encore is deployed using WSGI with apache. You can 
 install apache and the WSGI module with
 
-    apt-get install apache2 python-setuptools libapache2-mod-wsgi
+    apt-get install apache2 python-setuptools libapache2-mod-wsgi-py3 python3-dev libmysqlclient-dev
 
 A sample wsgi file is included at encore.wsgi.example. You should
 copy this file to encore.wsgi and fill in the correct path
@@ -65,6 +65,6 @@ in the `/etc/postfix/main.cf` config file.
 # Building Executable tools
 
      mkdir build
-	 cd build
-	 cmake ..
-	 make
+     cd build
+     cmake ..
+     make

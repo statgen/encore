@@ -1,5 +1,5 @@
-from genotype import Genotype
-from phenotype import Phenotype 
+from .genotype import Genotype
+from .phenotype import Phenotype 
 import os
 
 class BaseModel(object):

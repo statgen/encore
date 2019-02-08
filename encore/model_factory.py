@@ -1,5 +1,5 @@
-from epacts_job_builder import LMEpactsModel, LMMEpactsModel, SkatOEpactsModel, MMSkatOEpactsModel, MMVTEpactsModel, MMSkatEpactsModel, MMCMCEpactsModel
-from saige_job_builder import LinearSaigeModel, BinarySaigeModel
+from .epacts_job_builder import LMEpactsModel, LMMEpactsModel, SkatOEpactsModel, MMSkatOEpactsModel, MMVTEpactsModel, MMSkatEpactsModel, MMCMCEpactsModel
+from .saige_job_builder import LinearSaigeModel, BinarySaigeModel
 
 class ModelFactory:
     __models = []

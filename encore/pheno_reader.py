@@ -36,9 +36,9 @@ def guess_atomic_column_class(rawtype, obs):
     if n_vals == n_uniq_vals and rawtype != "float":
         return {"class": "id", "type": rawtype}
     if n_uniq_vals == 1:
-        return {"class": "fixed", "type": rawtype, "value": obs.keys()[0]}
+        return {"class": "fixed", "type": rawtype, "value": next(iter(obs.keys()))}
     if n_uniq_vals == 2:
-        levels = obs.keys()
+        levels = list(obs.keys())
         if rawtype in ["int", "float"]:
             levels.sort(key = lambda x: atof(x))
         return {"class": "binary", "type": rawtype, "levels": levels}
@@ -46,7 +46,7 @@ def guess_atomic_column_class(rawtype, obs):
         if float(n_uniq_vals)/n_vals > .75:
             return {"class": "descr", "type": "str"}
         else:
-            return {"class": "categorical", "type":"str", "levels": obs.keys()}
+            return {"class": "categorical", "type":"str", "levels": list(obs.keys())}
     if rawtype == "float" or rawtype == "int":
         return {"class": "numeric", "type": rawtype}
     return {"class": rawtype, "type": rawtype}
@@ -54,9 +54,9 @@ def guess_atomic_column_class(rawtype, obs):
 def guess_column_class(colinfo):
     # colinfo is dict (types) of counters (values)
     has_empty = "_empty_" in colinfo and len(colinfo["_empty_"])==1
-    col = {k: v for k,v in colinfo.iteritems() if k != "_empty_"}
-    n_vals = Counter({k: sum(v.values()) for k, v in col.iteritems()})
-    n_uniq_vals = Counter({k: len(v) for k, v in col.iteritems()})
+    col = {k: v for k,v in colinfo.items() if k != "_empty_"}
+    n_vals = Counter({k: sum(v.values()) for k, v in col.items()})
+    n_uniq_vals = Counter({k: len(v) for k, v in col.items()})
     if len(col)==0:
         #all empty
         return {"class": "fixed", "type": "str"}
@@ -65,7 +65,7 @@ def guess_column_class(colinfo):
         best_type = n_vals.most_common(1)[0][0]
         ci = guess_atomic_column_class(best_type, col[best_type])
         if has_empty:
-            ci["missing"] = colinfo["_empty_"].keys()[0]
+            ci["missing"] = next(iter(colinfo["_empty_"].keys()))
         return ci
     if len(col)==2 and "int" in col and "float" in col:
         #promote to float
@@ -73,20 +73,20 @@ def guess_column_class(colinfo):
         vals = col["int"] + col["float"]
         ci =  guess_atomic_column_class(best_type, vals)
         if has_empty:
-            ci["missing"] = colinfo["_empty_"].keys()[0]
+            ci["missing"] = next(iter(colinfo["_empty_"].keys()))
         return ci
     if len(col)==2 and (n_uniq_vals["str"]==1):
         # likely a single type with a missing indicator
         best_type = [x[0] for x in n_vals.most_common(2) if x[0] != "str"][0]
         ci = guess_atomic_column_class(best_type, colinfo[best_type])
-        ci["missing"] = colinfo["str"].keys()[0]
+        ci["missing"] = next(iter(colinfo["str"].keys()))
         return ci
     if all((x in ["str","int","float"] for x in col.keys())) and (n_uniq_vals["str"]==1):
         # likely a numeric value with a missing indicator
         best_type = "float"
         vals = col["int"] + col["float"]
         ci = guess_atomic_column_class(best_type, vals)
-        ci["missing"] = colinfo["str"].keys()[0]
+        ci["missing"] = next(iter(colinfo["str"].keys()))
         return ci
     if len(col)>1 and "str" in col and n_uniq_vals["str"]>2:
         best_type = "str"
@@ -95,7 +95,7 @@ def guess_column_class(colinfo):
             vals += r
         ci = guess_atomic_column_class(best_type, vals)
         if has_empty:
-            ci["missing"] = colinfo["_empty_"].keys()[0]
+            ci["missing"] = next(iter(colinfo["_empty_"].keys()))
         return ci
     # finally let's just make it a string
     best_type = "str"
@@ -125,7 +125,7 @@ def sniff_file(csvfile):
 
 def find_header(firstrow, lastcomment, cols):
     colclasses = {k: guess_column_class(v) for k,v in cols.items()}
-    col_types = [z["type"] for z in [colclasses[i] for i in xrange(len(firstrow))]]
+    col_types = [z["type"] for z in [colclasses[i] for i in range(len(firstrow))]]
     firstrow_types = [guess_raw_type(x) for x in firstrow]
 
     nonstringcols = sum((x != "str" for x in col_types))
@@ -146,7 +146,7 @@ def find_header(firstrow, lastcomment, cols):
     if (float)(firstrow_promotions)/nonstringcols >= .5:
         return (firstrow, "firstrow")
     # no header found, return unique names
-    return (["COL{0}".format(i) for i in xrange(len(colclasses))], "position")
+    return (["COL{0}".format(i) for i in range(len(colclasses))], "position")
 
 def check_if_ped(cols, obs):
     # This just isn't working quite right
@@ -255,7 +255,7 @@ class PhenoReader:
             pass
         if opts is None and self.meta and "layout" in self.meta:
             opts = {k[4:]:v for (k,v) in self.meta["layout"].items() if k.startswith("csv_")}
-            opts = {k: v.encode('utf8') if isinstance(v, unicode) else v
+            opts = {k: v.encode('utf8') if isinstance(v, str) else v
                 for (k,v) in opts.items()} 
             for (k, v) in opts.items():
                 setattr(dialect, k, v)
@@ -288,7 +288,7 @@ class PhenoReader:
                 dialect = sniff_file(csvfile)
                 csvfile.seek(0)
             if skip>0:
-                [csvfile.readline() for i in xrange(skip)]
+                [csvfile.readline() for i in range(skip)]
             cvr = csv.reader((row for row in csvfile if not row.startswith("#")), dialect)
             for row in cvr:
                 yield row
@@ -307,7 +307,7 @@ class PhenoReader:
         human, err = p.communicate()
         p = subprocess.Popen(["file","-b","-i", file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         mime, err = p.communicate()
-        return human.rstrip(), mime.rstrip()
+        return human.decode().rstrip(), mime.decode().rstrip()
 
     @staticmethod
     def is_text_file(file):
@@ -324,8 +324,8 @@ if __name__ == "__main__":
             with open(sys.argv[2]) as f:
                 meta = json.load(f)
             p = PhenoReader(sys.argv[1], meta)
-            print [x for x in p.row_extractor()]
+            print([x for x in p.row_extractor()])
         else:
             p = PhenoReader(sys.argv[1], meta)
-            print json.dumps(p.meta, indent=2)
+            print(json.dumps(p.meta, indent=2))
 

@@ -1,9 +1,9 @@
 import os
 import json
-import sql_pool
+from . import sql_pool
 import MySQLdb
-from pheno_reader import PhenoReader
-from geno_reader import GenoReader
+from .pheno_reader import PhenoReader
+from .geno_reader import GenoReader
 
 class Genotype:
     def __init__(self, geno_id, meta=None):

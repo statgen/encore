@@ -1,13 +1,13 @@
 import os
 import shutil
 import json
-import sql_pool
+from . import sql_pool
 import MySQLdb
 import sys
 import re
 import hashlib
-from user import User
-from model_factory import ModelFactory
+from .user import User
+from .model_factory import ModelFactory
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
@@ -15,7 +15,8 @@ class Job:
 
     def __init__(self, job_id, meta=None):
         self.job_id = job_id
-        map(lambda x: setattr(self, x, None), self.__dbfields + self.__extfields)
+        for x in self.__dbfields + self.__extfields:
+            setattr(self, x, None)
         self.root_path = "" 
         self.users = []
         self.meta = meta
@@ -111,8 +112,9 @@ class Job:
         cur.execute(sql, (job_id,))
         result = cur.fetchone()
         if result is not None:
-            map(lambda x: setattr(j, x, result[x]), \
-                (val for val in Job.__dbfields + Job.__extfields if val in result))
+            for x in Job.__dbfields + Job.__extfields:
+                if x in result:
+                    setattr(j, x, result[x])
             sql = """
                 SELECT 
                     ju.user_id as user_id, ju.role_id as role_id,
@@ -216,8 +218,8 @@ class Job:
     @staticmethod
     def update(job_id, new_values):
         updateable_fields = ["name"]
-        fields = new_values.keys() 
-        values = new_values.values()
+        fields = list(new_values.keys()) 
+        values = list(new_values.values())
         bad_fields = [x for x in fields if x not in updateable_fields]
         if len(bad_fields)>0:
             raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
@@ -344,11 +346,11 @@ class Job:
         join_status = False
         if not by:
             by = []
-        elif isinstance(by, basestring):
+        elif isinstance(by, str):
             by = by.split(",")
         if not filters:
             filters = []
-        elif isinstance(filters, basestring):
+        elif isinstance(filters, str):
             filters = filters.split(",")
         select = []
         group_by = []
@@ -414,4 +416,4 @@ class Job:
         meta_clean.pop("user_id", None)
         meta_clean.pop("response_desc", None)
         job_def_string = json.dumps(meta_clean, sort_keys=True)
-        return hashlib.md5(job_def_string).hexdigest()
+        return hashlib.md5(job_def_string.encode('utf-8')).hexdigest()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 '''
 This script takes two arguments:
@@ -8,7 +8,7 @@ This script takes two arguments:
 It creates a json file which can be used to render a Manhattan plot.
 '''
 
-from __future__ import print_function, division, absolute_import
+
 
 import os.path
 import sys
@@ -125,7 +125,7 @@ def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglo
     # unroll bins into simple array (preserving chromosomal order)
     binned_variants = []
     for chrom_key in sorted(chrom_order.values()):
-        for pos_key in xrange(int(1+chrom_n_bins[chrom_key])):
+        for pos_key in range(int(1+chrom_n_bins[chrom_key])):
             b = bins.get((chrom_key, pos_key), None)
             if b and len(b['neglog10_pvals']) != 0:
                 b['neglog10_pvals'], b['neglog10_pval_extents'] = get_pvals_and_pval_extents(b['neglog10_pvals'], neglog10_pval_bin_size)
@@ -144,9 +144,9 @@ class AssocResultReader:
     def __enter__(self):
         if self.path and self.path != "-":
             if self.path.endswith(".gz"):
-                self.f = gzip.open(self.path)
+                self.f = gzip.open(self.path, "rt")
             else:
-                self.f = open(self.path)
+                self.f = open(self.path, "rt")
         else:
             self.f = sys.stdin
         return self
@@ -182,7 +182,7 @@ class AssocResultReader:
             if pval < 1e-308:
                 pval = 1e-308
             marker_id = v[column_indices["MARKER_ID"]]
-            other = { k: v[i] for k,i in column_indices.iteritems()};
+            other = { k: v[i] for k,i in column_indices.items()};
             match = _single_id_regex.match(marker_id)
             if match:
                 chrom2, pos2, ref2, alt2, name2 = match.groups()

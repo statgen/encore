@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 '''
 This script takes two arguments:
@@ -8,7 +8,7 @@ This script takes two arguments:
 It creates a json file which can be used to render a QQ plot.
 '''
 
-from __future__ import print_function, division, absolute_import
+
 
 import os.path
 import sys
@@ -73,7 +73,7 @@ def make_qq(variants, max_unbinned, num_bins):
     current_bin = -1
     variants_in_bin = []
     binned_variants = []
-    for i in xrange(max_unbinned+1, count):
+    for i in range(max_unbinned+1, count):
         exp_neglog10_pval = -math.log10( (i+0.5) / count ) 
         exp_bin = int(exp_neglog10_pval / max_exp_neglog10_pval * num_bins)
         obs_neglog10_pval = -math.log10( sorted_variants[i].pval )
@@ -93,7 +93,7 @@ def make_qq(variants, max_unbinned, num_bins):
         ))
 
     unbinned_variants = []
-    for i in xrange(0, min(max_unbinned, count)):
+    for i in range(0, min(max_unbinned, count)):
         variant = sorted_variants[i]
         obs_neglog10_pval = -math.log10( variant.pval )
         exp_neglog10_pval = -math.log10( (i+0.5) / count )
@@ -143,7 +143,7 @@ def process_file(results, max_unbinned, num_bins):
         plot = process_file_quartile_binned(results, max_unbinned, num_bins)
     else:
         plot = process_file_unbinned(results, max_unbinned, num_bins)
-    return {"header": {"variant_columns": results.filecols.keys()}, "data": [plot]} 
+    return {"header": {"variant_columns": list(results.filecols.keys())}, "data": [plot]} 
 
 AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval other'.split())
 class AssocResultReader:
@@ -199,7 +199,7 @@ class AssocResultReader:
             if pval < 1e-308:
                 pval = 1e-308
             marker_id = v[column_indices["MARKER_ID"]]
-            other = { k: v[i] for k,i in column_indices.iteritems()};
+            other = { k: v[i] for k,i in column_indices.items()};
             match = AssocResultReader._single_id_regex.match(marker_id)
             if match:
                 chrom2, pos2, ref2, alt2, name2 = match.groups()

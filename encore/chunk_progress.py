@@ -32,7 +32,7 @@ def bin_chunks_by_chr_and_age(chunks, now):
         chunk["vals"] = sorted(chunk["vals"], key=lambda x: x["start"] )
         return chunk
 
-    bins = { k: sort_chunk_vals(v) for (k,v) in bins.iteritems() }
+    bins = { k: sort_chunk_vals(v) for (k,v) in bins.items() }
     return bins
 
 def collapse_chunk_bins(bins):
@@ -55,7 +55,7 @@ def collapse_chunk_bins(bins):
         state["newest"] = val["modified"] if val["modified"]>state["newest"] else state["newest"]
         return state
 
-    for b in bins.itervalues():
+    for b in bins.values():
         vals = iter(b["vals"])
         state = reset(next(vals), state)
         for val in vals:

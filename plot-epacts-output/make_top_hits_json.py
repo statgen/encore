@@ -1,6 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
-from __future__ import print_function, division, absolute_import
+
 
 import os.path
 import sys
@@ -24,7 +24,7 @@ class BEDReader:
 
     def __load_data(self):
         self.data = collections.defaultdict(lambda: BEDCols([],[],[]))
-        with open(self.path) as f:
+        with open(self.path, "rt") as f:
             for line in f:
                 cols = line.split()
                 if cols[0]=="browser" or cols[0]=="track" or cols[0].startswith("#"):
@@ -58,9 +58,9 @@ class AssocResultReader:
     def __enter__(self):
         if self.path and self.path != "-":
             if self.path.endswith(".gz"):
-                self.f = gzip.open(self.path)
+                self.f = gzip.open(self.path, "rt")
             else:
-                self.f = open(self.path)
+                self.f = open(self.path, "rt")
         else:
             self.f = sys.stdin
         self.itr = iter(self.f)
@@ -97,7 +97,7 @@ class AssocResultReader:
             pos = int(v[column_indices["BEGIN"]])
             pval = float(v[column_indices["PVALUE"]])
             marker_id = v[column_indices["MARKER_ID"]]
-            other = { k: v[i] for k,i in column_indices.iteritems()};
+            other = { k: v[i] for k,i in column_indices.items()};
             match = AssocResultReader._single_id_regex.match(marker_id)
             if match:
                 chrom2, pos2, ref2, alt2, name2 = match.groups()

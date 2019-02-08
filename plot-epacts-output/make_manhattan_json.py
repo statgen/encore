@@ -144,9 +144,9 @@ class AssocResultReader:
     def __enter__(self):
         if self.path and self.path != "-":
             if self.path.endswith(".gz"):
-                self.f = gzip.open(self.path)
+                self.f = gzip.open(self.path, "rt")
             else:
-                self.f = open(self.path)
+                self.f = open(self.path, "rt")
         else:
             self.f = sys.stdin
         return self

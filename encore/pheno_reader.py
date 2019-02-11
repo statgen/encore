@@ -255,8 +255,6 @@ class PhenoReader:
             pass
         if opts is None and self.meta and "layout" in self.meta:
             opts = {k[4:]:v for (k,v) in self.meta["layout"].items() if k.startswith("csv_")}
-            opts = {k: v.encode('utf8') if isinstance(v, str) else v
-                for (k,v) in opts.items()} 
             for (k, v) in opts.items():
                 setattr(dialect, k, v)
             return dialect

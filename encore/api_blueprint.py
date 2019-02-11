@@ -217,7 +217,7 @@ def cancel_job(job_id, job=None):
 def get_job_results(job_id, job=None):
     filters = request.args.to_dict()
     epacts_filename = job.relative_path("output.epacts.gz")
-    with gzip.open(epacts_filename) as f:
+    with gzip.open(epacts_filename, "rt") as f:
         header = f.readline().rstrip('\n').split('\t')
         if header[1] == "BEG":
             header[1] = "BEGIN"
@@ -317,7 +317,7 @@ def get_api_job_manhattan(job_id, job=None):
 def get_job_zoom(job_id, job=None):
     header = []
     output_filename = job.get_output_file_path()
-    with gzip.open(output_filename) as f:
+    with gzip.open(output_filename, "rt") as f:
         header = f.readline().rstrip('\n').split('\t')
         if header[1] == "BEG":
             header[1] = "BEGIN"

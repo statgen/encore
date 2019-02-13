@@ -1,5 +1,5 @@
 import re
-from functools import reduce
+from itertools import chain
 
 def sanitize(x):
     if re.match(r'^[^A-Za-z]', x):
@@ -168,8 +168,7 @@ class PedRequiredColumn(Column):
         return super(PedRequiredColumn, self).values(index)
 
 def flatten(x):
-    #return [item for sublist in x for item in sublist]
-    return reduce(lambda a,b: a+b if b is not None else a + [None], x, [])
+    return list(chain.from_iterable((v if v is not None else [None] for v in x )))
 
 class PedWriter:
     def __init__(self, phenoreader=None, resp=None, covar=None):

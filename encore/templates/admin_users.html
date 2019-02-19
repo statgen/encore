@@ -13,9 +13,9 @@
 				order: [[5, "desc"]],
 				columns: [
 					{data: "id", title: "User ID"},
-					{data: "email", title: "Account"},
-					{data: "full_name", title: "Name"},
-					{data: "affiliation", title: "Affiliation"},
+					{data: "email", title: "Account", render: $.fn.dataTable.render.text()},
+					{data: "full_name", title: "Name", render: $.fn.dataTable.render.text()},
+					{data: "affiliation", title: "Affiliation", render: $.fn.dataTable.render.text()},
 					{data: "creation_date", title: "Date Created"},
 					{data: "last_login_date", title: "Last Login"}
 				],

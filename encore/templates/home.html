@@ -21,7 +21,7 @@
 				ajax: {url: url, dataSrc: ""},
 				order: [[1, "desc"]],
 				columns: [
-					{data: "name", title: "Job Name"},
+					{data: "name", title: "Job Name", render: $.fn.dataTable.render.text()},
 					{data: "creation_date", title: "Date Created"},
 					{data: "status", title: "Status"},
 					{title: "Job", data: "id", render: function(data) {

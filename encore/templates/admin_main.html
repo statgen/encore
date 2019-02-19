@@ -13,8 +13,8 @@
 				order: [[4, "desc"]],
 				columns: [
 					{data: "id", title: "Job ID"},
-					{data: "name", title: "Job Name"},
-					{data: "user_email", title: "User"},
+					{data: "name", title: "Job Name", render: $.fn.dataTable.render.text()},
+					{data: "user_email", title: "User", render: $.fn.dataTable.render.text()},
 					{data: "status", title: "Status"},
 					{data: "creation_date", title: "Date Created"},
 					{title: "Job", data: "id", render: function(data) {

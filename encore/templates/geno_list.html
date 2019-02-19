@@ -12,7 +12,7 @@
 				ajax: {url: "{{ url_for("api.get_genotypes")}}", dataSrc: ""},
 				order: [[1, "desc"]],
 				columns: [
-					{data: "name", title: "Name"},
+					{data: "name", title: "Name", render: $.fn.dataTable.render.text()},
 					{data: "creation_date", title: "Date Created"},
 					{data: "build", title: "Genome Build"},
 					{title: "View", data: "id", render: function(data) {

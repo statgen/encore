@@ -577,7 +577,7 @@ def post_pheno():
         pheno_file_path = os.path.join(pheno_directory, "pheno.txt")
         pheno_meta_path = os.path.join(pheno_directory, "meta.json")
         pheno_file.save(pheno_file_path)
-        md5 =  hashfile(open(pheno_file_path, "rb")).encode("hex")
+        md5 =  hashfile(open(pheno_file_path, "rb")).hex()
     except Exception as e:
         print("File saving error: %s" % e)
         raise ApiException("COULD NOT SAVE FILE")

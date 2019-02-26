@@ -72,3 +72,4 @@ function init_pheno_delete_button(selector) {
         });
     });
 }
+

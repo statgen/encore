@@ -1,5 +1,6 @@
 from flask import Blueprint, Response, json, render_template, current_app, request, send_file
 from flask_login import current_user, login_required
+from .api_blueprint import calculate_overlaps
 from .genotype import Genotype
 from .phenotype import Phenotype
 from .notice import Notice
@@ -86,6 +87,7 @@ def get_phenos():
 def get_pheno(pheno_id, pheno=None):
     pheno_obj = pheno.as_object()
     pheno_obj["jobs"] = Job.list_all_for_phenotype(pheno_id, current_app.config)
+    pheno_obj["overlap"] = calculate_overlaps(pheno)
     if can_user_edit_pheno(current_user, pheno):
         pheno_obj["can_edit"] = True
     is_usable, usable_error = pheno.check_usable()

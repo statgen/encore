@@ -23,6 +23,10 @@
 				init_new_job_button("button[name=new_job]", pheno_error);
 				init_pheno_delete_button();
 			}
+			$(".format-int").text(function(i, data) {
+				var pn = parseInt(data);
+				return isNaN(pn)? data: pn.toLocaleString();
+			})
 		});
 	</script>
 	<style>
@@ -30,6 +34,7 @@
 		.label-edit:hover {color: black; backgroud-color: #c4c4c4; }
 		a.edit-pheno-modal {text-decoration: none; color:inherit; cursor: pointer}
 		.pheno-actions button {display: block; padding: 1px 8px; margin: 3px auto; width: 8em;}
+		.col-right {text-align: right}
 	</style>
 
 {% endblock %}
@@ -57,7 +62,7 @@
 				{% if pheno.meta.records %}
 				<tr>
 					<th>Records</th>
-					<td>{{ pheno.meta.records }}</td>
+					<td class="format-int">{{ pheno.meta.records }}</td>
 				</tr>
 				{% endif %}
 				<tr>
@@ -76,6 +81,28 @@
         </div>
 
 		{% if pheno.is_active %}
+		{% if pheno.overlap %}
+        <div class="section">
+            <div class="section-title">
+                <h3>Samples in each freeze</h3>
+            </div>
+        </div>
+
+        <div class="section">
+			<table id="job_details_table">
+				<tr>
+					<th>Freeze Name</th>
+					<th class="col-right">Matching Samples</th>
+				</tr>
+				{% for geno in pheno.overlap %}
+				<tr>
+					<td>{{ geno.name}}</td>
+					<td class="format-int col-right">{{ geno.overlap }}</td>
+				</tr>
+				{% endfor %}
+			</table>
+        </div>
+		{% endif %}
         <div class="section">
             <div class="section-title">
                 <h3>Covariates</h3>

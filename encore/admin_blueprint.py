@@ -2,6 +2,7 @@ from flask import Blueprint, Response, json, render_template, current_app, reque
 from flask_login import current_user, login_required
 from .user import User
 from functools import wraps
+from .user_blueprint import get_job_output
 
 admin_area = Blueprint("admin", __name__,
     template_folder="templates")
@@ -42,7 +43,7 @@ def get_job_log(job_id, log_name):
     tail = request.args.get("tail", 0)
     head = request.args.get("head", 0)
     if log_name in ["err.log","out.log"]:
-        return job_handlers.get_job_output(job_id, log_name, \
+        return get_job_output(job_id, log_name, \
             mimetype="text/plain", tail=tail, head=head)
     else:
         return "Not Found", 404

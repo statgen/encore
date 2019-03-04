@@ -125,7 +125,7 @@ def get_queue():
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     squeue_out, squeue_err = p.communicate()
     queue = {"running": [], "queued": []}
-    for line in squeue_out.split("\n"):
+    for line in squeue_out.decode().split("\n"):
         values = line.split("|")
         if len(values) != len(col_names):
             continue

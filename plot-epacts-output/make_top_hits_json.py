@@ -24,7 +24,7 @@ class BEDReader:
 
     def __load_data(self):
         self.data = collections.defaultdict(lambda: BEDCols([],[],[]))
-        with open(self.path) as f:
+        with open(self.path, "rt") as f:
             for line in f:
                 cols = line.split()
                 if cols[0]=="browser" or cols[0]=="track" or cols[0].startswith("#"):
@@ -58,9 +58,9 @@ class AssocResultReader:
     def __enter__(self):
         if self.path and self.path != "-":
             if self.path.endswith(".gz"):
-                self.f = gzip.open(self.path)
+                self.f = gzip.open(self.path, "rt")
             else:
-                self.f = open(self.path)
+                self.f = open(self.path, "rt")
         else:
             self.f = sys.stdin
         self.itr = iter(self.f)

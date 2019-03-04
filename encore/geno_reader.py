@@ -28,7 +28,7 @@ class GenoReader:
             vcf_path,
             "{}:{}-{}".format(chrom , pos, pos+1)]
         try:
-            lines = subprocess.check_output(cmd).split("\n")
+            lines = subprocess.check_output(cmd).decode().split("\n")
         except subprocess.CalledProcessError as e:
             raise Exception("Could not extract genotype") 
         except OSError:

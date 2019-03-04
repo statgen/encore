@@ -23,7 +23,8 @@
 		];
 		var table;
 		function draw_table(data, columns) {
-			cols = columns.map(function(x) {return {title: x, data: x}})
+			cols = columns.map(function(x) {return {title: x, data: x,
+				render: $.fn.dataTable.render.text()}})
 			if (table) {
 				table.clear();
 				table.destroy();

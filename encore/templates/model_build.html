@@ -238,7 +238,8 @@
 				var opts  = [];
 				var hideCols = ["family_id","sample_id","mother_id","father_id"];
 				pheno.meta.columns.forEach(function(col) {
-					if (hideCols.indexOf(col.class)<0 && col.class != "fixed" && col.class != "id") {
+					if (hideCols.indexOf(col.class)<0 &&
+						col.class != "fixed" && col.class != "id" && col.class!= "descr") {
 						opts.push({id: col.name, text: col.name});	
 					}
 				});
@@ -260,7 +261,8 @@
 					genocovars = pheno.meta.columns;
 					var hideCols = ["family_id","sample_id","mother_id","father_id"];
 					genocovars.forEach(function(col) {
-						if (hideCols.indexOf(col.class)<0 && col.class != "fixed") {
+						if (hideCols.indexOf(col.class)<0 &&
+							col.class != "fixed" && col.class != "descr") {
 							opts.push({id: col.name, text: col.name});	
 						}
 					});

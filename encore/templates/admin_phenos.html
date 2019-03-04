@@ -13,8 +13,8 @@
 				order: [[3, "desc"]],
 				columns: [
 					{data: "id", title: "Pheno ID"},
-					{data: "user_email", title: "User"},
-					{data: "name", title: "Name"},
+					{data: "user_email", title: "User", render: $.fn.dataTable.render.text()},
+					{data: "name", title: "Name", render: $.fn.dataTable.render.text()},
 					{data: "creation_date", title: "Date Created"},
 					{title: "Pheno", data: "id", render: function(data) {
 						return "<a href='/phenos/" + data + "'>View</a>"}}

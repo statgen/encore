@@ -372,7 +372,7 @@ function init_job_lookup(job_id) {
     drawResults();
     $lf.submit(function(e) {
         e.preventDefault();
-        var term = $lf.find("#lookup").val();
+        var term = $("<div>").html($lf.find("#lookup").val()).text();
         if(term && term.length) {
             result_lookup(term).then(function(resps) {
                 resps.forEach(function(x) {results.add_lookup(x);});
@@ -516,7 +516,7 @@ function init_editform(job_id, job_api_url) {
         evt.preventDefault();
         var new_name = $("#editModal").find("#job_name").val();
         $.post(job_api_url, {"name": new_name}).done( function() {
-            $("#job_name_title").contents().first().replaceWith(new_name);
+            $("#job_name_title").contents().first().replaceWith($("<div>").text(new_name).html());
             $("#editModal").modal("hide");
         }).fail(function() {
             alert("Update failed");

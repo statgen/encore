@@ -217,7 +217,7 @@ def cancel_job(job_id, job=None):
 def get_job_results(job_id, job=None):
     filters = request.args.to_dict()
     epacts_filename = job.relative_path("output.epacts.gz")
-    with gzip.open(epacts_filename) as f:
+    with gzip.open(epacts_filename, "rt") as f:
         header = f.readline().rstrip('\n').split('\t')
         if header[1] == "BEG":
             header[1] = "BEGIN"
@@ -285,7 +285,7 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
             count = tail or head
             p = subprocess.Popen([cmd, "-n", count, output_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             tail_data, tail_error = p.communicate()
-            resp = make_response(tail_data)
+            resp = make_response(tail_data.decode())
             if as_attach:
                 resp.headers["Content-Disposition"] = "attachment; filename={}".format(filename)
             if mimetype:
@@ -317,7 +317,7 @@ def get_api_job_manhattan(job_id, job=None):
 def get_job_zoom(job_id, job=None):
     header = []
     output_filename = job.get_output_file_path()
-    with gzip.open(output_filename) as f:
+    with gzip.open(output_filename, "rt") as f:
         header = f.readline().rstrip('\n').split('\t')
         if header[1] == "BEG":
             header[1] = "BEGIN"
@@ -510,39 +510,41 @@ def get_phenotype_jobs(pheno_id):
     jobs = Job.list_all_for_phenotype(pheno_id, current_app.config)
     return ApiResult(jobs)
 
+def calculate_overlaps(pheno):
+    genos = Genotype.list_all_for_user(current_user.rid)
+    overlap_all = []
+    for geno in genos:
+        overlap = calculate_overlap(pheno, geno["id"])
+        if overlap is not None:
+            geno["overlap"] = overlap
+            overlap_all.append(geno)
+    return overlap_all
+
+def calculate_overlap(pheno, geno_id):
+    p_samples = pheno.get_pheno_reader().get_samples()
+    g_samples = set(Genotype.get(geno_id, current_app.config).get_samples())
+    if len(g_samples)>0:
+        overlap = [sample for sample in p_samples if sample in g_samples]
+        return len(overlap)
+    else:
+        return None
+
 @api.route("/phenos/<pheno_id>/overlap", methods=["GET"])
 @check_edit_pheno
 def get_pheno_sample_overlap_all(pheno_id, pheno=None):
     try:
-        genos = Genotype.list_all_for_user(current_user.rid)
-        overlap_all = []
-        for geno in genos:
-            print(geno["id"])
-            p = Phenotype.get(pheno_id, current_app.config)
-            samples = p.get_pheno_reader().get_samples()
-            g = set(Genotype.get(geno["id"], current_app.config).get_samples())
-            if len(g)>0:
-                overlap = [sample for sample in samples if sample in g]
-                geno["overlap"] = len(overlap)
-                overlap_all.append(geno)
-        return ApiResult(overlap_all)
+        return ApiResult(calculate_overlaps(pheno))
     except Exception as e:
         raise ApiException("COULD NOT FIND OVERLAP", details=str(e))
 
 @api.route("/phenos/<pheno_id>/overlap/<geno_id>", methods=["GET"])
 @check_edit_pheno
 def get_pheno_sample_overlap(pheno_id, geno_id, pheno=None):
-    try:
-        p = Phenotype.get(pheno_id, current_app.config)
-        samples = p.get_pheno_reader().get_samples()
-        g = set(Genotype.get(geno_id, current_app.config).get_samples())
-        if len(g)>0:
-            overlap = [sample for sample in samples if sample in g]
-            return ApiResult({"samples": len(overlap)})
-        else:
-            raise Exception("NO SAMPLES LIST STORED WITH GENOTYPES")
-    except Exception as e:
-        raise ApiException("COULD NOT FIND OVERLAP", details=str(e))
+    overlap = calculate_overlap(pheno, geno_id)
+    if overlap is not None:
+        return ApiResult({"samples": overlap})
+    else:
+        raise Exception("NO SAMPLES LIST STORED WITH GENOTYPES")
 
 def suggest_pheno_name(filename):
     base, ext = os.path.splitext(os.path.basename(filename))
@@ -577,7 +579,7 @@ def post_pheno():
         pheno_file_path = os.path.join(pheno_directory, "pheno.txt")
         pheno_meta_path = os.path.join(pheno_directory, "meta.json")
         pheno_file.save(pheno_file_path)
-        md5 =  hashfile(open(pheno_file_path, "rb")).encode("hex")
+        md5 =  hashfile(open(pheno_file_path, "rb")).hex()
     except Exception as e:
         print("File saving error: %s" % e)
         raise ApiException("COULD NOT SAVE FILE")

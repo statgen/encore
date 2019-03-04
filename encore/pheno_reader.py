@@ -255,8 +255,6 @@ class PhenoReader:
             pass
         if opts is None and self.meta and "layout" in self.meta:
             opts = {k[4:]:v for (k,v) in self.meta["layout"].items() if k.startswith("csv_")}
-            opts = {k: v.encode('utf8') if isinstance(v, str) else v
-                for (k,v) in opts.items()} 
             for (k, v) in opts.items():
                 setattr(dialect, k, v)
             return dialect
@@ -307,7 +305,7 @@ class PhenoReader:
         human, err = p.communicate()
         p = subprocess.Popen(["file","-b","-i", file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         mime, err = p.communicate()
-        return human.rstrip(), mime.rstrip()
+        return human.decode().rstrip(), mime.decode().rstrip()
 
     @staticmethod
     def is_text_file(file):

@@ -96,7 +96,10 @@ def register_helpers(app):
 
 def register_info(app):
     try:
-        git_hash = subprocess.check_output([app.config.get("GIT_BINARY","git"), "rev-parse", "HEAD"])
+        # grab current GIT commit (if available) for debugging
+        git_hash = subprocess.check_output(
+            [app.config.get("GIT_BINARY","git"), "rev-parse", "HEAD"],
+            stderr=subprocess.STDOUT)
         app.config["git-hash"] = git_hash.decode()
     except:
         pass

@@ -1,5 +1,7 @@
 #!/bin/bash
 source venv/bin/activate
-export FLASK_APP=`pwd`/runweb.py
-export FLASK_DEBUG=1
+FLASK_APP=$(pwd)/runweb.py
+FLASK_DEBUG=1
+export FLASK_APP
+export FLASK_DEBUG
 flask run --host=0.0.0.0 

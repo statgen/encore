@@ -219,7 +219,10 @@ def infer_meta(csvfile, dialect=None):
     meta["columns"] = [None] * len(cols)
     for col, colval in cols.items():
         coldef = guess_column_class(colval)
-        coldef["name"] = headers[col]
+        if col < len(headers):
+            coldef["name"] = headers[col]
+        else:
+            coldef["name"] = "COL{}".format(col+1)
         meta["columns"][col] = coldef
     #check if ped
     pedlike, ped_columns = check_if_ped(meta["columns"], cols)

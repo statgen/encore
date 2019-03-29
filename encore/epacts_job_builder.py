@@ -47,7 +47,6 @@ class EpactsModel(BaseModel):
             infile = geno.get_vcf_path(1, must_exist=True)
         if not infile:
             raise Exception("Unable to find genotype input (genotype: {})".format(geno.geno_id))
-        infile = geno.get_sav_path(1)
         cmd = "{} {}".format(binary, self.cmd) + \
             " --vcf {}".format(infile) + \
             " --ped {}".format(ped.get("path")) +  \

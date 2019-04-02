@@ -614,8 +614,11 @@ def post_pheno():
     # file has been saved to DB
     pheno = Phenotype.get(pheno_id, current_app.config)
     pheno_reader = pheno.get_pheno_reader()
-    if pheno.meta:
-        meta = pheno_reader.meta
+    # find samples ids
+    latest_geno = next(iter(Genotype.list_all_for_user(user)), None)
+    if latest_geno:
+        latest_geno = Genotype.get(latest_geno["id"], current_app.config)
+        meta = pheno_reader.infer_meta( sample_ids = latest_geno.get_samples() )
     else:
         meta = pheno_reader.infer_meta()
     pheno.meta = meta

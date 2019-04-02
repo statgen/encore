@@ -35,6 +35,7 @@
 		a.edit-pheno-modal {text-decoration: none; color:inherit; cursor: pointer}
 		.pheno-actions button {display: block; padding: 1px 8px; margin: 3px auto; width: 8em;}
 		.col-right {text-align: right}
+		.error-info { padding: 20px; margin: 20px auto; }
 	</style>
 
 {% endblock %}
@@ -58,6 +59,9 @@
         </div>
 
         <div class="section">
+			{% if pheno.error %}
+				<div class="bg-warning error-info">{{ pheno.error }}</div>
+			{% endif %}
 			<table id="pheno_details_table">
 				{% if pheno.meta.records %}
 				<tr>

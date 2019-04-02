@@ -523,11 +523,17 @@ def calculate_overlaps(pheno):
 def calculate_overlap(pheno, geno_id):
     p_samples = pheno.get_pheno_reader().get_samples()
     g_samples = set(Genotype.get(geno_id, current_app.config).get_samples())
-    if len(g_samples)>0:
-        overlap = [sample for sample in p_samples if sample in g_samples]
-        return len(overlap)
-    else:
+    if len(g_samples)<1:
         return None
+    samples = 0
+    matched = 0
+    for sample in p_samples:
+        samples += 1
+        if sample in g_samples:
+            matched += 1
+    if samples < 1:
+        return None
+    return matched
 
 @api.route("/phenos/<pheno_id>/overlap", methods=["GET"])
 @check_edit_pheno

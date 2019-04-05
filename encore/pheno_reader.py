@@ -166,15 +166,23 @@ def check_if_ped(cols, obs):
         return False, None
     return True, None 
 
-def is_possible_sample_id_col(meta, colinfo):
-    colclass = meta["class"]
-    if meta["class"] == "id" and meta["type"] == "str":
-        matches = sum(x.startswith("NWD") for x in colinfo["str"])
-        return matches == len(colinfo["str"])
-    else:
-        return False
+def guess_sample_id_col(metas, cols, sample_ids):
+    best_match = 0
+    id_col_idx = None
+    for i in range(len(cols)):
+        meta = metas[i]
+        colinfo = cols[i]
+        if meta["class"] == "id":
+            if meta["type"] == "str":
+                matches = sum(x in sample_ids for x in colinfo["str"])
+            elif meta["type"] == "int":
+                matches = sum(str(x) in sample_ids for x in colinfo["int"])
+            if matches > best_match:
+                best_match = matches
+                id_col_idx = i
+    return id_col_idx
 
-def infer_meta(csvfile, dialect=None):
+def infer_meta(csvfile, dialect=None, sample_ids=None):
     meta = {"layout": {}, "columns": []}
 
     start_pos = 0
@@ -219,7 +227,10 @@ def infer_meta(csvfile, dialect=None):
     meta["columns"] = [None] * len(cols)
     for col, colval in cols.items():
         coldef = guess_column_class(colval)
-        coldef["name"] = headers[col]
+        if col < len(headers):
+            coldef["name"] = headers[col]
+        else:
+            coldef["name"] = "COL{}".format(col+1)
         meta["columns"][col] = coldef
     #check if ped
     pedlike, ped_columns = check_if_ped(meta["columns"], cols)
@@ -230,10 +241,11 @@ def infer_meta(csvfile, dialect=None):
         for actas, col in zip(colclasses, meta["columns"][0:3]):
             if col["class"] != "fixed":
                 col["class"] =  actas
-    else:
+    elif sample_ids:
         #if not ped, try to find ID column
-        id_col =  next((i for i in range(len(cols)) if  \
-            is_possible_sample_id_col(meta["columns"][i], cols[i])), None)
+        id_col =  None
+        sample_id_set = set(sample_ids)
+        id_col = guess_sample_id_col(meta["columns"], cols, sample_id_set)
         if id_col is not None:
             meta["columns"][id_col]["class"] = "sample_id"
     return meta
@@ -246,9 +258,9 @@ class PhenoReader:
         else:
             self.meta = self.infer_meta()
 
-    def infer_meta(self):
+    def infer_meta(self, sample_ids=None):
         with open(self.path, 'rU') as csvfile:
-            return infer_meta(csvfile)
+            return infer_meta(csvfile, sample_ids=sample_ids)
 
     def get_dialect(self, opts=None):
         class dialect(csv.Dialect):
@@ -294,7 +306,7 @@ class PhenoReader:
     def get_samples(self):
         sample_col = next(iter([x for x in self.get_columns() if x["class"]=="sample_id"]), None)
         if not sample_col:
-            raise "Could not find sample ID column" 
+            return None
         sample_col_idx = self.get_column_indexes()[sample_col["name"]]
         for row in self.row_extractor():
             yield row[sample_col_idx]

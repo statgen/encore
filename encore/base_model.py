@@ -44,3 +44,6 @@ class BaseModel(object):
             if x[0] == vfilter:
                 return x[1]
         return None
+
+    def get_failure_reason(self):
+        return None

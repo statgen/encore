@@ -124,6 +124,16 @@ class SaigeModel(BaseModel):
         else:
             if hasattr(self, "filters"):
                 model_spec["variant_filter"] = self.filters[0][0]
+
+    def get_failure_reason(self):
+        log_file_path = self.relative_path("saige.log")
+        if not os.path.isfile(log_file_path):
+            return None
+        with open(log_file_path, 'rt') as f:
+            for line in f:
+                if "matrix is singular" in line:
+                    return "Matrix is singular or not positive definite"
+        return None
         
 class LinearSaigeModel(SaigeModel):
     model_code = "saige-qt"

@@ -681,6 +681,19 @@ def add_user():
         print(e)
         raise ApiException("COULD NOT ADD USER", details=str(e))
 
+@api.route("/genos", methods=["POST"])
+@admin_required
+def add_geno():
+    try: 
+        values = request.values.to_dict(flat=True)
+        result = Genotype.create(values, config=current_app.config)
+        result["geno"] = result["geno"].as_object()
+        result["created"] = True
+        return ApiResult(result)
+    except Exception as e:
+        print(e)
+        raise ApiException("COULD NOT CREATE GENO", details=str(e))
+
 @api.route("/jobs/<job_id>/purge", methods=["DELETE"])
 @admin_required
 def purge_job(job_id):
@@ -757,7 +770,6 @@ def post_help():
             current_user)
         return ApiResult({"sent": True, "from_page": from_page})
     except Exception as e:
-        print(e)
         raise ApiException("FAILED TO SEND MESSAGE", details=str(e)) 
 
 @api.route("/notices", methods=["GET"])
@@ -785,6 +797,8 @@ class ApiException(Exception):
         self.details = details
 
     def to_result(self):
-        return ApiResult({'error': self.message},
-            status=self.status)
+        result = {'error': self.message}
+        if self.details:
+            result["details"] = self.details
+        return ApiResult(result, status=self.status)
 

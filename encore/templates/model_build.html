@@ -237,12 +237,14 @@
 				covars = pheno.meta.columns;
 				var opts  = [];
 				var hideCols = ["family_id","sample_id","mother_id","father_id"];
-				pheno.meta.columns.forEach(function(col) {
-					if (hideCols.indexOf(col.class)<0 &&
-						col.class != "fixed" && col.class != "id" && col.class!= "descr") {
-						opts.push({id: col.name, text: col.name});	
-					}
-				});
+				if (covars) {
+					covars.forEach(function(col) {
+						if (hideCols.indexOf(col.class)<0 &&
+							col.class != "fixed" && col.class != "id" && col.class!= "descr") {
+							opts.push({id: col.name, text: col.name});
+						}
+					});
+				}
 				responseSelect.html("").select2(
 					{"data": [""].concat(opts),
 					placeholder: "",
@@ -278,11 +280,20 @@
 		}
 
 		function updateModels(avail) {
-			function canDo(req) {
+			isAvailable = function(x) {return avail[x];}
+			areTrue = function(x) {return x==true;}
+
+			function canDo(reqs) {
 				if (!avail) {return true;}
-				if (!req) {return true;}
-				for( var i in req ) {
-					if (!(avail[req[i]])) {return false;}
+				if (!reqs) {return true;}
+				for( var i in reqs ) {
+					req = reqs[i]
+					if (req.indexOf("|") > -1) {
+						oneOf = req.split("|").map(isAvailable).some(areTrue);
+						if (!oneOf) {return false;}
+					} else {
+						if (!isAvailable(req)) {return false;}
+					}
 				}
 				return true;
 			}

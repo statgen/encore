@@ -34,6 +34,10 @@ def get_admin_user_page():
 def get_admin_pheno_page():
     return render_template("admin_phenos.html")
 
+@admin_area.route("/genos/", methods=["GET"])
+def get_admin_geno_page():
+    return render_template("admin_genos.html")
+
 @admin_area.route("/counts/", methods=["GET"])
 def get_admin_counts_page():
     return render_template("admin_counts.html")

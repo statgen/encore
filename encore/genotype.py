@@ -282,6 +282,9 @@ class Genotype:
         missing_fields = [x for x in required_fields if x not in fields]
         if len(missing_fields)>0:
             raise Exception("Missing required fields: {}".format(", ".join(missing_fields)))
+        empty_fields = [x for x in required_fields if len(new_values[x])<1]
+        if len(empty_fields)>0:
+            raise Exception("Missing values for fields: {}".format(", ".join(empty_fields)))
         builds = config.get("BUILD_REF", {}).keys()
         if new_values["build"] not in config.get("BUILD_REF", {}).keys():
             raise Exception("Unrecognized build: {} (known: {})".format(

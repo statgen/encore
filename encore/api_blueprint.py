@@ -668,6 +668,12 @@ def get_api_phenos_all():
     phenos = Phenotype.list_all(current_app.config)
     return ApiResult(phenos)
 
+@api.route("/genos-all", methods=["GET"])
+@admin_required
+def get_api_genos_all():
+    genos = Genotype.list_all(current_app.config)
+    return ApiResult(genos)
+
 @api.route("/users", methods=["POST"])
 @admin_required
 def add_user():
@@ -737,6 +743,11 @@ def purge_pheno(pheno_id):
         return ApiResult(result)
     except Exception as e:
         raise ApiException("COULD NOT PURGE PHENO", details=str(e))
+
+@api.route("/get-uuid", methods=["GET"])
+@admin_required
+def get_uuid():
+    return ApiResult({"uuid": str(uuid.uuid4())})
 
 @api.route('/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
 def get_api_annotations(resource):

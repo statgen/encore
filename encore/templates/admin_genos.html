@@ -9,14 +9,14 @@
 <script type="text/javascript">
 		function init_geno_table() {
 			$("#genos-table").DataTable({
-				ajax: {url: "/api/genos-all", dataSrc: ""},
+				ajax: {url: "/api/genos-all?links", dataSrc: ""},
 				order: [[3, "desc"]],
 				columns: [
 					{data: "id", title: "Geno ID"},
 					{data: "name", title: "Name", render: $.fn.dataTable.render.text()},
 					{data: "creation_date", title: "Date Created"},
-					{title: "Geno", data: "id", render: function(data) {
-						return "<a href='/genos/" + data + "'>View</a>"}}
+					{title: "Geno", data: "url_edit", render: function(data) {
+						return data ? "<a href='" + data + "'>View</a>" : "View"}}
 				],
 				createdRow: function(row, data, index) {
 					if (!data.is_active) {

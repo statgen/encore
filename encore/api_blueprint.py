@@ -672,6 +672,9 @@ def get_api_phenos_all():
 @admin_required
 def get_api_genos_all():
     genos = Genotype.list_all(current_app.config)
+    if "links" in request.args:
+        for geno in genos:
+            geno["url_edit"] =  url_for("admin.get_admin_geno_detail_geno", geno_id=geno["id"])
     return ApiResult(genos)
 
 @api.route("/users", methods=["POST"])

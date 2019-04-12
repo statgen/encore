@@ -1,0 +1,148 @@
+{% extends "layout.html" %}
+{% block header %}
+	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$(".link-button").click(function() {
+				var url = $(this).data("url");
+				if (url) {
+					document.location = url;
+				}
+			});
+			$(".pretty-number").each(function(x) {
+				$(this).text(parseInt($(this).text()).toLocaleString())
+			})
+		});
+	</script>
+	<style>
+		.geno-actions button {display: block; padding: 1px 8px; margin: 3px auto; width: 8em;}
+	</style>
+
+{% endblock %}
+{% block content %}
+	{% if geno %}
+        <div class="section">
+            <div class="section-title row">
+				<div class="col-md-10">
+					<h2 id="geno_main_title">{{ geno.name }}</h2>
+				</div>
+				<div class="col-md-2 geno-actions">
+					{% if geno.is_active %}
+						<button class="btn btn-success link-button" disabled="true"> 
+							Edit</button>
+					{% endif %}
+				</div>
+            </div>
+        </div>
+
+        <div class="section">
+			<table id="geno_details_table">
+				<tr>
+					<th>Build</th>
+					<td>{{ geno.build }}</td>
+				</tr>
+				<tr>
+					<th>Date Created</th>
+					<td>{{ geno.creation_date }}</td>
+				</tr>
+				<tr>
+					<th>Is Active</th>
+					<td>{{ geno.is_active }}</td>
+				</tr>
+			</table>
+        </div>
+
+		{% if geno.avail %}
+        <div class="section">
+            <div class="section-title">
+                <h3>Available Files</h3>
+            </div>
+        </div>
+	
+		<div class="section">
+			<table id="covariate_details_table">
+				<tr>
+					<th>VCF Files</th>
+					<td>{{ geno.avail.vcf }}</td>
+				</tr>
+				<tr>
+					<th>SAV Files</th>
+					<td>{{ geno.avail.sav }}</td>
+				</tr>
+				<tr>
+					<th>Kinship Matrix</th>
+					<td>{{ geno.avail.kinship }}</td>
+				</tr>
+				<tr>
+					<th>PCA SNPs</th>
+					<td>{{ geno.avail.snps }}</td>
+				</tr>
+			</table>
+		</div>
+		{% endif %}
+
+		{% if geno.stats %}
+        <div class="section">
+            <div class="section-title">
+                <h3>Stats</h3>
+            </div>
+        </div>
+	
+		<div class="section">
+			<table id="covariate_details_table">
+				<tr>
+					<th>Samples</th>
+					<td class="pretty-number">{{ geno.stats.sample_count }}</td>
+				</tr>
+				<tr>
+					<th>Genotypes</th>
+					<td class="pretty-number">{{ geno.stats.record_count }}</td>
+				</tr>
+			</table>
+		</div>
+		{% endif %}
+
+		{% if geno.meta %}
+        <div class="section">
+            <div class="section-title">
+                <h3>Meta Configuration</h3>
+            </div>
+        </div>
+
+		<pre>{{ geno.meta | tojson(indent=2) }} </pre>
+
+		{% endif %}
+
+		{% if geno.jobs %}
+        <div class="section">
+            <div class="section-title">
+                <h3>Jobs</h3>
+            </div>
+        </div>
+
+        <div class="section">
+			<table id="job_details_table">
+				<tr>
+					<th>Job Name</th>
+					<th>Creation Date</th>
+					<th>Status</th>
+					<th>Job</th>
+				</tr>
+				{% for job in geno.jobs %} 
+				<tr>
+					<td>{{ job.name}}</td>
+					<td>{{ job.creation_date }}</td>
+					<td>{{ job.status }}</td>
+					<td><a href="{{ url_for("user.get_job", job_id=job.id) }}">View</a></td>
+				</tr>
+				{% endfor %}
+			</table>
+        </div>
+		{% endif %}
+	{% else %}
+		<h3 style="text-align:center; padding: 10px;">Genotype not found</h3>
+		<p style="text-align:center"><a href="{{url_for("user.get_genos")}}">Return to genotypes</a></p>
+	{% endif %}
+{% endblock %}

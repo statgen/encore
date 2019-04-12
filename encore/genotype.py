@@ -200,7 +200,7 @@ class Genotype:
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))
 
-    def as_object(self):
+    def as_object(self, include_meta=False):
         obj = {"geno_id": self.geno_id, 
             "name": self.name, 
             "build": self.build, 
@@ -215,6 +215,8 @@ class Genotype:
         avail["snps"] = True if self.get_pca_genotypes_path(must_exist=True) else False
         avail["group_nonsyn"] = True if self.get_groups_path("nonsyn", must_exist=True) else False
         obj["avail"] = avail
+        if include_meta:
+            obj["meta"] = self.meta
         return obj
 
     @staticmethod

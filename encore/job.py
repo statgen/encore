@@ -146,6 +146,13 @@ class Job:
         return results 
 
     @staticmethod
+    def list_all_for_genotype(geno_id, config=None):
+        db = sql_pool.get_conn()
+        results = Job.__list_by_sql_where(db, "jobs.geno_id = uuid_to_bin(%s) ",
+            (geno_id,))
+        return results
+
+    @staticmethod
     def list_all_for_user_by_genotype(user_id, geno_id, config=None):
         db = sql_pool.get_conn()
         results = Job.__list_by_sql_where(db, "jobs.geno_id = uuid_to_bin(%s) " + 

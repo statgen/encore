@@ -668,6 +668,15 @@ def get_api_phenos_all():
     phenos = Phenotype.list_all(current_app.config)
     return ApiResult(phenos)
 
+@api.route("/genos-all", methods=["GET"])
+@admin_required
+def get_api_genos_all():
+    genos = Genotype.list_all(current_app.config)
+    if "links" in request.args:
+        for geno in genos:
+            geno["url_edit"] =  url_for("admin.get_admin_geno_detail_geno", geno_id=geno["id"])
+    return ApiResult(genos)
+
 @api.route("/users", methods=["POST"])
 @admin_required
 def add_user():
@@ -680,6 +689,19 @@ def add_user():
     except Exception as e:
         print(e)
         raise ApiException("COULD NOT ADD USER", details=str(e))
+
+@api.route("/genos", methods=["POST"])
+@admin_required
+def add_geno():
+    try: 
+        values = request.values.to_dict(flat=True)
+        result = Genotype.create(values, config=current_app.config)
+        result["geno"] = result["geno"].as_object()
+        result["created"] = True
+        return ApiResult(result)
+    except Exception as e:
+        print(e)
+        raise ApiException("COULD NOT CREATE GENO", details=str(e))
 
 @api.route("/jobs/<job_id>/purge", methods=["DELETE"])
 @admin_required
@@ -725,6 +747,11 @@ def purge_pheno(pheno_id):
     except Exception as e:
         raise ApiException("COULD NOT PURGE PHENO", details=str(e))
 
+@api.route("/get-uuid", methods=["GET"])
+@admin_required
+def get_uuid():
+    return ApiResult({"uuid": str(uuid.uuid4())})
+
 @api.route('/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
 def get_api_annotations(resource):
     if resource == "ld-results":
@@ -757,7 +784,6 @@ def post_help():
             current_user)
         return ApiResult({"sent": True, "from_page": from_page})
     except Exception as e:
-        print(e)
         raise ApiException("FAILED TO SEND MESSAGE", details=str(e)) 
 
 @api.route("/notices", methods=["GET"])
@@ -785,6 +811,8 @@ class ApiException(Exception):
         self.details = details
 
     def to_result(self):
-        return ApiResult({'error': self.message},
-            status=self.status)
+        result = {'error': self.message}
+        if self.details:
+            result["details"] = self.details
+        return ApiResult(result, status=self.status)
 

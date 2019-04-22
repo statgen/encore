@@ -6,6 +6,8 @@ from .pheno_reader import PhenoReader
 from .geno_reader import GenoReader
 
 class Genotype:
+    __dbfields = ["id", "name", "build", "is_active", "creation_date"]
+
     def __init__(self, geno_id, meta=None):
         self.geno_id = geno_id
         if meta is None:
@@ -198,7 +200,7 @@ class Genotype:
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))
 
-    def as_object(self):
+    def as_object(self, include_meta=False):
         obj = {"geno_id": self.geno_id, 
             "name": self.name, 
             "build": self.build, 
@@ -213,6 +215,8 @@ class Genotype:
         avail["snps"] = True if self.get_pca_genotypes_path(must_exist=True) else False
         avail["group_nonsyn"] = True if self.get_groups_path("nonsyn", must_exist=True) else False
         obj["avail"] = avail
+        if include_meta:
+            obj["meta"] = self.meta
         return obj
 
     @staticmethod
@@ -246,7 +250,7 @@ class Genotype:
         return results
 
     @staticmethod
-    def list_all():
+    def list_all(config=None):
         db = sql_pool.get_conn()
         results = Genotype.__list_by_sql_where(db)
         return results
@@ -267,3 +271,37 @@ class Genotype:
         cur.execute(sql, vals)
         results = cur.fetchall()
         return results
+
+    @staticmethod
+    def create(new_values, db=None, config=None):
+        updateable_fields = [x for x in Genotype.__dbfields]
+        required_fields = ["id", "name", "build"]
+        fields = list(new_values.keys()) 
+        values = list(new_values.values())
+        bad_fields = [x for x in fields if x not in updateable_fields]
+        if len(bad_fields)>0:
+            raise Exception("Invalid field: {}".format(", ".join(bad_fields)))
+        missing_fields = [x for x in required_fields if x not in fields]
+        if len(missing_fields)>0:
+            raise Exception("Missing required fields: {}".format(", ".join(missing_fields)))
+        empty_fields = [x for x in required_fields if len(new_values[x])<1]
+        if len(empty_fields)>0:
+            raise Exception("Missing values for fields: {}".format(", ".join(empty_fields)))
+        builds = config.get("BUILD_REF", {}).keys()
+        if new_values["build"] not in config.get("BUILD_REF", {}).keys():
+            raise Exception("Unrecognized build: {} (known: {})".format(
+                new_values["build"], ", ".join(builds)))
+        if db is None:
+            db = sql_pool.get_conn()
+        sql = "INSERT INTO genotypes (" + \
+            ", ".join(fields)+ \
+            ") values (" + \
+            ", ".join(["uuid_to_bin(%s)" if x=="id" else "%s" for x in fields]) + \
+            ")"
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute(sql, values)
+        db.commit()
+        new_geno = Genotype.get(new_values["id"], config=config)
+        result = {"geno": new_geno}
+        return result
+

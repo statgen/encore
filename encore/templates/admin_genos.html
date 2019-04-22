@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+{% block header %}
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
+
+	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+
+<script type="text/javascript">
+		function init_geno_table() {
+			$("#genos-table").DataTable({
+				ajax: {url: "/api/genos-all?links", dataSrc: ""},
+				order: [[3, "desc"]],
+				columns: [
+					{data: "id", title: "Geno ID"},
+					{data: "name", title: "Name", render: $.fn.dataTable.render.text()},
+					{data: "creation_date", title: "Date Created"},
+					{title: "Geno", data: "url_edit", render: function(data) {
+						return data ? "<a href='" + data + "'>View</a>" : "View"}}
+				],
+				createdRow: function(row, data, index) {
+					if (!data.is_active) {
+						$(row).addClass("inactive")
+					}
+				},
+				stateSave: true
+			})
+		};
+		function init_addform() {
+			$("#genoModal").find("form").on("keyup keypress", function(e) {
+				var keyCode = e.keyCode || e.which;
+				if (keyCode === 13) { 
+					e.preventDefault();
+					return false;
+				}
+			});
+			$(".uuid").click(function(evt) {
+				evt.preventDefault();
+				var uuid_for = $(this).data("for");
+				var action = $(this).data("action");
+				if (!uuid_for || !action) {return ;}
+				var dest = $("#" + uuid_for);
+				if (dest.length < 1) {return;}
+				$.get(action).done( function(data) {
+					dest.val(data.uuid)
+				});
+			});
+			$("#new_geno_button").click(function(evt) {
+				evt.preventDefault();
+				$("#genoModal").on("shown.bs.modal", function() {
+					$("#genoModal").find("#geno_id").focus();
+				});
+				$("#genoModal").modal();
+			});
+			$("button.add-geno-save").click(function(evt) {
+				evt.preventDefault();
+				var data = ["geno_id", "name", "build", "is_active"].reduce(function(obj, x) {
+					var ele = $("#genoModal").find("#" + x);
+					if (x=="geno_id") {x="id";}
+					if (ele.attr("type") == "checkbox") {
+						obj[x] = Number(ele.is(":checked"));
+					} else {
+						obj[x] = ele.val();
+					}
+					return obj;
+				}, {});
+				var add_url = $(this).data("action-add");
+				$.post(add_url, data).done( function() {
+					$("#genos-table").DataTable().ajax.reload();
+					$("#genoModal").modal("hide");
+				}).fail(function(xhr, status, err) {
+					var msg = (xhr.responseJSON && xhr.responseJSON.details) || "Insert failed";
+					alert(msg);
+				});
+			});
+		}
+		function init_page() {
+			init_geno_table();
+			init_addform();
+		}
+		$(document).ready(function() {
+			init_page();
+		});
+	</script>
+	<style>
+		tr.inactive {text-decoration: line-through;} 
+	</style>
+{% endblock %}
+{% block content %}
+
+        <div class="section">
+            <div class="section-title row">
+				<div class="col-md-10">
+					<h2>Genos</h2>
+				</div>
+				<div class="col-md-2">
+					<button class="btn btn-success" name="add_geno" id="new_geno_button">New Geno</button>
+				</div>
+            </div>
+            <table id="genos-table"></table>
+        </div>
+
+		<div class="modal fade" id="genoModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Add Genotype Freeze</h4>
+					</div>
+					<div class="modal-body">
+						<form class="form-horizonal"> 
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="geno_id">Geno ID</label>
+							<div class="col-sm-10"><div class="input-group">
+								<input type="text" class="form-control" id="geno_id"/>
+								<span class="input-group-btn"><button class="uuid btn btn-info" data-for="geno_id" 
+									data-action="{{ url_for("api.get_uuid") }}">generate</button><</span>
+							</div></div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="name">Name</label>
+							<div class="col-sm-10"><input type="text" class="form-control" id="name"/></div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="full_name">Build</label>
+							<div class="col-sm-10"><input type="text" class="form-control" id="build"/></div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="is_active">Is Active</label>
+							<div class="col-sm-10"> <input type="checkbox" id="is_active"/></div>
+						</div>
+						&nbsp;
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-success add-geno-save" 
+							data-action-add="{{ url_for("api.add_geno") }}">Add</button>
+					</div>
+				</div>
+			</div>
+		</div>
+{% endblock %}

@@ -19,7 +19,7 @@ class SlurmJob:
         cores_per_job= model_plan.get("mem_per_cpu", 56)
 
         return ["#!/bin/bash", 
-           "#SBATCH --partition=encore", 
+           "#SBATCH --partition={}".format(self.config.get("QUEUE_PARTITION", "encore")),
            "#SBATCH --job-name=gasp_{}".format(self.job_id), 
            "#SBATCH --mem-per-cpu={}".format(mem_per_cpu), 
            "#SBATCH --workdir={}".format(self.job_directory), 

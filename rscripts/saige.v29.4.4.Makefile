@@ -31,7 +31,7 @@ STEP2OPT = --minMAF=0.001 --IsOutputAFinCaseCtrl=FALSE
 
 RLIBPATH = /apps/saige
 RSCRIPT = R_LIBS=$(RLIBPATH) /usr/bin/Rscript
-APPDIR = /apps/saige
+APPDIR = /apps/saige/
 
 ifeq ("$(wildcard $(REFFILEINDEX))","")
 $(error Cannot read REFFILEINDEX ($(REFFILEINDEX)) in order to create chunks for step 2)

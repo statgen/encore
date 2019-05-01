@@ -178,14 +178,13 @@ class Job:
         return results
 
     @staticmethod
-    def list_all(config=None):
+    def list_all(config=None, page=None):
         db = sql_pool.get_conn()
-        results = Job.__list_by_sql_where(db)
+        results = Job.__list_by_sql_where(db, page=page)
         return results
 
     @staticmethod
-    def __list_by_sql_where(db, where="", vals=(), order=""):
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
+    def __list_by_sql_where(db, where="", vals=(), order="", page=None):
         sql = """
             SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, 
               statuses.name AS status, 
@@ -202,6 +201,10 @@ class Job:
             sql += " ORDER BY " + order
         else:
             sql += " ORDER BY jobs.creation_date DESC"
+        if page:
+            sql += " LIMIT %s OFFSET %s"
+            vals += (page.limit, page.offset)
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
         cur.execute(sql, vals)
         results = cur.fetchall()
         return results

@@ -22,8 +22,24 @@ import sys, traceback
 import subprocess
 import requests
 import numpy as np
+from collections import namedtuple
 
 api = Blueprint("api", __name__)
+def safe_cast(val, to_type, default=None):
+    try:
+        return to_type(val)
+    except (ValueError, TypeError):
+        return default
+
+PageInfo = namedtuple('PageInfo', ['limit', 'offset'], verbose=False)
+def get_page_info(request):
+    if request.args.get("limit") is None:
+        return None
+    offset = safe_cast(request.args.get("offset", 0), int, 0)
+    limit = safe_cast(request.args.get("limit", 50), int, 50)
+    if limit==0:
+        return None
+    return PageInfo(limit, offset)
 
 @api.before_request
 @login_required
@@ -653,7 +669,8 @@ def get_models():
 @api.route("/api/jobs-all", methods=["GET"])
 @admin_required
 def get_jobs_all():
-    jobs = Job.list_all(current_app.config)
+    page = get_page_info(request)
+    jobs = Job.list_all(current_app.config, page=page)
     return ApiResult(jobs)
 
 @api.route("/users-all", methods=["GET"])

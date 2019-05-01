@@ -8,6 +8,7 @@ import re
 import hashlib
 from .user import User
 from .model_factory import ModelFactory
+from .db_helpers import SelectQuery, TableJoin, PagedResult
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
@@ -185,29 +186,25 @@ class Job:
 
     @staticmethod
     def __list_by_sql_where(db, where="", vals=(), order="", page=None):
-        sql = """
-            SELECT bin_to_uuid(jobs.id) AS id, jobs.name AS name, 
-              statuses.name AS status, 
-              DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date, 
-              DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date,
-              users.email as user_email,
-              jobs.is_active
-            FROM jobs
-            LEFT JOIN statuses ON jobs.status_id = statuses.id
-            LEFT JOIN users ON jobs.user_id = users.id"""
-        if where:
-            sql += " WHERE " + where
-        if order:
-            sql += " ORDER BY " + order
-        else:
-            sql += " ORDER BY jobs.creation_date DESC"
-        if page:
-            sql += " LIMIT %s OFFSET %s"
-            vals += (page.limit, page.offset)
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        cur.execute(sql, vals)
-        results = cur.fetchall()
-        return results
+        cols = ["bin_to_uuid(jobs.id) AS id", "jobs.name AS name",
+              "statuses.name AS status",
+              "DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date",
+              "DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date",
+              "users.email as user_email",
+              "jobs.is_active"]
+        if not order:
+            order = "jobs.creation_date DESC"
+        sqlcmd = (SelectQuery()
+            .set_cols(cols)
+            .set_table("jobs")
+            .add_join(TableJoin("statuses", "jobs.status_id = statuses.id"))
+            .add_join(TableJoin("users", "jobs.user_id = users.id"))
+            .set_where(where)
+            .set_vals(vals)
+            .set_order(order)
+            .set_page(page))
+        result = PagedResult.execute_select(db, sqlcmd)
+        return result.results
 
     @staticmethod
     def create(job_id, values):

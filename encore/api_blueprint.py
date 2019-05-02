@@ -1,5 +1,6 @@
 from flask import Blueprint, Response, json, render_template, current_app, request, send_file, url_for
 from flask_login import current_user, login_required
+from werkzeug.urls import url_encode
 from .user import User
 from .job import Job 
 from .auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno, admin_required
@@ -10,6 +11,7 @@ from .pheno_reader import PhenoReader
 from .slurm_queue import SlurmJob, get_queue
 from .model_factory import ModelFactory
 from .notifier import get_notifier
+from .db_helpers import PagedResult, PageInfo
 import os
 import re
 import gzip
@@ -22,7 +24,6 @@ import sys, traceback
 import subprocess
 import requests
 import numpy as np
-from collections import namedtuple
 
 api = Blueprint("api", __name__)
 def safe_cast(val, to_type, default=None):
@@ -31,7 +32,6 @@ def safe_cast(val, to_type, default=None):
     except (ValueError, TypeError):
         return default
 
-PageInfo = namedtuple('PageInfo', ['limit', 'offset'], verbose=False)
 def get_page_info(request):
     if request.args.get("limit") is None:
         return None
@@ -666,12 +666,12 @@ def get_models():
 
 # ADMIN ENDPOINTS
 
-@api.route("/api/jobs-all", methods=["GET"])
+@api.route("/jobs-all", methods=["GET"])
 @admin_required
 def get_jobs_all():
     page = get_page_info(request)
     jobs = Job.list_all(current_app.config, page=page)
-    return ApiResult(jobs)
+    return ApiPagedResult(jobs, request=request)
 
 @api.route("/users-all", methods=["GET"])
 @admin_required
@@ -820,6 +820,45 @@ class ApiResult(object):
         return Response(json.dumps(data),
             status=self.status,
             mimetype='application/json')
+
+class ApiPagedResult(ApiResult):
+    def __init__(self, value, status=200, header=None, request=None):
+        if not isinstance(value, PagedResult):
+            raise Exception("ApiPagedResult expects a PagedResult")
+        self.value = value
+        self.status = status
+        self.header = header
+        if value.page:
+            if self.header is None:
+                self.header = {}
+            self.header["total_count"] = value.total_count
+            self.header["limit"] = value.page.limit
+            self.header["offset"] = value.page.offset
+            self.header["pages"] = value.page_count()
+            if request:
+                next_page = self.value.next_page()
+                if next_page:
+                    self.header["next"] = ApiPagedResult.update_url_page(request,
+                        next_page)
+                prev_page = self.value.prev_page()
+                if prev_page:
+                    self.header["prev"] = ApiPagedResult.update_url_page(request,
+                        prev_page)
+
+    def to_response(self):
+        data = self.value.results
+        if self.header:
+            data = {"header": self.header, "data": data}
+        return Response(json.dumps(data),
+            status=self.status,
+            mimetype='application/json')
+
+    @staticmethod
+    def update_url_page(request, page):
+        args = request.args.copy()
+        args["limit"] = page.limit
+        args["offset"] = page.offset
+        return '{}?{}'.format(request.path, url_encode(args))
 
 class ApiException(Exception):
     def __init__(self, message, status=400, details=None):

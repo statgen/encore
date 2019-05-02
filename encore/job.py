@@ -181,11 +181,16 @@ class Job:
     @staticmethod
     def list_all(config=None, page=None):
         db = sql_pool.get_conn()
-        results = Job.__list_by_sql_where(db, page=page)
-        return results
+        result = Job.__list_by_sql_where_page(db, page=page)
+        return result
 
     @staticmethod
-    def __list_by_sql_where(db, where="", vals=(), order="", page=None):
+    def __list_by_sql_where(db, where="", vals=(), order=""):
+        result = Job.__list_by_sql_where_page(db, where, vals, order, page=None)
+        return result.results
+
+    @staticmethod
+    def __list_by_sql_where_page(db, where="", vals=(), order="", page=None):
         cols = ["bin_to_uuid(jobs.id) AS id", "jobs.name AS name",
               "statuses.name AS status",
               "DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date",
@@ -203,8 +208,7 @@ class Job:
             .set_vals(vals)
             .set_order(order)
             .set_page(page))
-        result = PagedResult.execute_select(db, sqlcmd)
-        return result.results
+        return PagedResult.execute_select(db, sqlcmd)
 
     @staticmethod
     def create(job_id, values):

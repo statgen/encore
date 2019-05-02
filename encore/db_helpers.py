@@ -1,5 +1,7 @@
 import re
 import MySQLdb
+from collections import namedtuple
+from math import ceil
 
 class TableJoin:
     def __init__(self, table, on, join_type="LEFT"):
@@ -83,11 +85,35 @@ class SelectQuery:
         return self
 
 
+PageInfo = namedtuple('PageInfo', ['limit', 'offset'], verbose=False)
+
 class PagedResult:
     def __init__(self, results, total_count=0, page=None):
         self.results = results
         self.page = page
         self.total_count = total_count
+
+    def next_page(self):
+        if self.page is None:
+            return None
+        if self.page.offset + self.page.limit >= self.total_count:
+            return None
+        return PageInfo(self.page.limit, self.page.offset + self.page.limit)
+
+    def prev_page(self):
+        if self.page is None:
+            return None
+        if self.page.offset == 0:
+            return None
+        return PageInfo(self.page.limit, min(self.page.offset-self.page.limit, 0))
+
+    def page_count(self):
+        if self.page is None:
+            if self.total_count>0:
+                return 1
+            else:
+                return 0
+        return int(ceil(self.total_count / float(self.page.limit)))
 
     @staticmethod
     def execute_select(db, sqlcmd):

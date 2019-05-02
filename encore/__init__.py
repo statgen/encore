@@ -124,4 +124,3 @@ class ApiFlask(Flask):
         if isinstance(rv, ApiResult):
             return rv.to_response()
         return Flask.make_response(self, rv)
-

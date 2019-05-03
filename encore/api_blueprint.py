@@ -32,12 +32,13 @@ def safe_cast(val, to_type, default=None):
     except (ValueError, TypeError):
         return default
 
-def get_page_info(request):
-    if request.args.get("limit") is None:
-        return None
+def get_page_info(request, default_limit = 0):
     offset = safe_cast(request.args.get("offset", 0), int, 0)
-    limit = safe_cast(request.args.get("limit", 50), int, 50)
-    if limit==0:
+    if "limit" in request.args:
+        limit = safe_cast(request.args.get("limit", 0), int, 0)
+    else:
+        limit = default_limit
+    if limit==0 and offset==0:
         return None
     return PageInfo(limit, offset)
 
@@ -844,6 +845,8 @@ class ApiPagedResult(ApiResult):
                 if prev_page:
                     self.header["prev"] = ApiPagedResult.update_url_page(request,
                         prev_page)
+                if "echo" in request.args:
+                    self.header["echo"] = re.sub(r'[\W]+', "", request.args.get("echo"))
 
     def to_response(self):
         data = self.value.results

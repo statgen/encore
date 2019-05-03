@@ -3,6 +3,39 @@ import MySQLdb
 from collections import namedtuple
 from math import ceil
 
+QueryInfo = namedtuple('QueryInfo', ['page', 'order_by'], verbose=False)
+
+class ResultOrder:
+    def __init__(self, column_orders=None):
+        self.order_by = []
+        if column_orders:
+            for x in column_orders:
+                self.add(x)
+
+    def addRaw(self, column, direction):
+        self.add(ColumnOrder(column, direction))
+
+    def add(self, column_order):
+        if not isinstance(column_order, ColumnOrder):
+            raise TypeError("ResultOrder expects a ColumnOrder object")
+        self.order_by.append(column_order)
+
+    def to_clause(self):
+        if len(self.order_by)==0:
+            return ""
+        return "ORDER BY " + ", ".join((x.to_clause() for x in self.order_by))
+
+class ColumnOrder:
+    def __init__(self, column, direction="ASC"):
+        self.column = column
+        self.direction = direction
+
+    def to_clause(self):
+        return "{} {}".format(self.column, self.direction)
+
+    def __repr__(self):
+        return "<ColumnOrder {},{}>".format(self.column, self.direction)
+
 class TableJoin:
     def __init__(self, table, on, join_type="LEFT"):
         self.table = table
@@ -19,11 +52,11 @@ class SelectQuery:
         self.joins = []
         self.where = ""
         self.vals = ()
-        self.order = ""
+        self.order = None
         self.page = None
 
     @staticmethod
-    def __base_sql(cols=[], table="", joins=[], where="", vals=(), order="", page=None):
+    def __base_sql(cols=[], table="", joins=[], where="", vals=(), order=None, page=None):
         sql = "SELECT "
         sql += ", ".join(cols)
         sql += " FROM " + table
@@ -32,7 +65,7 @@ class SelectQuery:
         if where:
             sql += " WHERE " + where
         if order:
-            sql += " ORDER BY " + order
+            sql += " " + order.to_clause()
         if page:
             sql += " LIMIT %s OFFSET %s"
             vals += (page.limit, page.offset)
@@ -76,7 +109,7 @@ class SelectQuery:
         self.vals = vals
         return self
 
-    def set_order(self, order):
+    def set_order_by(self, order):
         self.order = order
         return self
 

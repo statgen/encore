@@ -122,7 +122,7 @@ class PagedResult:
         page = sqlcmd.page
         cur.execute(sql, vals)
         results = cur.fetchall()
-        if page and len(results)>=page.limit:
+        if page and (page.offset>0 or len(results)==page.limit):
             sql, vals = sqlcmd.cmd_count()
             cur.execute(sql, vals)
             total_count = cur.fetchone()["count"]

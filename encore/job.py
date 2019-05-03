@@ -8,7 +8,7 @@ import re
 import hashlib
 from .user import User
 from .model_factory import ModelFactory
-from .db_helpers import SelectQuery, TableJoin, PagedResult
+from .db_helpers import SelectQuery, TableJoin, PagedResult, ResultOrder, ColumnOrder
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
@@ -179,26 +179,28 @@ class Job:
         return results
 
     @staticmethod
-    def list_all(config=None, page=None):
+    def list_all(config=None, query=None):
         db = sql_pool.get_conn()
-        result = Job.__list_by_sql_where_page(db, page=page)
+        result = Job.__list_by_sql_where_query(db, query=query)
         return result
 
     @staticmethod
-    def __list_by_sql_where(db, where="", vals=(), order=""):
-        result = Job.__list_by_sql_where_page(db, where, vals, order, page=None)
+    def __list_by_sql_where(db, where="", vals=()):
+        result = Job.__list_by_sql_where_page(db, where, vals, query=None)
         return result.results
 
     @staticmethod
-    def __list_by_sql_where_page(db, where="", vals=(), order="", page=None):
+    def __list_by_sql_where_query(db, where="", vals=(), query=None):
+        page = query.page
+        order_by = query.order_by
         cols = ["bin_to_uuid(jobs.id) AS id", "jobs.name AS name",
               "statuses.name AS status",
               "DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date",
               "DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date",
               "users.email as user_email",
               "jobs.is_active"]
-        if not order:
-            order = "jobs.creation_date DESC"
+        if not order_by:
+            order_by = ResultOrder([ColumnOrder("jobs.creation_date", "DESC")])
         sqlcmd = (SelectQuery()
             .set_cols(cols)
             .set_table("jobs")
@@ -206,7 +208,7 @@ class Job:
             .add_join(TableJoin("users", "jobs.user_id = users.id"))
             .set_where(where)
             .set_vals(vals)
-            .set_order(order)
+            .set_order_by(order_by)
             .set_page(page))
         return PagedResult.execute_select(db, sqlcmd)
 

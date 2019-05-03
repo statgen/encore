@@ -11,7 +11,7 @@ from .pheno_reader import PhenoReader
 from .slurm_queue import SlurmJob, get_queue
 from .model_factory import ModelFactory
 from .notifier import get_notifier
-from .db_helpers import PagedResult, PageInfo
+from .db_helpers import PagedResult, PageInfo, ResultOrder, QueryInfo
 import os
 import re
 import gzip
@@ -41,6 +41,25 @@ def get_page_info(request, default_limit = 0):
     if limit==0 and offset==0:
         return None
     return PageInfo(limit, offset)
+
+def get_order_info(request):
+    if not "order_by" in request.args:
+        return None
+    order_by = ResultOrder()
+    raw_vals = request.args.get("order_by").split(",")
+    for val in raw_vals:
+        if val.startswith("+"):
+            order_by.addRaw(val[1:], "ASC")
+        elif val.startswith("-"):
+            order_by.addRaw(val[1:], "DESC")
+        else:
+            order_by.addRaw(val, "ASC")
+    return order_by
+
+def get_query_info(request, default_limit = 0):
+    page = get_page_info(request, default_limit)
+    order_by = get_order_info(request)
+    return QueryInfo(page, order_by)
 
 @api.before_request
 @login_required
@@ -670,8 +689,8 @@ def get_models():
 @api.route("/jobs-all", methods=["GET"])
 @admin_required
 def get_jobs_all():
-    page = get_page_info(request)
-    jobs = Job.list_all(current_app.config, page=page)
+    query = get_query_info(request)
+    jobs = Job.list_all(current_app.config, query=query)
     return ApiPagedResult(jobs, request=request)
 
 @api.route("/users-all", methods=["GET"])

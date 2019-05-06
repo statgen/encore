@@ -8,7 +8,7 @@ import re
 import hashlib
 from .user import User
 from .model_factory import ModelFactory
-from .db_helpers import SelectQuery, TableJoin, PagedResult, ResultOrder, ColumnOrder
+from .db_helpers import SelectQuery, TableJoin, PagedResult, ResultOrder, ColumnOrder, WhereClause, WhereExpression
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
@@ -186,11 +186,11 @@ class Job:
 
     @staticmethod
     def __list_by_sql_where(db, where="", vals=()):
-        result = Job.__list_by_sql_where_page(db, where, vals, query=None)
+        result = Job.__list_by_sql_where_page(db, WhereClause(where, vals), query=None)
         return result.results
 
     @staticmethod
-    def __list_by_sql_where_query(db, where="", vals=(), query=None):
+    def __list_by_sql_where_query(db, where=None, query=None):
         page = query.page
         order_by = query.order_by
         cols = ["bin_to_uuid(jobs.id) AS id", "jobs.name AS name",
@@ -201,13 +201,17 @@ class Job:
               "jobs.is_active"]
         if not order_by:
             order_by = ResultOrder([ColumnOrder("jobs.creation_date", "DESC")])
+        if query.filter:
+            where = WhereClause() if where is None else where
+            qfields = ["bin_to_uuid(jobs.id)", "jobs.name", "users.email", "statuses.name"]
+            where.add(WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
+                ("%" + query.filter + "%", )))
         sqlcmd = (SelectQuery()
             .set_cols(cols)
             .set_table("jobs")
             .add_join(TableJoin("statuses", "jobs.status_id = statuses.id"))
             .add_join(TableJoin("users", "jobs.user_id = users.id"))
             .set_where(where)
-            .set_vals(vals)
             .set_order_by(order_by)
             .set_page(page))
         return PagedResult.execute_select(db, sqlcmd)

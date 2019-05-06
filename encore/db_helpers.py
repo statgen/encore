@@ -3,7 +3,7 @@ import MySQLdb
 from collections import namedtuple
 from math import ceil
 
-QueryInfo = namedtuple('QueryInfo', ['page', 'order_by'], verbose=False)
+QueryInfo = namedtuple('QueryInfo', ['page', 'order_by', 'filter'], verbose=False)
 
 class ResultOrder:
     def __init__(self, column_orders=None):
@@ -45,25 +45,81 @@ class TableJoin:
     def to_clause(self):
         return "{} JOIN {} ON {}".format(self.join_type, self.table, self.on)
 
+
+class WhereExpression:
+    def __init__(self, where="", vals=()):
+        self.where = where
+        self.vals = vals
+
+    def to_clause(self):
+        return self.where, self.vals
+
+class WhereGroup:
+    def __init__(self, *exprs):
+        self.__join_verb = "??"
+        self.wheres = []
+        for expr in exprs:
+            self.add(expr)
+
+    def add(self, expr):
+        self.wheres.append(expr)
+
+    def to_clause(self):
+        if len(self.wheres) <1 :
+            return None, None
+        elif len(self.wheres) == 1:
+            return self.wheres[0].to_clause()
+        where = []
+        vals = ()
+        for expr in self.wheres:
+            w, v = expr.to_clause()
+            where.append(w)
+            vals = vals + v
+        connect = ") " + self.__join_verb + " ("
+        wheres = "(" + connect.join(where) + ")"
+        return wheres, vals
+
+class WhereAll(WhereGroup):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__join_verb = "AND"
+
+class WhereAny(WhereGroup):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__join_verb = "OR"
+
+class WhereClause(WhereAll):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def to_clause(self):
+        w, v = super().to_clause()
+        if not w:
+            return ""
+        return "WHERE " + w, v
+
 class SelectQuery:
     def __init__(self):
         self.cols = []
         self.table = ""
         self.joins = []
-        self.where = ""
-        self.vals = ()
+        self.where = None
         self.order = None
         self.page = None
 
     @staticmethod
-    def __base_sql(cols=[], table="", joins=[], where="", vals=(), order=None, page=None):
+    def __base_sql(cols=[], table="", joins=[], where=None, order=None, page=None):
+        vals = ()
         sql = "SELECT "
         sql += ", ".join(cols)
         sql += " FROM " + table
         for join in joins:
             sql += " " + join.to_clause()
         if where:
-            sql += " WHERE " + where
+            w, v =  where.to_clause()
+            sql += " " + w
+            vals += v
         if order:
             sql += " " + order.to_clause()
         if page:
@@ -73,12 +129,12 @@ class SelectQuery:
 
     def cmd_select(self):
         sql, vals = SelectQuery.__base_sql(self.cols, self.table, self.joins,
-            self.where, self.vals, self.order, self.page)
+            self.where, self.order, self.page)
         return sql, vals
 
     def cmd_count(self):
         sql, vals = SelectQuery.__base_sql(["count(*) as count"], self.table, self.joins,
-            self.where, self.vals)
+            self.where)
         return sql, vals
 
     def set_cols(self, cols):
@@ -103,10 +159,6 @@ class SelectQuery:
 
     def set_where(self, where):
         self.where = where
-        return self
-
-    def set_vals(self, vals):
-        self.vals = vals
         return self
 
     def set_order_by(self, order):

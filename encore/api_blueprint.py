@@ -11,7 +11,7 @@ from .pheno_reader import PhenoReader
 from .slurm_queue import SlurmJob, get_queue
 from .model_factory import ModelFactory
 from .notifier import get_notifier
-from .db_helpers import PagedResult, PageInfo, ResultOrder, QueryInfo
+from .db_helpers import PagedResult, PageInfo, OrderClause, QueryInfo
 import os
 import re
 import gzip
@@ -45,7 +45,7 @@ def get_page_info(request, default_limit = 0):
 def get_order_info(request):
     if not "order_by" in request.args:
         return None
-    order_by = ResultOrder()
+    order_by = OrderClause()
     raw_vals = request.args.get("order_by").split(",")
     for val in raw_vals:
         if val.startswith("+"):

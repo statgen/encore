@@ -8,7 +8,7 @@ import re
 import hashlib
 from .user import User
 from .model_factory import ModelFactory
-from .db_helpers import SelectQuery, TableJoin, PagedResult, ResultOrder, ColumnOrder, WhereClause, WhereExpression
+from .db_helpers import SelectQuery, TableJoin, PagedResult, OrderClause, OrderExpression, WhereClause, WhereExpression
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
@@ -200,7 +200,7 @@ class Job:
               "users.email as user_email",
               "jobs.is_active"]
         if not order_by:
-            order_by = ResultOrder([ColumnOrder("jobs.creation_date", "DESC")])
+            order_by = OrderClause(OrderExpression("jobs.creation_date", "DESC"))
         if query.filter:
             where = WhereClause() if where is None else where
             qfields = ["bin_to_uuid(jobs.id)", "jobs.name", "users.email", "statuses.name"]

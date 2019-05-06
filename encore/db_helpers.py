@@ -5,19 +5,18 @@ from math import ceil
 
 QueryInfo = namedtuple('QueryInfo', ['page', 'order_by', 'filter'], verbose=False)
 
-class ResultOrder:
-    def __init__(self, column_orders=None):
+class OrderClause:
+    def __init__(self, *exprs):
         self.order_by = []
-        if column_orders:
-            for x in column_orders:
-                self.add(x)
+        for expr in exprs:
+            self.add(expr)
 
     def addRaw(self, column, direction):
-        self.add(ColumnOrder(column, direction))
+        self.add(OrderExpression(column, direction))
 
     def add(self, column_order):
-        if not isinstance(column_order, ColumnOrder):
-            raise TypeError("ResultOrder expects a ColumnOrder object")
+        if not isinstance(column_order, OrderExpression):
+            raise TypeError("OrderClause expects an OrderExpression object")
         self.order_by.append(column_order)
 
     def to_clause(self):
@@ -25,7 +24,7 @@ class ResultOrder:
             return ""
         return "ORDER BY " + ", ".join((x.to_clause() for x in self.order_by))
 
-class ColumnOrder:
+class OrderExpression:
     def __init__(self, column, direction="ASC"):
         self.column = column
         self.direction = direction
@@ -34,7 +33,7 @@ class ColumnOrder:
         return "{} {}".format(self.column, self.direction)
 
     def __repr__(self):
-        return "<ColumnOrder {},{}>".format(self.column, self.direction)
+        return "<OrderExpression {},{}>".format(self.column, self.direction)
 
 class TableJoin:
     def __init__(self, table, on, join_type="LEFT"):

@@ -695,7 +695,7 @@ def get_models():
 def get_jobs_all():
     query = get_query_info(request)
     jobs = Job.list_all(current_app.config, query=query)
-    return ApiPagedResult(jobs, request=request)
+    return ApiResult(jobs, request=request)
 
 @api.route("/users-all", methods=["GET"])
 @admin_required
@@ -833,51 +833,32 @@ def get_api_notices():
     return ApiResult(notices)
 
 class ApiResult(object):
-    def __init__(self, value, status=200, header=None):
-        self.value = value
-        self.status = status
-        self.header = header
-    def to_response(self):
-        data = self.value
-        if self.header:
-            data = {"header": self.header, "data": self.value}
-        return Response(json.dumps(data),
-            status=self.status,
-            mimetype='application/json')
-
-class ApiPagedResult(ApiResult):
     def __init__(self, value, status=200, header=None, request=None):
-        if not isinstance(value, PagedResult):
-            raise Exception("ApiPagedResult expects a PagedResult")
         self.value = value
         self.status = status
         self.header = header
-        if value.page:
-            if self.header is None:
-                self.header = {}
-            self.header["total_count"] = value.total_count
-            self.header["limit"] = value.page.limit
-            self.header["offset"] = value.page.offset
-            self.header["pages"] = value.page_count()
-            if request:
-                next_page = self.value.next_page()
-                if next_page:
-                    self.header["next"] = ApiPagedResult.update_url_page(request,
-                        next_page)
-                prev_page = self.value.prev_page()
-                if prev_page:
-                    self.header["prev"] = ApiPagedResult.update_url_page(request,
-                        prev_page)
-                if "echo" in request.args:
-                    self.header["echo"] = re.sub(r'[\W]+', "", request.args.get("echo"))
+        self.request = request
 
-    def to_response(self):
-        data = self.value.results
-        if self.header:
-            data = {"header": self.header, "data": data}
-        return Response(json.dumps(data),
-            status=self.status,
-            mimetype='application/json')
+    def __set_paging_headers(self, value):
+        if not value.page:
+            return
+        if self.header is None:
+            self.header = {}
+        self.header["total_count"] = value.total_count
+        self.header["limit"] = value.page.limit
+        self.header["offset"] = value.page.offset
+        self.header["pages"] = value.page_count()
+        if self.request:
+            next_page = value.next_page()
+            if next_page:
+                self.header["next"] = ApiResult.update_url_page(self.request,
+                    next_page)
+            prev_page = value.prev_page()
+            if prev_page:
+                self.header["prev"] = ApiResult.update_url_page(self.request,
+                    prev_page)
+            if "echo" in request.args:
+                self.header["echo"] = re.sub(r'[\W]+', "", request.args.get("echo"))
 
     @staticmethod
     def update_url_page(request, page):
@@ -885,6 +866,17 @@ class ApiPagedResult(ApiResult):
         args["limit"] = page.limit
         args["offset"] = page.offset
         return '{}?{}'.format(request.path, url_encode(args))
+
+    def to_response(self):
+        data = self.value
+        if isinstance(data, PagedResult):
+            self.__set_paging_headers(data)
+            data = data.results
+        if self.header:
+            data = {"header": self.header, "data": data}
+        return Response(json.dumps(data),
+            status=self.status,
+            mimetype='application/json')
 
 class ApiException(Exception):
     def __init__(self, message, status=400, details=None):

@@ -4,12 +4,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
 
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
-	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.js"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='js/dt_api_interface.js') }}"></script>
 
 	<script type="text/javascript">
 		$(document).ready(function() {
 			$("#jobs-table").DataTable({
-				ajax: {url: "{{url_for("api.get_jobs_all")}}", dataSrc: ""},
+				serverSide: true,
+				ajax: encoreApi( "{{url_for("api.get_jobs_all")}}" ),
 				order: [[4, "desc"]],
 				columns: [
 					{data: "id", title: "Job ID"},

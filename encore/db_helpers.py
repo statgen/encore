@@ -61,6 +61,8 @@ class WhereGroup:
             self.add(expr)
 
     def add(self, expr):
+        if not isinstance(expr, WhereExpression):
+            raise TypeError("Where expects a WhereExpression object")
         self.wheres.append(expr)
 
     def to_clause(self):
@@ -95,7 +97,7 @@ class WhereClause(WhereAll):
     def to_clause(self):
         w, v = super().to_clause()
         if not w:
-            return ""
+            return "", ()
         return "WHERE " + w, v
 
 class SelectQuery:

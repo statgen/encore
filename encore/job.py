@@ -191,8 +191,17 @@ class Job:
 
     @staticmethod
     def __list_by_sql_where_query(db, where=None, query=None):
-        page = query.page
-        order_by = query.order_by
+        if query:
+            page = query.page
+            order_by = query.order_by
+            if query.filter:
+                where = WhereClause() if where is None else where
+                qfields = ["bin_to_uuid(jobs.id)", "jobs.name", "users.email", "statuses.name"]
+                where.add(WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
+                    ("%" + query.filter + "%", )))
+        else:
+            page = None
+            order_by = None
         cols = ["bin_to_uuid(jobs.id) AS id", "jobs.name AS name",
               "statuses.name AS status",
               "DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date",
@@ -201,11 +210,6 @@ class Job:
               "jobs.is_active"]
         if not order_by:
             order_by = OrderClause(OrderExpression("jobs.creation_date", "DESC"))
-        if query.filter:
-            where = WhereClause() if where is None else where
-            qfields = ["bin_to_uuid(jobs.id)", "jobs.name", "users.email", "statuses.name"]
-            where.add(WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
-                ("%" + query.filter + "%", )))
         sqlcmd = (SelectQuery()
             .set_cols(cols)
             .set_table("jobs")

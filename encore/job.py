@@ -200,26 +200,7 @@ class Job:
             ("user_email", "users.email"),
             ("is_active", "jobs.is_active")])
         qcols = ["id", "name", "user_email", "status"]
-        if query:
-            page = query.page
-            order_by = query.order_by
-            if query.order_by:
-                order_by = OrderClause()
-                for col, direction in query.order_by:
-                    if col in cols:
-                        order_by.add(OrderExpression(col, direction))
-                    else:
-                        raise DBException("Invalid order by columns: {}".format(col))
-            if query.filter:
-                qfields = [cols[k] for k in cols.keys()]
-                qfilter = WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
-                    ("%" + query.filter + "%", ))
-            else:
-                qfilter = None
-        else:
-            page = None
-            order_by = None
-            qfilter = None
+        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
         sqlcmd = (SelectQuery()

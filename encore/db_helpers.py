@@ -183,6 +183,28 @@ class SelectQuery:
         return self
 
     @staticmethod
+    def translate_query(query, cols, qfields):
+        if query is None:
+            return None, None, None
+        page = None
+        qfilter = None
+        order_by = None
+        if query.page:
+            page = query.page
+        if query.order_by:
+            order_by = OrderClause()
+            for col, direction in query.order_by:
+                if col in cols:
+                    order_by.add(OrderExpression(col, direction))
+                else:
+                    raise DBException("Invalid order by columns: {}".format(col))
+        if query.filter:
+            qfields = [cols[k] for k in cols.keys()]
+            qfilter = WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
+                ("%" + query.filter + "%", ))
+        return page, order_by, qfilter
+
+    @staticmethod
     def __to_where_clause(*args):
         if len(args) < 1:
             return None

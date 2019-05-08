@@ -840,12 +840,12 @@ class ApiResult(object):
         self.request = request
 
     def __set_paging_headers(self, value):
-        if not value.page:
-            return
         if self.header is None:
             self.header = {}
         self.header["total_count"] = value.total_count
         self.header["filtered_count"] = value.filtered_count
+        if not value.page:
+            return
         self.header["limit"] = value.page.limit
         self.header["offset"] = value.page.offset
         self.header["pages"] = value.page_count()

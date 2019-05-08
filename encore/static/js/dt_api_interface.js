@@ -52,7 +52,7 @@ function encoreApi(url) {
                         //paged response
                         json.draw = json.header.echo;
                         json.recordsTotal = json.header.total_count;
-                        json.recordsFiltered = json.recordsTotal;
+                        json.recordsFiltered = json.header.filtered_count;
 
                         cacheLastJson = $.extend(true, {}, json);
                         cache.lower = json.header.offset;

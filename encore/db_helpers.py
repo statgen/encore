@@ -54,12 +54,17 @@ class WhereGroup:
     def __init__(self, *exprs):
         self.__join_verb = "??"
         self.wheres = []
+        if len(exprs)==1 and isinstance(exprs[0], WhereGroup):
+            self.wheres = exprs[0].wheres
+            self.__join_verb = exprs[0].__join_verb
         for expr in exprs:
             self.add(expr)
 
     def add(self, expr):
-        if not isinstance(expr, WhereExpression):
-            raise TypeError("Where expects a WhereExpression object")
+        if expr is None:
+            return
+        if not isinstance(expr, WhereExpression) and not isinstance(expr, WhereGroup):
+            raise TypeError("Where expects a WhereExpression object or group")
         self.wheres.append(expr)
 
     def to_clause(self):
@@ -78,18 +83,18 @@ class WhereGroup:
         return wheres, vals
 
 class WhereAll(WhereGroup):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args):
+        super().__init__(*args)
         self.__join_verb = "AND"
 
 class WhereAny(WhereGroup):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args):
+        super().__init__(*args)
         self.__join_verb = "OR"
 
 class WhereClause(WhereAll):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args):
+        super().__init__(*args)
 
     def to_clause(self):
         w, v = super().to_clause()
@@ -103,6 +108,7 @@ class SelectQuery:
         self.table = ""
         self.joins = []
         self.where = None
+        self.qfilter = None
         self.order = None
         self.page = None
 
@@ -127,12 +133,17 @@ class SelectQuery:
 
     def cmd_select(self):
         sql, vals = SelectQuery.__base_sql(self.cols, self.table, self.joins,
-            self.where, self.order, self.page)
+            self.__to_where_clause(self.where, self.qfilter), self.order, self.page)
         return sql, vals
 
     def cmd_count(self):
         sql, vals = SelectQuery.__base_sql(["count(*) as count"], self.table, self.joins,
-            self.where)
+            self.__to_where_clause(self.where, self.qfilter))
+        return sql, vals
+
+    def cmd_count_unfiltered(self):
+        sql, vals = SelectQuery.__base_sql(["count(*) as count"], self.table, self.joins,
+            self.__to_where_clause(self.where))
         return sql, vals
 
     def set_cols(self, cols):
@@ -159,6 +170,10 @@ class SelectQuery:
         self.where = where
         return self
 
+    def set_filter(self, qfilter):
+        self.qfilter = qfilter
+        return self
+
     def set_order_by(self, order):
         self.order = order
         return self
@@ -167,14 +182,21 @@ class SelectQuery:
         self.page = page
         return self
 
+    @staticmethod
+    def __to_where_clause(*args):
+        if len(args) < 1:
+            return None
+        return WhereClause(*args)
+
 
 PageInfo = namedtuple('PageInfo', ['limit', 'offset'], verbose=False)
 
 class PagedResult:
-    def __init__(self, results, total_count=0, page=None):
+    def __init__(self, results, total_count=0, filtered_count=0, page=None):
         self.results = results
         self.page = page
         self.total_count = total_count
+        self.filtered_count = filtered_count
 
     def next_page(self):
         if self.page is None:
@@ -203,6 +225,7 @@ class PagedResult:
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql, vals =  sqlcmd.cmd_select()
         page = sqlcmd.page
+        qfilter = sqlcmd.qfilter
         cur.execute(sql, vals)
         results = cur.fetchall()
         if page and (page.offset>0 or len(results)==page.limit):
@@ -211,7 +234,14 @@ class PagedResult:
             total_count = cur.fetchone()["count"]
         else:
             total_count = len(results)
-        return PagedResult(results, total_count, page)
+        if qfilter:
+            sql, vals = sqlcmd.cmd_count_unfiltered()
+            cur.execute(sql, vals)
+            filtered_count = total_count
+            total_count = cur.fetchone()["count"]
+        else:
+            filtered_count = total_count
+        return PagedResult(results, total_count, filtered_count, page)
 
 class DBException(Exception):
     pass

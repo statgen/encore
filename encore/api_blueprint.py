@@ -845,6 +845,7 @@ class ApiResult(object):
         if self.header is None:
             self.header = {}
         self.header["total_count"] = value.total_count
+        self.header["filtered_count"] = value.filtered_count
         self.header["limit"] = value.page.limit
         self.header["offset"] = value.page.offset
         self.header["pages"] = value.page_count()

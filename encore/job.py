@@ -9,7 +9,7 @@ import hashlib
 from collections import OrderedDict
 from .user import User
 from .model_factory import ModelFactory
-from .db_helpers import SelectQuery, TableJoin, PagedResult, OrderClause, OrderExpression, WhereClause, WhereExpression, DBException
+from .db_helpers import SelectQuery, TableJoin, PagedResult, OrderClause, OrderExpression, WhereExpression, DBException
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
@@ -187,7 +187,7 @@ class Job:
 
     @staticmethod
     def __list_by_sql_where(db, where="", vals=()):
-        result = Job.__list_by_sql_where_query(db, where=WhereClause(WhereExpression(where, vals)), query=None)
+        result = Job.__list_by_sql_where_query(db, where=WhereExpression(where, vals), query=None)
         return result.results
 
     @staticmethod
@@ -211,13 +211,15 @@ class Job:
                     else:
                         raise DBException("Invalid order by columns: {}".format(col))
             if query.filter:
-                where = WhereClause() if where is None else where
                 qfields = [cols[k] for k in cols.keys()]
-                where.add(WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
-                    ("%" + query.filter + "%", )))
+                qfilter = WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
+                    ("%" + query.filter + "%", ))
+            else:
+                qfilter = None
         else:
             page = None
             order_by = None
+            qfilter = None
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
         sqlcmd = (SelectQuery()
@@ -226,6 +228,7 @@ class Job:
             .add_join(TableJoin("statuses", "jobs.status_id = statuses.id"))
             .add_join(TableJoin("users", "jobs.user_id = users.id"))
             .set_where(where)
+            .set_filter(qfilter)
             .set_order_by(order_by)
             .set_page(page))
         return PagedResult.execute_select(db, sqlcmd)

@@ -6,9 +6,10 @@ import MySQLdb
 import sys
 import re
 import hashlib
+from collections import OrderedDict
 from .user import User
 from .model_factory import ModelFactory
-from .db_helpers import SelectQuery, TableJoin, PagedResult, OrderClause, OrderExpression, WhereClause, WhereExpression
+from .db_helpers import SelectQuery, TableJoin, PagedResult, OrderClause, OrderExpression, WhereClause, WhereExpression, DBException
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
@@ -191,27 +192,36 @@ class Job:
 
     @staticmethod
     def __list_by_sql_where_query(db, where=None, query=None):
+        cols = OrderedDict([("id", "bin_to_uuid(jobs.id)"),
+            ("name", "jobs.name"),
+            ("status", "statuses.name"),
+            ("creation_date", "DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
+            ("modified_date", "DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
+            ("user_email", "users.email"),
+            ("is_active", "jobs.is_active")])
+        qcols = ["id", "name", "user_email", "status"]
         if query:
             page = query.page
             order_by = query.order_by
+            if query.order_by:
+                order_by = OrderClause()
+                for col, direction in query.order_by:
+                    if col in cols:
+                        order_by.add(OrderExpression(col, direction))
+                    else:
+                        raise DBException("Invalid order by columns: {}".format(col))
             if query.filter:
                 where = WhereClause() if where is None else where
-                qfields = ["bin_to_uuid(jobs.id)", "jobs.name", "users.email", "statuses.name"]
+                qfields = [cols[k] for k in cols.keys()]
                 where.add(WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
                     ("%" + query.filter + "%", )))
         else:
             page = None
             order_by = None
-        cols = ["bin_to_uuid(jobs.id) AS id", "jobs.name AS name",
-              "statuses.name AS status",
-              "DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date",
-              "DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS modified_date",
-              "users.email as user_email",
-              "jobs.is_active"]
         if not order_by:
-            order_by = OrderClause(OrderExpression("jobs.creation_date", "DESC"))
+            order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
         sqlcmd = (SelectQuery()
-            .set_cols(cols)
+            .set_cols([ "{} AS {}".format(v,k) for k,v in cols.items()])
             .set_table("jobs")
             .add_join(TableJoin("statuses", "jobs.status_id = statuses.id"))
             .add_join(TableJoin("users", "jobs.user_id = users.id"))

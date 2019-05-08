@@ -11,9 +11,6 @@ class OrderClause:
         for expr in exprs:
             self.add(expr)
 
-    def addRaw(self, column, direction):
-        self.add(OrderExpression(column, direction))
-
     def add(self, column_order):
         if not isinstance(column_order, OrderExpression):
             raise TypeError("OrderClause expects an OrderExpression object")
@@ -215,3 +212,6 @@ class PagedResult:
         else:
             total_count = len(results)
         return PagedResult(results, total_count, page)
+
+class DBException(Exception):
+    pass

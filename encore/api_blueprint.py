@@ -11,7 +11,7 @@ from .pheno_reader import PhenoReader
 from .slurm_queue import SlurmJob, get_queue
 from .model_factory import ModelFactory
 from .notifier import get_notifier
-from .db_helpers import PagedResult, PageInfo, OrderClause, QueryInfo
+from .db_helpers import PagedResult, PageInfo, QueryInfo
 import os
 import re
 import gzip
@@ -45,15 +45,15 @@ def get_page_info(request, default_limit = 0):
 def get_order_info(request):
     if not "order_by" in request.args:
         return None
-    order_by = OrderClause()
+    order_by = []
     raw_vals = request.args.get("order_by").split(",")
     for val in raw_vals:
         if val.startswith("+"):
-            order_by.addRaw(val[1:], "ASC")
+            order_by.append((val[1:], "ASC"))
         elif val.startswith("-"):
-            order_by.addRaw(val[1:], "DESC")
+            order_by.append((val[1:], "DESC"))
         else:
-            order_by.addRaw(val, "ASC")
+            order_by.append((val, "ASC"))
     return order_by
 
 def get_filter_info(request):

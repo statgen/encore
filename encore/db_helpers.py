@@ -47,25 +47,37 @@ class WhereExpression:
         self.where = where
         self.vals = vals
 
+    def count(self):
+        return 1
+
     def to_clause(self):
         return self.where, self.vals
 
 class WhereGroup:
-    def __init__(self, *exprs):
-        self.__join_verb = "??"
+    def __init__(self, *exprs, join="??"):
+        self.__join_verb = join
         self.wheres = []
         if len(exprs)==1 and isinstance(exprs[0], WhereGroup):
             self.wheres = exprs[0].wheres
             self.__join_verb = exprs[0].__join_verb
-        for expr in exprs:
-            self.add(expr)
+        else:
+            for expr in exprs:
+                self.add(expr)
 
     def add(self, expr):
         if expr is None:
             return
         if not isinstance(expr, WhereExpression) and not isinstance(expr, WhereGroup):
             raise TypeError("Where expects a WhereExpression object or group")
+        if isinstance(expr, WhereClause):
+            expr = WhereGroup(expr)
         self.wheres.append(expr)
+
+    def count(self):
+        return sum([x.count() for x in self.wheres if x is not None])
+
+    def is_empty(self):
+        return self.count() < 1
 
     def to_clause(self):
         if len(self.wheres) <1 :
@@ -76,21 +88,20 @@ class WhereGroup:
         vals = ()
         for expr in self.wheres:
             w, v = expr.to_clause()
-            where.append(w)
-            vals = vals + v
+            if w is not None:
+                where.append(w)
+                vals = vals + v
         connect = ") " + self.__join_verb + " ("
         wheres = "(" + connect.join(where) + ")"
         return wheres, vals
 
 class WhereAll(WhereGroup):
     def __init__(self, *args):
-        super().__init__(*args)
-        self.__join_verb = "AND"
+        super().__init__(*args, join="AND")
 
 class WhereAny(WhereGroup):
     def __init__(self, *args):
-        super().__init__(*args)
-        self.__join_verb = "OR"
+        super().__init__(*args, join="OR")
 
 class WhereClause(WhereAll):
     def __init__(self, *args):
@@ -120,7 +131,7 @@ class SelectQuery:
         sql += " FROM " + table
         for join in joins:
             sql += " " + join.to_clause()
-        if where:
+        if where is not None and not where.is_empty():
             w, v =  where.to_clause()
             sql += " " + w
             vals += v

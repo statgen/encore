@@ -2,6 +2,7 @@
 {% block header %}
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='js/dt_api_interface.js') }}"></script>
 
 	<style>
 		.home-nav-list li {padding: 10px 0}
@@ -9,7 +10,8 @@
 	<script type="text/javascript">
 		function init_pheno_table() {
 			$("#pheno-table").DataTable({
-				ajax: {url: "{{ url_for("api.get_phenotypes")}}", dataSrc: ""},
+				serverSide: true,
+				ajax: encoreApi( "{{url_for("api.get_phenotypes")}}" ),
 				order: [[1, "desc"]],
 				columns: [
 					{data: "name", title: "Name"},

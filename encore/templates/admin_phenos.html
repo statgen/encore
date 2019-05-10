@@ -5,11 +5,13 @@
 
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='js/dt_api_interface.js') }}"></script>
 
 <script type="text/javascript">
 		$(document).ready(function() {
 			$("#phenos-table").DataTable({
-				ajax: {url: "/api/phenos-all", dataSrc: ""},
+				serverSide: true,
+				ajax: encoreApi( "{{url_for("api.get_api_phenos_all")}}" ),
 				order: [[3, "desc"]],
 				columns: [
 					{data: "id", title: "Pheno ID"},

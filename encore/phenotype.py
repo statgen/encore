@@ -3,7 +3,9 @@ import shutil
 import json
 from . import sql_pool
 import MySQLdb
+from collections import OrderedDict
 from .pheno_reader import PhenoReader
+from .db_helpers import SelectQuery, TableJoin, PagedResult, OrderClause, OrderExpression, WhereExpression, WhereAll
 
 class Phenotype:
     __dbfields = ["name","orig_file_name","md5sum","user_id","creation_date", "is_active"]
@@ -49,78 +51,78 @@ class Phenotype:
 
     @staticmethod
     def get(pheno_id, config):
-        return Phenotype.__get_by_sql_where("id = uuid_to_bin(%s)", (pheno_id,), config)
+        where = WhereExpression("phenotypes.id = uuid_to_bin(%s)", (pheno_id,))
+        return Phenotype.__get_by_sql_where(where=where, config=config)
 
     @staticmethod
     def get_by_hash_user(filehash, user_id, config):
-        where = "md5sum=%s and user_id=%s and is_active=1"
-        return Phenotype.__get_by_sql_where(where, (filehash, user_id), config)
+        where = WhereAll(
+            WhereExpression("md5sum=%s", (filehash,)),
+            WhereExpression("user_id=%s", (user_id,)),
+            WhereExpression("phenotypes.is_active=1")
+        )
+        return Phenotype.__get_by_sql_where(where=where, config=config)
     
     @staticmethod
-    def __get_by_sql_where(where, vals, config):
+    def __get_by_sql_where(where, config):
         db = sql_pool.get_conn()
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT bin_to_uuid(id) AS id, user_id, name, 
-            orig_file_name, md5sum, 
-            DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date,
-            is_active
-            FROM phenotypes WHERE """ + where
-        cur.execute(sql, vals)
-        result = cur.fetchone()
-        if result is not None:
-            pheno_id = result["id"]
-            pheno_folder = os.path.join(config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
-            meta_path = os.path.expanduser(os.path.join(pheno_folder, "meta.json"))
-            if os.path.exists(meta_path):
-                with open(meta_path) as meta_file:
-                    meta = json.load(meta_file)
-            else:
-               meta = dict()
-            p = Phenotype(pheno_id, meta)
-            p.root_path = pheno_folder
-            for x in Phenotype.__dbfields:
-                if x in result:
-                    setattr(p, x, result[x])
-            return p
-        else:
+        results = Phenotype.__list_by_sql_where_query(db, where=where).results
+        if len(results) != 1:
             return None
+        result = results[0]
+        pheno_id = result["id"]
+        pheno_folder = os.path.join(config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
+        meta_path = os.path.expanduser(os.path.join(pheno_folder, "meta.json"))
+        if os.path.exists(meta_path):
+            with open(meta_path) as meta_file:
+                meta = json.load(meta_file)
+        else:
+           meta = dict()
+        p = Phenotype(pheno_id, meta)
+        p.root_path = pheno_folder
+        for x in Phenotype.__dbfields:
+            if x in result:
+                setattr(p, x, result[x])
+        return p
 
     @staticmethod
-    def list_all_for_user(user_id, config=None):
+    def list_all_for_user(user_id, config=None, query=None):
         db = sql_pool.get_conn()
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT bin_to_uuid(id) AS id, user_id, name,
-            orig_file_name, md5sum, 
-            DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date 
-            FROM phenotypes
-            WHERE 
-              user_id = %s
-              AND is_active=1
-            ORDER BY creation_date DESC
-            """
-        cur.execute(sql, (user_id,))
-        results = cur.fetchall()
-        return results
+        where = WhereAll(
+            WhereExpression("phenotypes.is_active = 1"),
+            WhereExpression("phenotypes.user_id = %s", (user_id,))
+        )
+        result = Phenotype.__list_by_sql_where_query(db, where=where, query=query)
+        return result
 
     @staticmethod
-    def list_all(config=None):
+    def list_all(config=None, query=None):
         db = sql_pool.get_conn()
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT bin_to_uuid(P.id) AS id, P.user_id, P.name,
-            U.email as user_email,
-            P.orig_file_name, P.md5sum, 
-            DATE_FORMAT(P.creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date,
-            P.is_active
-            FROM phenotypes as P
-            JOIN users as U on P.user_id = U.id
-            ORDER BY creation_date DESC
-            """
-        cur.execute(sql)
-        results = cur.fetchall()
-        return results
+        result = Phenotype.__list_by_sql_where_query(db, query=query)
+        return result
+
+    @staticmethod
+    def __list_by_sql_where_query(db, where=None, query=None):
+        cols = OrderedDict([("id", "bin_to_uuid(phenotypes.id)"),
+            ("name", "phenotypes.name"),
+            ("user_email", "users.email"),
+            ("orig_file_name", "phenotypes.orig_file_name"),
+            ("md5sum", "phenotypes.md5sum"),
+            ("creation_date", "DATE_FORMAT(phenotypes.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
+            ("is_active", "phenotypes.is_active")])
+        qcols = ["id", "name", "user_email", "status"]
+        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
+        if not order_by:
+            order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
+        sqlcmd = (SelectQuery()
+            .set_cols([ "{} AS {}".format(v,k) for k,v in cols.items()])
+            .set_table("phenotypes")
+            .add_join(TableJoin("users", "phenotypes.user_id = users.id"))
+            .set_where(where)
+            .set_filter(qfilter)
+            .set_order_by(order_by)
+            .set_page(page))
+        return PagedResult.execute_select(db, sqlcmd)
 
     @staticmethod
     def add(values):

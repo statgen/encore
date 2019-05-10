@@ -48,7 +48,7 @@ class User(UserMixin):
         if db is None:
             db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
-        where = WhereExpression("id=%s", (id, ))
+        where = WhereExpression("id=%s", (rid, ))
         return User.__get_by_sql_where(db, where)
 
     @staticmethod

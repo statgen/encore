@@ -2,11 +2,18 @@
 /* exported encoreApi */
 // inspired by https://datatables.net/examples/server_side/pipeline.html
 
-function encoreApi(url) {
+function encoreApi(opts) {
+    if (typeof(opts) === "string") {
+        opts = { url: opts };
+    }
+    var conf = $.extend( {
+        url: "",
+        serverPageSize: 100,
+    }, opts);
     var cacheLastRequest = null;
     var cacheLastJson = null;
     var cache = {lower: -1, upper: -1};
-    var serverPageSize = 100;
+    var serverPageSize = conf.serverPageSize;
 
     function json_differ(a, b) {
         return JSON.stringify( a ) !== JSON.stringify( b );
@@ -43,30 +50,33 @@ function encoreApi(url) {
         if (needsFetching) {
             settings.jqXHR = $.ajax( {
                 "type": "GET",
-                "url": url,
+                "url": conf.url,
                 "data": apiOpts,
                 "dataType": "json",
                 "cache": false,
                 "success": function(json) {
-                    if (json.header && typeof(json.header.total_count) !=="undefined" ) {
+                    if (json.header && json.header.pages) {
                         //paged response
                         json.draw = json.header.echo;
                         json.recordsTotal = json.header.total_count;
                         json.recordsFiltered = json.header.filtered_count;
 
                         cacheLastJson = $.extend(true, {}, json);
-                        cache.lower = json.header.offset;
-                        cache.upper = cache.lower + json.header.limit;
-                        serverPageSize = json.header.limit;
+                        serverPageSize = (json.header.limit || json.recordsTotal);
+                        cache.lower = json.header.offset || 0;
+                        cache.upper = cache.lower + serverPageSize;
 
                         json.data.splice( 0, request.start-cache.lower );
                         json.data.splice( request.length, json.data.length );
                         drawCallback(json);
                     } else {
                         //non-paged response, handle locally	
-                        json = { data: json };
+                        if (!json.header) {
+                            json = { data: json };
+                        }
                         cache.lower = 0;
                         cache.upper = json.data.length;
+
                         settings.oFeatures.bServerSide = false;
                         drawCallback(json);
                     }

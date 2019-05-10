@@ -182,8 +182,9 @@ def create_new_job():
 
 @api.route("/jobs", methods=["GET"])
 def get_jobs():
-    jobs = Job.list_all_for_user(current_user.rid, current_app.config)
-    return ApiResult(jobs)
+    query = get_query_info(request)
+    jobs = Job.list_all_for_user(current_user.rid, current_app.config, query=query)
+    return ApiResult(jobs, request=request)
 
 @api.route("/jobs/<job_id>", methods=["GET"])
 @check_view_job

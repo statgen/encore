@@ -9,7 +9,7 @@ import hashlib
 from collections import OrderedDict
 from .user import User
 from .model_factory import ModelFactory
-from .db_helpers import SelectQuery, TableJoin, PagedResult, OrderClause, OrderExpression, WhereExpression, DBException
+from .db_helpers import SelectQuery, TableJoin, PagedResult, OrderClause, OrderExpression, WhereExpression, WhereAll, DBException
 
 class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
@@ -136,9 +136,13 @@ class Job:
             return None
 
     @staticmethod
-    def list_all_for_user(user_id, config=None):
+    def list_all_for_user(user_id, config=None, query=None):
         db = sql_pool.get_conn()
-        results = Job.__list_by_sql_where(db, "jobs.id IN (SELECT job_id from job_users where user_id=%s) AND jobs.is_active=1", (user_id, ))
+        where = WhereAll(
+            WhereExpression("jobs.is_active=1"),
+            WhereExpression("jobs.id IN (SELECT job_id from job_users where user_id=%s)", (user_id,))
+        )
+        results = Job.__list_by_sql_where_query(db, where=where, query=query)
         return results 
 
     @staticmethod

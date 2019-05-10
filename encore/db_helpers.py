@@ -144,17 +144,17 @@ class SelectQuery:
 
     def cmd_select(self):
         sql, vals = SelectQuery.__base_sql(self.cols, self.table, self.joins,
-            self.__to_where_clause(self.where, self.qfilter), self.order, self.page)
+            WhereClause(self.where, self.qfilter), self.order, self.page)
         return sql, vals
 
     def cmd_count(self):
         sql, vals = SelectQuery.__base_sql(["count(*) as count"], self.table, self.joins,
-            self.__to_where_clause(self.where, self.qfilter))
+            WhereClause(self.where, self.qfilter))
         return sql, vals
 
     def cmd_count_unfiltered(self):
         sql, vals = SelectQuery.__base_sql(["count(*) as count"], self.table, self.joins,
-            self.__to_where_clause(self.where))
+            WhereClause(self.where))
         return sql, vals
 
     def set_cols(self, cols):
@@ -214,12 +214,6 @@ class SelectQuery:
             qfilter = WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
                 ("%" + query.filter + "%", ))
         return page, order_by, qfilter
-
-    @staticmethod
-    def __to_where_clause(*args):
-        if len(args) < 1:
-            return None
-        return WhereClause(*args)
 
 
 PageInfo = namedtuple('PageInfo', ['limit', 'offset'], verbose=False)

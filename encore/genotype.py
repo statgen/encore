@@ -2,8 +2,10 @@ import os
 import json
 from . import sql_pool
 import MySQLdb
+from collections import OrderedDict
 from .pheno_reader import PhenoReader
 from .geno_reader import GenoReader
+from .db_helpers import SelectQuery, TableJoin, PagedResult, OrderClause, OrderExpression, WhereExpression, WhereAll
 
 class Genotype:
     __dbfields = ["id", "name", "build", "is_active", "creation_date"]
@@ -244,33 +246,43 @@ class Genotype:
         return g
         
     @staticmethod
-    def list_all_for_user(user_id=None):
+    def list_all_for_user(user_id=None, config=None, query=None):
         db = sql_pool.get_conn()
-        results = Genotype.__list_by_sql_where(db, "is_active=1")
+        where = WhereExpression("is_active=1")
+        results = Genotype.__list_by_sql_where_query(db, where=where, query=query)
         return results
 
     @staticmethod
-    def list_all(config=None):
+    def list_all(config=None, query=None):
         db = sql_pool.get_conn()
-        results = Genotype.__list_by_sql_where(db)
+        results = Genotype.__list_by_sql_where_query(db, query=query)
         return results
 
     @staticmethod
-    def __list_by_sql_where(db, where="", vals=(), order=""):
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT bin_to_uuid(id) AS id, name, build, is_active,
-              DATE_FORMAT(creation_date, '%%Y-%%m-%%d %%H:%%i:%%s') AS creation_date
-            FROM genotypes"""
-        if where:
-            sql += " WHERE " + where
-        if order:
-            sql += " ORDER BY " + order
-        else:
-            sql += " ORDER BY creation_date DESC"
-        cur.execute(sql, vals)
-        results = cur.fetchall()
-        return results
+    def __list_by_sql_where(db, where="", vals=()):
+        where = WhereExpression(where, vals)
+        result = Genotype.__list_by_sql_where_query(db, where=where, query=None)
+        return result.results
+
+    @staticmethod
+    def __list_by_sql_where_query(db, where=None, query=None):
+        cols = OrderedDict([("id", "bin_to_uuid(genotypes.id)"),
+            ("name", "genotypes.name"),
+            ("build", "genotypes.build"),
+            ("creation_date", "DATE_FORMAT(genotypes.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
+            ("is_active", "genotypes.is_active")])
+        qcols = ["name", "build", "creation_date"]
+        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
+        if not order_by:
+            order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
+        sqlcmd = (SelectQuery()
+            .set_cols([ "{} AS {}".format(v,k) for k,v in cols.items()])
+            .set_table("genotypes")
+            .set_where(where)
+            .set_filter(qfilter)
+            .set_order_by(order_by)
+            .set_page(page))
+        return PagedResult.execute_select(db, sqlcmd)
 
     @staticmethod
     def create(new_values, db=None, config=None):

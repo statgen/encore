@@ -219,7 +219,7 @@ class SelectQuery:
 PageInfo = namedtuple('PageInfo', ['limit', 'offset'], verbose=False)
 
 class PagedResult:
-    def __init__(self, results, total_count=0, filtered_count=0, page=None):
+    def __init__(self, results=[], total_count=0, filtered_count=0, page=None):
         self.results = results
         self.page = page
         self.total_count = total_count
@@ -246,6 +246,9 @@ class PagedResult:
             else:
                 return 0
         return int(ceil(self.total_count / float(self.page.limit)))
+
+    def __iter__(self):
+        return iter(self.results)
 
     @staticmethod
     def execute_select(db, sqlcmd):

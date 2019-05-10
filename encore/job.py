@@ -191,7 +191,8 @@ class Job:
 
     @staticmethod
     def __list_by_sql_where(db, where="", vals=()):
-        result = Job.__list_by_sql_where_query(db, where=WhereExpression(where, vals), query=None)
+        where = WhereExpression(where, vals)
+        result = Job.__list_by_sql_where_query(db, where=where, query=None)
         return result.results
 
     @staticmethod

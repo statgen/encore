@@ -5,11 +5,13 @@
 
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='js/dt_api_interface.js') }}"></script>
 
 <script type="text/javascript">
 		function init_user_table() {
 			$("#users-table").DataTable({
-				ajax: {url: "{{url_for("api.get_users_all")}}", dataSrc: ""},
+				serverSide: true,
+				ajax: encoreApi( "{{url_for("api.get_users_all")}}" ),
 				order: [[5, "desc"]],
 				columns: [
 					{data: "id", title: "User ID"},

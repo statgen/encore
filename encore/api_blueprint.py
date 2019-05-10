@@ -701,8 +701,9 @@ def get_jobs_all():
 @api.route("/users-all", methods=["GET"])
 @admin_required
 def get_users_all():
-    users = User.list_all(current_app.config)
-    return ApiResult(users)
+    query = get_query_info(request)
+    users = User.list_all(current_app.config, query=query)
+    return ApiResult(users, request=request)
 
 @api.route("/phenos-all", methods=["GET"])
 @admin_required

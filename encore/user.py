@@ -1,7 +1,9 @@
 import MySQLdb
 from . import sql_pool
+from collections import OrderedDict
 from flask import session, current_app
 from flask_login import UserMixin
+from .db_helpers import SelectQuery, PagedResult, OrderClause, OrderExpression, WhereExpression, WhereAll
 
 
 class User(UserMixin):
@@ -38,15 +40,16 @@ class User(UserMixin):
     @staticmethod
     def from_email(email, db):
         cur = db.cursor(MySQLdb.cursors.DictCursor)
-        return User.__get_by_sql_where(db, "email=%s", (email,))
+        where = WhereExpression("email=%s", (email, ))
+        return User.__get_by_sql_where(db, where)
 
     @staticmethod
     def from_id(rid, db = None):
         if db is None:
             db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
-        return User.__get_by_sql_where(db, "id=%s", (rid,))
-    
+        where = WhereExpression("id=%s", (id, ))
+        return User.__get_by_sql_where(db, where)
 
     @staticmethod
     def from_session_key(sess_key, db=None):
@@ -57,18 +60,46 @@ class User(UserMixin):
         return User.from_email(session[sess_key], db)
 
     @staticmethod
-    def __get_by_sql_where(db, where="", vals=()):
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT id, email, can_analyze, full_name, affiliation
-            FROM users"""
-        if where:
-            sql += " WHERE " + where
-        cur.execute(sql, vals)
-        if cur.rowcount != 1:
+    def list_all(config=None, query=None):
+        db = sql_pool.get_conn()
+        return User.__list_by_sql_where_query(db, query=query)
+
+    @staticmethod
+    def __get_by_sql_where(db, where=None):
+        results = User.__list_by_sql_where_query(db, where=where).results
+        if len(results)!=1:
             return None
-        res = cur.fetchone()
+        res = results[0]
         return User(res["email"], res["id"], res["can_analyze"], res["full_name"], res["affiliation"])
+
+    @staticmethod
+    def __list_by_sql_where(db, where="", vals=()):
+        result = User.__list_by_sql_where_query(db, where=WhereExpression(where, vals), query=None)
+        return result.results
+
+    @staticmethod
+    def __list_by_sql_where_query(db, where=None, query=None):
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        cols = OrderedDict([("id", "users.id"),
+            ("email", "users.email"),
+            ("full_name", "users.full_name"),
+            ("affiliation", "users.affiliation"),
+            ("can_analyze", "users.can_analyze"),
+            ("creation_date", "DATE_FORMAT(users.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
+            ("last_login_date", "DATE_FORMAT(users.last_login_date, '%%Y-%%m-%%d %%H:%%i:%%s')")
+        ])
+        qcols = ["id", "email", "full_name", "affiliation"]
+        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
+        if not order_by:
+            order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
+        sqlcmd = (SelectQuery()
+            .set_cols([ "{} AS {}".format(v,k) for k,v in cols.items()])
+            .set_table("users")
+            .set_where(where)
+            .set_filter(qfilter)
+            .set_order_by(order_by)
+            .set_page(page))
+        return PagedResult.execute_select(db, sqlcmd)
 
 
     @staticmethod
@@ -96,18 +127,6 @@ class User(UserMixin):
         result = {"user": new_user}
         return result
 
-    @staticmethod
-    def list_all(config=None):
-        db = sql_pool.get_conn()
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = """
-            SELECT id, email, full_name, affiliation, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date, DATE_FORMAT(last_login_date, '%Y-%m-%d %H:%i:%s') AS last_login_date
-            FROM users
-            ORDER BY id
-            """
-        cur.execute(sql)
-        results = cur.fetchall()
-        return results
 
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields if hasattr(self, key)} 

@@ -365,6 +365,9 @@
 				return resp[0].id;
 			});
 			var d2 = $.getJSON("{{url_for('api.get_phenotypes')}}").then(function(resp) {
+				if (resp.header) {
+					resp = resp.data;
+				}
 				var phenos = [];
 				resp.forEach(function(p) {
 					phenos.push({id: p.id, text:p.name});

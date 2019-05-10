@@ -520,8 +520,9 @@ def get_queue_status(job_id=None):
 
 @api.route("/phenos", methods=["GET"])
 def get_phenotypes():
-    phenos = Phenotype.list_all_for_user(current_user.rid)
-    return ApiResult(phenos)
+    query = get_query_info(request)
+    phenos = Phenotype.list_all_for_user(current_user.rid, query=query)
+    return ApiResult(phenos, request=request)
 
 @api.route("/phenos/<pheno_id>", methods=["GET"])
 def get_pheno(pheno_id):
@@ -708,8 +709,9 @@ def get_users_all():
 @api.route("/phenos-all", methods=["GET"])
 @admin_required
 def get_api_phenos_all():
-    phenos = Phenotype.list_all(current_app.config)
-    return ApiResult(phenos)
+    query = get_query_info(request)
+    phenos = Phenotype.list_all(current_app.config, query=query)
+    return ApiResult(phenos, request=request)
 
 @api.route("/genos-all", methods=["GET"])
 @admin_required

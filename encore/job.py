@@ -163,11 +163,14 @@ class Job:
         return results
 
     @staticmethod
-    def list_all_for_user_by_genotype(user_id, geno_id, config=None):
+    def list_all_for_user_by_genotype(user_id, geno_id, config=None, query=None):
         db = sql_pool.get_conn()
-        results = Job.__list_by_sql_where(db, "jobs.geno_id = uuid_to_bin(%s) " + 
-            "AND jobs.id IN (SELECT job_id from job_users where user_id=%s) " + 
-            "AND jobs.is_active=1", (geno_id, user_id))
+        where = WhereAll(
+            WhereExpression("jobs.is_active=1"),
+            WhereExpression("jobs.geno_id = uuid_to_bin(%s)", (geno_id,)),
+            WhereExpression("jobs.id IN (SELECT job_id from job_users where user_id=%s)", (user_id,))
+        )
+        results = Job.__list_by_sql_where_query(db, where=where, query=query)
         return results 
 
     @staticmethod

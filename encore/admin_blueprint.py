@@ -47,7 +47,6 @@ def get_admin_geno_detail_geno(geno_id):
         geno_obj = geno.as_object(include_meta=True)
     else:
         geno_obj = None
-    geno_obj["jobs"] = Job.list_all_for_genotype(geno_id, current_app.config)
     return render_template("admin_geno_details.html", geno=geno_obj)
 
 @admin_area.route("/counts/", methods=["GET"])

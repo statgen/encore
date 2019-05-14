@@ -699,6 +699,13 @@ def get_jobs_all():
     jobs = Job.list_all(current_app.config, query=query)
     return ApiResult(jobs, request=request)
 
+@api.route("/genos/<geno_id>/jobs-all", methods=["GET"])
+@admin_required
+def get_api_genotype_jobs_all(geno_id):
+    query = get_query_info(request)
+    jobs = Job.list_all_for_genotype(geno_id, current_app.config, query=query)
+    return ApiResult(jobs, request=request)
+
 @api.route("/users-all", methods=["GET"])
 @admin_required
 def get_users_all():

@@ -152,10 +152,10 @@ class Job:
         return results 
 
     @staticmethod
-    def list_all_for_genotype(geno_id, config=None):
+    def list_all_for_genotype(geno_id, config=None, query=None):
         db = sql_pool.get_conn()
-        results = Job.__list_by_sql_where(db, "jobs.geno_id = uuid_to_bin(%s) ",
-            (geno_id,))
+        where = WhereExpression("jobs.geno_id = uuid_to_bin(%s)", (geno_id, ))
+        results = Job.__list_by_sql_where_query(db, where=where, query=query)
         return results
 
     @staticmethod

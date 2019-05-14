@@ -96,8 +96,10 @@ def get_genotype_info_stats(geno_id):
 
 @api.route("/genos/<geno_id>/jobs", methods=["GET"])
 def get_genotype_jobs(geno_id):
-    jobs = Job.list_all_for_user_by_genotype(current_user.rid, geno_id, current_app.config)
-    return ApiResult(jobs)
+    query = get_query_info(request)
+    jobs = Job.list_all_for_user_by_genotype(current_user.rid, geno_id,
+        config=current_app.config, query=query)
+    return ApiResult(jobs, request=request)
 
 @api.route("/jobs", methods=["POST"])
 def create_new_job():

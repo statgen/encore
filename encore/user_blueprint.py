@@ -86,7 +86,6 @@ def get_phenos():
 @access_pheno_page
 def get_pheno(pheno_id, pheno=None):
     pheno_obj = pheno.as_object()
-    pheno_obj["jobs"] = Job.list_all_for_phenotype(pheno_id, current_app.config)
     pheno_obj["overlap"] = calculate_overlaps(pheno)
     if can_user_edit_pheno(current_user, pheno):
         pheno_obj["can_edit"] = True

@@ -146,9 +146,13 @@ class Job:
         return results 
 
     @staticmethod
-    def list_all_for_phenotype(pheno_id, config=None):
+    def list_all_for_phenotype(pheno_id, config=None, query=None):
         db = sql_pool.get_conn()
-        results = Job.__list_by_sql_where(db, "jobs.pheno_id = uuid_to_bin(%s) AND jobs.is_active=1", (pheno_id, ))
+        where = WhereAll(
+            WhereExpression("jobs.is_active=1"),
+            WhereExpression("jobs.pheno_id = uuid_to_bin(%s)", (pheno_id,))
+        )
+        results = Job.__list_by_sql_where_query(db, where=where, query=query)
         return results 
 
     @staticmethod

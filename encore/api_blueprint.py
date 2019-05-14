@@ -549,8 +549,9 @@ def retire_pheno(pheno_id, pheno=None):
 
 @api.route("/phenos/<pheno_id>/jobs", methods=["GET"])
 def get_phenotype_jobs(pheno_id):
-    jobs = Job.list_all_for_phenotype(pheno_id, current_app.config)
-    return ApiResult(jobs)
+    query = get_query_info(request)
+    jobs = Job.list_all_for_phenotype(pheno_id, config=current_app.config, query=query)
+    return ApiResult(jobs, request=request)
 
 def calculate_overlaps(pheno):
     genos = Genotype.list_all_for_user(current_user.rid)

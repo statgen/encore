@@ -129,7 +129,7 @@ class User(UserMixin):
         cur.execute(sql, values)
         db.commit()
         new_id = cur.lastrowid
-        new_user = User.__get_by_sql_where(db, "id=%s", (new_id,))
+        new_user = User.from_id(new_id, db=db)
         result = {"user": new_user}
         return result
 

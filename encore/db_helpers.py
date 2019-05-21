@@ -210,7 +210,7 @@ class SelectQuery:
                 else:
                     raise DBException("Invalid order by columns: {}".format(col))
         if query.filter:
-            qfields = [cols[k] for k in cols.keys()]
+            qfields = [cols[k] for k in qfields]
             qfilter = WhereExpression("CONCAT(" + ",'|',".join(qfields)+ ") LIKE %s",
                 ("%" + query.filter + "%", ))
         return page, order_by, qfilter

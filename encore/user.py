@@ -94,7 +94,7 @@ class User(UserMixin):
             ("last_login_date", "DATE_FORMAT(users.last_login_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
             ("is_active", "users.is_active")
         ])
-        qcols = ["id", "email", "full_name", "affiliation"]
+        qcols = ["id", "email", "full_name", "affiliation", "creation_date", "last_login_date"]
         page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))

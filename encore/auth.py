@@ -22,6 +22,8 @@ def can_user_view_job(user, job):
     if not user or not job:
         return False
     user_id = user.rid
+    if not user.is_active():
+        return False
     if user_id == job.user_id:
         return True
     if user_id in (x["user_id"] for x in job.users):
@@ -34,6 +36,8 @@ def can_user_edit_job(user, job):
     if not user or not job:
         return False
     user_id = user.rid
+    if not user.is_active():
+        return False
     if user_id == job.user_id:
         return True
     if user.is_admin():
@@ -44,6 +48,8 @@ def can_user_view_pheno(user, pheno):
     if not user or not pheno:
         return False
     user_id = user.rid
+    if not user.is_active():
+        return False
     if user_id == pheno.user_id:
         return True
     if user.is_admin():
@@ -54,6 +60,8 @@ def can_user_edit_pheno(user, pheno):
     if not user or not pheno:
         return False
     user_id = user.rid
+    if not user.is_active():
+        return False
     if user_id == pheno.user_id:
         return True
     if user.is_admin():

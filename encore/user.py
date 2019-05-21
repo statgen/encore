@@ -7,14 +7,15 @@ from .db_helpers import SelectQuery, PagedResult, OrderClause, OrderExpression, 
 
 
 class User(UserMixin):
-    __dbfields = ["id", "email", "can_analyze", "full_name", "affiliation"]
+    __dbfields = ["id", "email", "can_analyze", "full_name", "affiliation", "is_active"]
 
-    def __init__(self, email, rid, can_analyze, full_name, affiliation):
+    def __init__(self, email, rid, can_analyze, full_name, affiliation, is_active):
         self.email = email
         self.rid = rid
         self.can_analyze = can_analyze
         self.full_name = full_name
         self.affiliation = affiliation
+        self._is_active = is_active
 
     def get_id(self):
         return self.email
@@ -30,6 +31,9 @@ class User(UserMixin):
 
     def is_admin(self):
         return self.email in current_app.config.get("ADMIN_USERS",[]) 
+
+    def is_active(self):
+        return self._is_active
 
     def log_login(self, db):
         cur = db.cursor(MySQLdb.cursors.DictCursor)
@@ -70,7 +74,8 @@ class User(UserMixin):
         if len(results)!=1:
             return None
         res = results[0]
-        return User(res["email"], res["id"], res["can_analyze"], res["full_name"], res["affiliation"])
+        return User(res["email"], res["id"], res["can_analyze"],
+            res["full_name"], res["affiliation"], res["is_active"])
 
     @staticmethod
     def __list_by_sql_where(db, where="", vals=()):
@@ -86,7 +91,8 @@ class User(UserMixin):
             ("affiliation", "users.affiliation"),
             ("can_analyze", "users.can_analyze"),
             ("creation_date", "DATE_FORMAT(users.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
-            ("last_login_date", "DATE_FORMAT(users.last_login_date, '%%Y-%%m-%%d %%H:%%i:%%s')")
+            ("last_login_date", "DATE_FORMAT(users.last_login_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
+            ("is_active", "users.is_active")
         ])
         qcols = ["id", "email", "full_name", "affiliation"]
         page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)

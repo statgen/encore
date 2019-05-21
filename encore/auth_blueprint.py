@@ -116,16 +116,20 @@ def get_sign_in_view(target):
         user_data = oauth_session.get("").json()
         user = load_user(user_data["email"])
         if user:
-            flask_login.login_user(user)
-            redirect_to = session.pop("post_login_page", None)
-            try:
-                endpoint, arguments = current_app.url_map.bind('localhost').match(redirect_to)
-            except Exception as e:
-                redirect_to = None
-            if redirect_to:
-                return redirect(redirect_to)
+            if user.is_active():
+                flask_login.login_user(user)
+                redirect_to = session.pop("post_login_page", None)
+                try:
+                    endpoint, arguments = current_app.url_map.bind('localhost').match(redirect_to)
+                except Exception as e:
+                    redirect_to = None
+                if redirect_to:
+                    return redirect(redirect_to)
+                else:
+                    return redirect(url_for("user.index"))
             else:
-                return redirect(url_for("user.index"))
+                error_message = "Account not active ({})".format(user_data["email"])
+                return render_template("/sign_in.html", error_message=error_message)
         else:
             error_message = "Not an authorized user ({})".format(user_data["email"])
             return render_template("/sign_in.html", error_message=error_message)

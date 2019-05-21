@@ -21,6 +21,11 @@
 					{data: "creation_date", title: "Date Created"},
 					{data: "last_login_date", title: "Last Login"}
 				],
+				createdRow: function(row, data, index) {
+					if (!data.is_active) {
+						$(row).addClass("inactive")
+					}
+				},
 				stateSave: true
 			})
 		}
@@ -69,6 +74,9 @@
 			init_page();
 		});
 	</script>
+	<style>
+		tr.inactive {text-decoration: line-through;}
+	</style>
 {% endblock %}
 {% block content %}
 

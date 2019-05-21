@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_login_date` DATETIME,
   `can_analyze` bool DEFAULT 0,
+  `is_active` bool DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `email_UNIQUE` (`email` ASC))
 ENGINE = InnoDB;

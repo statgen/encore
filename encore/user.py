@@ -137,6 +137,7 @@ class User(UserMixin):
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields if hasattr(self, key)} 
         obj["id"] = self.rid
+        obj["is_active"] = self.is_active()
         return obj
 
     @staticmethod

@@ -227,8 +227,13 @@ def share_job(job_id, job=None):
 @check_edit_job
 def resubmit_job(job_id, job=None):
     sjob = SlurmJob(job_id, job.root_path, current_app.config) 
+    rebuild = "rebuild" in request.args
     try:
-        sjob.resubmit()
+        if rebuild:
+            job_desc = sjob.load_model_spec()
+            sjob.submit_job(job_desc)
+        else:
+            sjob.resubmit_job()
     except Exception as e:
         raise ApiException("Could not resubmit job", details=str(e));
     try:

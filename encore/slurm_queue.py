@@ -62,7 +62,7 @@ class SlurmJob:
         model = ModelFactory.get_for_model_spec(model_spec, self.job_directory, self.config)
         return model
 
-    def resubmit(self):
+    def resubmit_job(self):
         sbatch = self.config.get("QUEUE_JOB_BINARY", "sbatch")
         batch_script_path = self.relative_path("batch_script.sh")
         if not os.path.isfile(batch_script_path):

@@ -106,6 +106,7 @@ class Phenotype:
         cols = OrderedDict([("id", "bin_to_uuid(phenotypes.id)"),
             ("name", "phenotypes.name"),
             ("user_email", "users.email"),
+            ("user_id", "phenotypes.user_id"),
             ("orig_file_name", "phenotypes.orig_file_name"),
             ("md5sum", "phenotypes.md5sum"),
             ("creation_date", "DATE_FORMAT(phenotypes.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),

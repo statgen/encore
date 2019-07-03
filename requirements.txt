@@ -20,7 +20,7 @@ PyJWT==1.7.1
 pytabix==0.0.2
 pytest==4.0.2
 rauth==0.7.3
-requests==2.21.0
+requests==2.22.0
 scipy==1.2.0
 six==1.12.0
 urllib3==1.25.3

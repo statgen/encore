@@ -140,10 +140,10 @@ def find_header(firstrow, lastcomment, cols):
         comment_types = []
         comment_promotions = 0
 
-    if comment_promotions > firstrow_promotions and (float)(comment_promotions)/nonstringcols > .9:
+    if nonstringcols > 0 and comment_promotions > firstrow_promotions and (float)(comment_promotions)/nonstringcols > .9:
         #the last comment has the right number of rows and string in non-string columns
         return (lastcomment, "comment")
-    if (float)(firstrow_promotions)/nonstringcols >= .5:
+    if nonstringcols > 0 and (float)(firstrow_promotions)/nonstringcols >= .5:
         return (firstrow, "firstrow")
     # no header found, return unique names
     return (["COL{0}".format(i) for i in range(len(colclasses))], "position")

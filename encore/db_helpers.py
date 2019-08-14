@@ -3,7 +3,7 @@ import MySQLdb
 from collections import namedtuple
 from math import ceil
 
-QueryInfo = namedtuple('QueryInfo', ['page', 'order_by', 'filter'], verbose=False)
+QueryInfo = namedtuple('QueryInfo', ['page', 'order_by', 'filter'])
 
 class OrderClause:
     def __init__(self, *exprs):

@@ -33,6 +33,8 @@ def create_app(config=None):
     from .auth_blueprint import login_manager
     login_manager.init_app(app)
 
+    app.register_error_handler(404, handle_not_found)
+
     from .sql_pool import register_db
     register_db(app)
 
@@ -43,6 +45,8 @@ def create_app(config=None):
 
     return app
 
+def handle_not_found(e):
+    return render_template("not_found.html"), 404
 
 def register_helpers(app):
     @app.route('/favicon.ico')

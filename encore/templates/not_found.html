@@ -1,0 +1,21 @@
+{% set navigation_links = {} %} 
+{% extends "layout.html" %}
+{% block content %}
+	<div class="row">
+		<h1>404 - Page Not Found</h1>
+		<p>The page you requested cannot be found</p>
+		<p>Page: {{request.url}}</p>
+		{% if config.SERVER_NAME and config.SERVER_NAME != request.host %}
+		<p>NOTE: The application does not appear to be configured properly.
+		The SERVER_NAME in the config file does not match the host from the
+		page request.</p>
+		<p>request.host: {{request.host}}</p>
+		<p>SERVER_NAME: {{config.SERVER_NAME}}</p>
+		{% endif %}
+		{%if config.HELP_EMAIL %}
+		<p>If you need help, please contact
+			<a href="mailto:{{config["HELP_EMAIL"]}}">{{config["HELP_EMAIL"]}}</a>
+		</p>
+		{% endif %}
+	</div>
+{% endblock %}

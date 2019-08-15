@@ -13,7 +13,8 @@ def register_db(app):
 def get_conn():
     con = getattr(g, '_database_con', None)
     if con is None:
-        con = g._database_con = MySQLdb.connect(host="localhost", 
+        con = g._database_con = MySQLdb.connect(
+        host=current_app.config.get("MYSQL_HOST"), 
         user=current_app.config.get("MYSQL_USER"), 
         passwd=current_app.config.get("MYSQL_PASSWORD"), 
         db=current_app.config.get("MYSQL_DB"))

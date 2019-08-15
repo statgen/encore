@@ -1,0 +1,32 @@
+version: '3.3'
+services:
+  db:
+    image: mariadb:10
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: my_pwd
+      MYSQL_USER: my_user
+      MYSQL_PASSWORD: my_pwd
+      MYSQL_DATABASE: my_db 
+  encore:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    environment:
+      MYSQL_HOST: db
+      MYSQL_DB: my_db
+      MYSQL_USER: my_user
+      MYSQL_PASSWORD: my_pwd
+      SERVER_NAME: localhost
+#      GOOGLE_LOGIN_CLIENT_ID:
+#      GOOGLE_LOGIN_CLIENT_SECRET:
+    ports:
+      - 80:80
+    volumes:
+      - ./encore.conf.dev:/etc/apache2/sites-enabled/encore.conf
+      - ./flask_config.py.example:/srv/encore/flask_config.py
+      - ./encore.wsgi.example:/srv/encore/encore.wsgi
+volumes:
+  db_data: {}

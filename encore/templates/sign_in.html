@@ -20,6 +20,10 @@
 			<p>If you do not already have a Google ID, you can create one at
 			<a href="https://accounts.google.com/SignUp">accounts.google.com</a>
 			using any e-mail address.</p>
+			{% if config["HELP_EMAIL"] %}
+			<p>To request an account, contact
+			<a href="mailto:{{config["HELP_EMAIL"]}}">{{config["HELP_EMAIL"]}}</a></p>.
+			{% endif %}
 		</div>
 	</div>
 {% endblock %}

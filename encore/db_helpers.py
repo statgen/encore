@@ -216,7 +216,7 @@ class SelectQuery:
         return page, order_by, qfilter
 
 
-PageInfo = namedtuple('PageInfo', ['limit', 'offset'], verbose=False)
+PageInfo = namedtuple('PageInfo', ['limit', 'offset'])
 
 class PagedResult:
     def __init__(self, results=[], total_count=0, filtered_count=0, page=None):

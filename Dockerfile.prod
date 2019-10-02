@@ -1,0 +1,33 @@
+FROM python:buster
+
+RUN apt-get update && apt-get install -y \
+    apache2 \
+    autoconf \
+    autotools-dev \
+    build-essential \
+    curl \
+    cmake \
+    git \
+    libapache2-mod-wsgi-py3 \
+    default-libmysqlclient-dev \
+    libssl-dev \
+    default-mysql-client
+
+COPY . /srv/encore
+
+RUN mkdir /srv/encore/build
+
+WORKDIR /srv/encore/build
+
+RUN cmake -DCMAKE_BUILD_TYPE=Release .. \
+ && make
+
+WORKDIR /srv/encore
+
+RUN pip install -r requirements.txt \
+ && ln -s /srv/encore/encore.conf.example /etc/apache2/sites-enabled/encore.conf
+
+EXPOSE 80/tcp
+EXPOSE 443/tcp
+
+CMD [ "/bin/bash", "-c", "rm -f /var/run/apache2/* && apache2ctl -D FOREGROUND" ]

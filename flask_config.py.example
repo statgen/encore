@@ -1,37 +1,40 @@
-SERVER_NAME = "encore.sph.umich.edu"
+#!/usr/bin/env python3
 
-JOB_DATA_FOLDER = "./"
-PHENO_DATA_FOLDER = "./"
-GENO_DATA_FOLDER = "./"
-EPACTS_BINARY = "epacts"
-QUEUE_JOB_BINARY = "sbatch"
-MANHATTAN_BINARY = "make_manhattan_json.py"
-QQPLOT_BINARY = "make_qq_json.py"
-TOPHITS_BINARY = "make_tophits_json.py"
-NEAREST_GENE_BED = "data/nearest-gene.bed"
-
-VCF_FILE = ""
-
-MYSQL_DB = "my_db"
-MYSQL_USER = "my_user"
-MYSQL_PASSWORD = "my_pass"
-
-BUILD_REF = {
-    "GRCh37": {
-        "fasta": "/data/ref/hs37d5.fa",
-        "nearest_gene_bed": "/data/ref/nearest-gene.GRCh37.bed"
-    },
-    "GRCh38": {
-        "fasta": "/data/ref/hs38DH.fa",
-        "nearest_gene_bed": "/data/ref/nearest-gene.GRCh38.bed"
+import os
+DEFAULT_CONFIG = {
+    'SERVER_NAME': 'encore.sph.umich.edu',
+    'JOB_DATA_FOLDER': './',
+    'PHENO_DATA_FOLDER': './',
+    'GENO_DATA_FOLDER': './',
+    'EPACTS_BINARY': 'epacts',
+    'QUEUE_JOB_BINARY': 'sbatch',
+    'MANHATTAN_BINARY': 'make_manhattan_json.py',
+    'QQPLOT_BINARY': 'make_qq_json.py',
+    'TOPHITS_BINARY': 'make_tophits_json.py',
+    'NEAREST_GENE_BED': 'data/nearest-gene.bed',
+    'VCF_FILE': '',
+    'MYSQL_HOST': 'localhost',
+    'MYSQL_DB': 'my_db',
+    'MYSQL_USER': 'my_user',
+    'MYSQL_PASSWORD': 'my_pwd',
+    'SECRET_KEY': None,
+    'JWT_SECRET_KEY': None,
+    'GOOGLE_LOGIN_CLIENT_ID': None,
+    'GOOGLE_LOGIN_CLIENT_SECRET': None,
+    'HELP_EMAIL': '',
+    'BUILD_REF': {
+        'GRCh37': {
+            'fasta': '/data/ref/hs37d5.fa',
+            'nearest_gene_bed': '/data/ref/nearest-gene.GRCh37.bed'
+        },
+        'GRCh38': {
+            'fasta': '/data/ref/hs38DH.fa',
+            'nearest_gene_bed': '/data/ref/nearest-gene.GRCh38.bed'
+        }
     }
 }
 
-
-SECRET_KEY = None
-JWT_SECRET_KEY = None
-
-GOOGLE_LOGIN_CLIENT_ID = None
-GOOGLE_LOGIN_CLIENT_SECRET = None
-
-HELP_EMAIL = ""
+for key in DEFAULT_CONFIG.keys():
+    if os.getenv(key):
+        DEFAULT_CONFIG[key] = os.environ[key]
+    globals()[key] = DEFAULT_CONFIG[key]

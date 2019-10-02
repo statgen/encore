@@ -1,0 +1,29 @@
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot "/srv/encore/encore"
+    ServerName localhost
+    ErrorLog "/proc/self/fd/2"
+    CustomLog "/proc/self/fd/1" common
+
+    #Removes stack underflow error
+    WSGIApplicationGroup %{GLOBAL}
+
+    WSGIDaemonProcess localhost processes=1 threads=1 home=/srv/encore
+    WSGIProcessGroup localhost
+    WSGIScriptAlias / /srv/encore/encore.wsgi
+	WSGIPassAuthorization On
+
+   <Location /server-info>
+      SetHandler server-info
+      Order deny,allow
+      Deny from all
+    </Location>
+
+    <Directory /srv/encore>
+        Require all granted
+    </Directory>
+
+    <Files /srv/encore/encore.wsgi>
+        Require all granted
+    </Files>
+</VirtualHost>

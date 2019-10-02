@@ -1,7 +1,9 @@
-#replace encore-path with path to repo folder
+#! /usr/bin/python3
+# Uncomment and replace encore-path with path to repo folder
 import os, sys
 
-PROJECT_DIR = 'encore-path'
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+# PROJECT_DIR = 'encore-path'
 
 def activate_venv(__file__):
 	old_os_path = os.environ.get('PATH', '')

@@ -31,6 +31,9 @@ def guess_raw_type(s):
         return type(s).__name__
 
 def guess_atomic_column_class(rawtype, obs):
+    # rawtype is best guess raw data type
+    # obs is a counter (data value, #times occuring) for values
+    #   of raw type
     n_vals = sum(obs.values())
     n_uniq_vals = len(obs)
     if n_vals == n_uniq_vals and rawtype != "float":
@@ -167,16 +170,25 @@ def check_if_ped(cols, obs):
     return True, None 
 
 def guess_sample_id_col(metas, cols, sample_ids):
-    best_match = 0
+    # metas is array (col index) of dict (infered properties) for each column
+    # cols is dict (col index) of dict (data type) of counter (values)
+    best_match = 25 #min overlap
     id_col_idx = None
     for i in range(len(cols)):
         meta = metas[i]
         colinfo = cols[i]
-        if meta["class"] == "id":
+        if meta["class"] == "id" or meta["class"] == "descr":
             if meta["type"] == "str":
-                matches = sum(x in sample_ids for x in colinfo["str"])
+                has_dup = colinfo["str"].most_common(1)[0][1]>1
+                vals = (x for x in colinfo["str"])
             elif meta["type"] == "int":
-                matches = sum(str(x) in sample_ids for x in colinfo["int"])
+                has_dup = colinfo["int"].most_common(1)[0][1]>1
+                vals = (str(x) for x in colinfo["int"])
+            else:
+                continue
+            if has_dup:
+                continue
+            matches = sum(x in sample_ids for x in vals)
             if matches > best_match:
                 best_match = matches
                 id_col_idx = i

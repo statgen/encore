@@ -104,6 +104,12 @@
 			<td>{{ job.details.variant_filter_desc or job.details.variant_filter }}</td>
 		</tr>
 		{% endif %}
+		{% if job.details.region %}
+		<tr>
+			<th>Region</th>
+			<td>{{ job.details.region_desc or job.details.region }}</td>
+		</tr>
+		{% endif %}
 		<tr>
 			<th>Status</th>
 			<td>{{ job.status }}</td>

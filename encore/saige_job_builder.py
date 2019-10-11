@@ -27,6 +27,12 @@ class SaigeModel(BaseModel):
                 opts.append("STEP2OPT='--minMAC 20 --IsOutputAFinCaseCtrl=FALSE'")
             else:
                 raise Exception("Unrecognized variant filter ({})".format(vf))
+        if model.get("region", None):
+            region = model.get("region").upper()
+            if region.startswith("CHR"):
+                region = region[3:]
+            opts.append("CHRS={}".format(region))
+            opts.append("BINSIZE={}".format(100000))
         return opts 
 
     def get_ped_writer(self, model, geno, pheno):

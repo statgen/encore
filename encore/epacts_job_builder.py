@@ -25,6 +25,9 @@ class EpactsModel(BaseModel):
                 opts.append("--max-maf 0.05")
             else:
                 raise Exception("Unrecognized variant filter ({})".format(vf))
+        if model.get("region", None):
+            region = model.get("region") + ":0"
+            opts.append("--region {}".format(region))
         return opts 
 
     def get_ped_writer(self, model_spec, geno, pheno):

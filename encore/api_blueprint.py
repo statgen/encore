@@ -123,6 +123,8 @@ def create_new_job():
     job_desc["type"] = form_data["model"]
     if form_data.get("variant_filter", "").strip() != "":
         job_desc["variant_filter"] = form_data["variant_filter"]
+    if form_data.get("region", "gwas").strip() != "gwas":
+        job_desc["region"] = form_data["region"]
     job_desc["user_id"] = current_user.rid
     job_id = str(uuid.uuid4())
 

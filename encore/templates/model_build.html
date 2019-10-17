@@ -20,6 +20,7 @@
 		var covariateSelect;
 		var genophenoSelect;
 		var filterSelect;
+		var regionSelect;
 		var userHasNamedJob = false;
 		var currentPheno;
 		var modelList;
@@ -227,6 +228,11 @@
 			} else if (covarcount>0) {
 				name = name + " = " + covarnames.map(function(a) {return a[0];}).join(" + ");
 			}
+
+			var region = regionSelect.val();
+			if (region != "gwas") {
+				name = name + " [" + region + "]";
+			}
 			return name;
 		}
 
@@ -275,6 +281,7 @@
 					$("#genopheno_input").hide();
 				}
 				updateModels(geno.avail);
+				updateRegions();
 				formChanged();
 			});
 		}
@@ -307,6 +314,15 @@
 					$input.closest("div").addClass("not-available");
 				}
 			})
+		}
+
+		function updateRegions() {
+			if (!regionSelect) {
+				let chrs = [{id: "gwas", text: "Genome-wide"}];
+				for(let i=1; i<23; i++) chrs.push({id: "chr" + i, text: "chr" + i});
+				chrs.push({id: "chrX", text: "chrX"})
+				regionSelect = $("#region").select2({"data": chrs}).on("change", formChanged);
+			}
 		}
 
 		function getQuerystring () {
@@ -438,6 +454,7 @@
 							opts.c = x.details.covariates;
 							opts.gp = x.details.genopheno || [];
 							opts.f = x.details.variant_filter;
+							opts.rg = x.details.region || "gwas";
 						}
 						return $.when(opts);
 					}, function() {
@@ -482,6 +499,9 @@
 					}
 					if (opts.f) {
 						filterSelect.val(opts.f).trigger("change");
+					}
+					if (opts.r) {
+						regionSelect.val(opts.rg).trigger("change");
 					}
 				}).then(function() {
 					$("#model-form").css("visibility","visible").hide().fadeIn();
@@ -554,6 +574,12 @@
 					<label for="response" class="control-label col-xs-2">Filter</label>
 					<div class="col-xs-10">
 						<select id="filter-type" name="variant_filter" class="form-control"></select>
+					</div>
+				</div>
+				<div class="form-group" id="region_input">
+					<label for="region" class="control-label col-xs-2">Region</label>
+					<div class="col-xs-10">
+						<select id="region" name="region" class="form-control"></select>
 					</div>
 				</div>
 				<div class="form-group">

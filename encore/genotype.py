@@ -121,6 +121,19 @@ class Genotype:
             return stats
         return dict() 
 
+    def get_readme(self):
+        if "readme" in self.meta:
+           return self.meta["readme"]
+        elif "readme_path" in self.meta:
+            readme_stub = self.meta.get("readme_path")
+            readme_path = self.relative_path(readme_stub)
+            if os.path.isfile(readme_path):
+                with open(readme_path) as infile:
+                    readme = infile.read()
+                self.meta["readme"] = readme
+                return readme
+        return ""
+
     def get_info_stats(self):
         if "info_stats_path" in self.meta:
             stats_stub = self.meta.get("info_stats_path", "info.json")
@@ -210,6 +223,7 @@ class Genotype:
             "is_active": self.is_active}
         obj["stats"] = self.get_stats()
         obj["phenos"] = self.get_phenotypes()
+        obj["readme"] = self.get_readme()
         avail = dict()
         avail["vcf"] = True if self.get_vcf_path(must_exist=True) else False
         avail["sav"] = True if self.get_sav_path(must_exist=True) else False

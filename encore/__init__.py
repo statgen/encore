@@ -7,6 +7,7 @@ from .notifier import get_notifier
 from . import job_tracking
 import atexit
 import subprocess
+import markdown
 
 def create_app(config=None):
 
@@ -52,6 +53,10 @@ def register_helpers(app):
     @app.route('/favicon.ico')
     def favicon():
         return app.send_static_file('favicon.ico')
+
+    @app.template_filter("markdown")
+    def render_markdown(text):
+        return markdown.markdown(text)
 
     @app.context_processor
     def template_helpers():

@@ -3,7 +3,7 @@ from . import sql_pool
 from collections import OrderedDict
 from flask import session, current_app
 from flask_login import UserMixin
-from .db_helpers import SelectQuery, PagedResult, OrderClause, OrderExpression, WhereExpression, WhereAll
+from .db_helpers import SelectQuery, PagedResult, OrderClause, OrderExpression, WhereExpression, WhereAll, TableJoin
 
 
 class User(UserMixin):
@@ -40,6 +40,40 @@ class User(UserMixin):
         sql = "UPDATE users SET last_login_date = NOW() WHERE id = %s"
         cur.execute(sql, (self.rid, ))
         db.commit()
+
+    def get_collaborations(self, query, db=None):
+        if db is None:
+            db = sql_pool.get_conn()
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        cols = OrderedDict([("user_id", "job_users.user_id"),
+            ("user_email", "users.email"),
+            ("user_full_name", "users.full_name"),
+            ("user_affiliation", "users.affiliation"),
+            ("job_id", "bin_to_uuid(jobs.id)"),
+            ("job_name", "jobs.name"),
+            ("job_creation_date", "DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
+            ("creation_date", "DATE_FORMAT(users.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
+            ("role_id", "job_users.role_id")
+        ])
+        qcols = ["user_id", "user_email", "user_full_name", "user_affiliation",
+            "job_id", "jon_name", "job_creation_date", "creation_date"]
+        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
+        if not order_by:
+            order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
+        where = WhereAll(
+            WhereExpression("job_users.job_id in (select job_id from job_users where user_id=%s)", (self.rid,)),
+            WhereExpression("job_users.user_id != %s", (self.rid,))
+        )
+        sqlcmd = (SelectQuery()
+            .set_cols([ "{} AS {}".format(v,k) for k,v in cols.items()])
+            .set_table("job_users")
+            .add_join(TableJoin("users", "job_users.user_id = users.id"))
+            .add_join(TableJoin("jobs", "job_users.job_id = jobs.id"))
+            .set_filter(qfilter)
+            .set_where(where)
+            .set_order_by(order_by)
+            .set_page(page))
+        return PagedResult.execute_select(db, sqlcmd)
 
     @staticmethod
     def from_email(email, db):

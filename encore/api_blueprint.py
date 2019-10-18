@@ -694,6 +694,12 @@ def post_pheno():
         del result["url_model"]
     return ApiResult(result)
 
+@api.route("/collaborations", methods=["GET"])
+@login_required
+def get_collaborations():
+    query = get_query_info(request)
+    return ApiResult(current_user.get_collaborations( query))
+
 @api.route("/models", methods=["GET"])
 @login_required
 def get_models():

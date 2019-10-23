@@ -57,7 +57,7 @@ class User(UserMixin):
         ])
         qcols = ["user_id", "user_email", "user_full_name", "user_affiliation",
             "job_id", "jon_name", "job_creation_date", "creation_date"]
-        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
+        page, order_by, qsearch = SelectQuery.translate_query(query, cols, qcols)
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
         where = WhereAll(
@@ -69,7 +69,7 @@ class User(UserMixin):
             .set_table("job_users")
             .add_join(TableJoin("users", "job_users.user_id = users.id"))
             .add_join(TableJoin("jobs", "job_users.job_id = jobs.id"))
-            .set_filter(qfilter)
+            .set_search(qsearch)
             .set_where(where)
             .set_order_by(order_by)
             .set_page(page))
@@ -129,14 +129,14 @@ class User(UserMixin):
             ("is_active", "users.is_active")
         ])
         qcols = ["id", "email", "full_name", "affiliation", "creation_date", "last_login_date"]
-        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
+        page, order_by, qsearch = SelectQuery.translate_query(query, cols, qcols)
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
         sqlcmd = (SelectQuery()
             .set_cols([ "{} AS {}".format(v,k) for k,v in cols.items()])
             .set_table("users")
             .set_where(where)
-            .set_filter(qfilter)
+            .set_search(qsearch)
             .set_order_by(order_by)
             .set_page(page))
         return PagedResult.execute_select(db, sqlcmd)

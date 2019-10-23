@@ -286,14 +286,14 @@ class Genotype:
             ("creation_date", "DATE_FORMAT(genotypes.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
             ("is_active", "genotypes.is_active")])
         qcols = ["name", "build", "creation_date"]
-        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
+        page, order_by, qsearch = SelectQuery.translate_query(query, cols, qcols)
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
         sqlcmd = (SelectQuery()
             .set_cols([ "{} AS {}".format(v,k) for k,v in cols.items()])
             .set_table("genotypes")
             .set_where(where)
-            .set_filter(qfilter)
+            .set_search(qsearch)
             .set_order_by(order_by)
             .set_page(page))
         return PagedResult.execute_select(db, sqlcmd)

@@ -56,14 +56,14 @@ def get_order_info(request):
             order_by.append((val, "ASC"))
     return order_by
 
-def get_filter_info(request):
+def get_search_info(request):
     return request.args.get("q", None)
 
 def get_query_info(request, default_limit = 200):
     page = get_page_info(request, default_limit)
     order_by = get_order_info(request)
-    user_filter = get_filter_info(request)
-    return QueryInfo(page, order_by, user_filter)
+    search = get_search_info(request)
+    return QueryInfo(page, order_by, search, dict())
 
 @api.before_request
 @login_required

@@ -112,7 +112,7 @@ class Phenotype:
             ("creation_date", "DATE_FORMAT(phenotypes.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
             ("is_active", "phenotypes.is_active")])
         qcols = ["id", "name", "user_email", "status"]
-        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
+        page, order_by, qsearch = SelectQuery.translate_query(query, cols, qcols)
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
         sqlcmd = (SelectQuery()
@@ -120,7 +120,7 @@ class Phenotype:
             .set_table("phenotypes")
             .add_join(TableJoin("users", "phenotypes.user_id = users.id"))
             .set_where(where)
-            .set_filter(qfilter)
+            .set_search(qsearch)
             .set_order_by(order_by)
             .set_page(page))
         return PagedResult.execute_select(db, sqlcmd)

@@ -3,7 +3,7 @@ import MySQLdb
 from collections import namedtuple
 from math import ceil
 
-QueryInfo = namedtuple('QueryInfo', ['page', 'order_by', 'filter'])
+QueryInfo = namedtuple('QueryInfo', ['page', 'order_by', 'qsearch', 'params'])
 
 class OrderClause:
     def __init__(self, *exprs):
@@ -119,7 +119,7 @@ class SelectQuery:
         self.table = ""
         self.joins = []
         self.where = None
-        self.qfilter = None
+        self.qsearch = None
         self.order = None
         self.page = None
 
@@ -144,12 +144,12 @@ class SelectQuery:
 
     def cmd_select(self):
         sql, vals = SelectQuery.__base_sql(self.cols, self.table, self.joins,
-            WhereClause(self.where, self.qfilter), self.order, self.page)
+            WhereClause(self.where, self.qsearch), self.order, self.page)
         return sql, vals
 
     def cmd_count(self):
         sql, vals = SelectQuery.__base_sql(["count(*) as count"], self.table, self.joins,
-            WhereClause(self.where, self.qfilter))
+            WhereClause(self.where, self.qsearch))
         return sql, vals
 
     def cmd_count_unfiltered(self):
@@ -181,8 +181,8 @@ class SelectQuery:
         self.where = where
         return self
 
-    def set_filter(self, qfilter):
-        self.qfilter = qfilter
+    def set_search(self, qsearch):
+        self.qsearch = qsearch
         return self
 
     def set_order_by(self, order):
@@ -198,7 +198,7 @@ class SelectQuery:
         if query is None:
             return None, None, None
         page = None
-        qfilter = None
+        qsearch = None
         order_by = None
         if query.page:
             page = query.page
@@ -209,11 +209,11 @@ class SelectQuery:
                     order_by.add(OrderExpression(col, direction))
                 else:
                     raise DBException("Invalid order by columns: {}".format(col))
-        if query.filter:
+        if query.qsearch:
             qfields = [cols[k] for k in qfields]
-            qfilter = WhereExpression("CONCAT_WS('|', " + ",".join(qfields) + ") LIKE %s",
-                ("%" + query.filter + "%", ))
-        return page, order_by, qfilter
+            qsearch = WhereExpression("CONCAT_WS('|', " + ",".join(qfields) + ") LIKE %s",
+                ("%" + query.qsearch + "%", ))
+        return page, order_by, qsearch
 
 
 PageInfo = namedtuple('PageInfo', ['limit', 'offset'])
@@ -255,7 +255,7 @@ class PagedResult:
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql, vals =  sqlcmd.cmd_select()
         page = sqlcmd.page
-        qfilter = sqlcmd.qfilter
+        qsearch = sqlcmd.qsearch
         cur.execute(sql, vals)
         results = cur.fetchall()
         if page and (page.offset>0 or len(results)==page.limit):
@@ -264,7 +264,7 @@ class PagedResult:
             total_count = cur.fetchone()["count"]
         else:
             total_count = len(results)
-        if qfilter:
+        if qsearch:
             sql, vals = sqlcmd.cmd_count_unfiltered()
             cur.execute(sql, vals)
             filtered_count = total_count

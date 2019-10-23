@@ -212,7 +212,7 @@ class Job:
             ("user_email", "users.email"),
             ("is_active", "jobs.is_active")])
         qcols = ["id", "name", "user_email", "status"]
-        page, order_by, qfilter = SelectQuery.translate_query(query, cols, qcols)
+        page, order_by, qsearch = SelectQuery.translate_query(query, cols, qcols)
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
         sqlcmd = (SelectQuery()
@@ -221,7 +221,7 @@ class Job:
             .add_join(TableJoin("statuses", "jobs.status_id = statuses.id"))
             .add_join(TableJoin("users", "jobs.user_id = users.id"))
             .set_where(where)
-            .set_filter(qfilter)
+            .set_search(qsearch)
             .set_order_by(order_by)
             .set_page(page))
         return PagedResult.execute_select(db, sqlcmd)

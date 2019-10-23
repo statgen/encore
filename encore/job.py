@@ -138,38 +138,40 @@ class Job:
     @staticmethod
     def list_all_for_user(user_id, config=None, query=None):
         db = sql_pool.get_conn()
-        where = WhereAll(
-            WhereExpression("jobs.is_active=1"),
-            WhereExpression("jobs.id IN (SELECT job_id from job_users where user_id=%s)", (user_id,))
-        )
+        params = query.params
+        params["is_active"] = True
+        params["user_id"] = user_id
+        where, joins = Job.__params_to_where(params)
         results = Job.__list_by_sql_where_query(db, where=where, query=query)
         return results 
 
     @staticmethod
     def list_all_for_phenotype(pheno_id, config=None, query=None):
         db = sql_pool.get_conn()
-        where = WhereAll(
-            WhereExpression("jobs.is_active=1"),
-            WhereExpression("jobs.pheno_id = uuid_to_bin(%s)", (pheno_id,))
-        )
+        params = query.params
+        params["is_active"] = True
+        params["pheno_id"] = pheno_id
+        where, joins = Job.__params_to_where(params)
         results = Job.__list_by_sql_where_query(db, where=where, query=query)
         return results 
 
     @staticmethod
     def list_all_for_genotype(geno_id, config=None, query=None):
         db = sql_pool.get_conn()
-        where = WhereExpression("jobs.geno_id = uuid_to_bin(%s)", (geno_id, ))
+        params = query.params
+        params["geno_id"] = geno_id
+        where, joins = Job.__params_to_where(params)
         results = Job.__list_by_sql_where_query(db, where=where, query=query)
         return results
 
     @staticmethod
     def list_all_for_user_by_genotype(user_id, geno_id, config=None, query=None):
         db = sql_pool.get_conn()
-        where = WhereAll(
-            WhereExpression("jobs.is_active=1"),
-            WhereExpression("jobs.geno_id = uuid_to_bin(%s)", (geno_id,)),
-            WhereExpression("jobs.id IN (SELECT job_id from job_users where user_id=%s)", (user_id,))
-        )
+        params = query.params
+        params["is_active"] = True
+        params["user_id"] = user_id
+        params["geno_id"] = geno_id
+        where, joins = Job.__params_to_where(params)
         results = Job.__list_by_sql_where_query(db, where=where, query=query)
         return results 
 
@@ -193,7 +195,8 @@ class Job:
     @staticmethod
     def list_all(config=None, query=None):
         db = sql_pool.get_conn()
-        result = Job.__list_by_sql_where_query(db, query=query)
+        where, joins = Job.__params_to_where(query.params)
+        result = Job.__list_by_sql_where_query(db, where=where, query=query)
         return result
 
     @staticmethod
@@ -225,6 +228,28 @@ class Job:
             .set_order_by(order_by)
             .set_page(page))
         return PagedResult.execute_select(db, sqlcmd)
+
+    @staticmethod
+    def __params_to_where(params):
+        where = WhereAll()
+        joins = dict()
+        for k, v in params.items():
+            if k == "user_id":
+                where.add(WhereExpression("jobs.id IN (SELECT job_id from job_users where user_id=%s)", (v,)))
+            elif k == "pheno_id":
+                where.add(WhereExpression("jobs.pheno_id = uuid_to_bin(%s)", (v,)))
+            elif k == "geno_id":
+                where.add(WhereExpression("jobs.geno_id = uuid_to_bin(%s)", (v, )))
+            elif k == "shared_with":
+                where.add(WhereExpression("jobs.id IN (SELECT job_id from job_users where user_id=%s and role_id!=1)", (v,)))
+            elif k == "is_active":
+                if v:
+                    where.add(WhereExpression("jobs.is_active=1"))
+                else:
+                    where.add(WhereExpression("jobs.is_active=0"))
+            else:
+                raise Exception("Parameter {} Not Recognized".format(k))
+        return where, joins
 
     @staticmethod
     def create(job_id, values):

@@ -32,21 +32,21 @@ def safe_cast(val, to_type, default=None):
     except (ValueError, TypeError):
         return default
 
-def get_page_info(request, default_limit = 0):
-    offset = safe_cast(request.args.get("offset", 0), int, 0)
-    if "limit" in request.args:
-        limit = safe_cast(request.args.get("limit", 0), int, 0)
+def get_page_info(params, default_limit = 0):
+    offset = safe_cast(params.pop("offset", 0), int, 0)
+    if "limit" in params:
+        limit = safe_cast(params.pop("limit", 0), int, 0)
     else:
         limit = default_limit
     if limit==0 and offset==0:
         return None
     return PageInfo(limit, offset)
 
-def get_order_info(request):
-    if not "order_by" in request.args:
+def get_order_info(params):
+    if not "order_by" in params:
         return None
     order_by = []
-    raw_vals = request.args.get("order_by").split(",")
+    raw_vals = params.pop("order_by").split(",")
     for val in raw_vals:
         if val.startswith("+"):
             order_by.append((val[1:], "ASC"))
@@ -56,14 +56,17 @@ def get_order_info(request):
             order_by.append((val, "ASC"))
     return order_by
 
-def get_search_info(request):
-    return request.args.get("q", None)
+def get_search_info(params):
+    return params.pop("q", None)
 
 def get_query_info(request, default_limit = 200):
-    page = get_page_info(request, default_limit)
-    order_by = get_order_info(request)
-    search = get_search_info(request)
-    return QueryInfo(page, order_by, search, dict())
+    params = request.args.to_dict(flat=True)
+    page = get_page_info(params, default_limit)
+    order_by = get_order_info(params)
+    search = get_search_info(params)
+    params.pop("echo", None)
+    params.pop("_", None)
+    return QueryInfo(page, order_by, search, params)
 
 @api.before_request
 @login_required

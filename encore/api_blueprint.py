@@ -701,7 +701,19 @@ def post_pheno():
 @login_required
 def get_collaborations():
     query = get_query_info(request)
-    return ApiResult(current_user.get_collaborations( query))
+    return ApiResult(current_user.get_collaborations(query))
+
+@api.route("/collaborations/people", methods=["GET"])
+@login_required
+def get_collaborators():
+    query = get_query_info(request)
+    return ApiResult(current_user.get_collaborators(query))
+
+@api.route("/collaborations/people/<user_id>", methods=["GET"])
+@login_required
+def get_collaborations_with_user(user_id):
+    query = get_query_info(request)
+    return ApiResult(Job.list_all_for_user_shared_with(current_user.rid, user_id, query=query))
 
 @api.route("/models", methods=["GET"])
 @login_required

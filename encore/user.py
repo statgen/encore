@@ -1,4 +1,5 @@
 import MySQLdb
+import re
 from . import sql_pool
 from collections import OrderedDict
 from flask import session, current_app
@@ -40,6 +41,17 @@ class User(UserMixin):
         sql = "UPDATE users SET last_login_date = NOW() WHERE id = %s"
         cur.execute(sql, (self.rid, ))
         db.commit()
+
+    def get_collaborators(self, query, db=None):
+        where = WhereAll(
+            WhereExpression("job_users.job_id in (select job_id from job_users where user_id=%s)", (self.rid,)),
+            WhereExpression("job_users.user_id != %s", (self.rid,))
+        )
+        sqlcmd = User.__build_sql_command(where, query)
+        sqlcmd.set_group_by([re.sub(r'AS \w+$','',x) for x in sqlcmd.cols])
+        sqlcmd.add_col("count(*) as count")
+        sqlcmd.add_join(TableJoin("job_users", "job_users.user_id = users.id"))
+        return User.__list_by_sql_command(db, sqlcmd)
 
     def get_collaborations(self, query, db=None):
         if db is None:
@@ -112,13 +124,7 @@ class User(UserMixin):
             res["full_name"], res["affiliation"], res["is_active"])
 
     @staticmethod
-    def __list_by_sql_where(db, where="", vals=()):
-        result = User.__list_by_sql_where_query(db, where=WhereExpression(where, vals), query=None)
-        return result.results
-
-    @staticmethod
-    def __list_by_sql_where_query(db, where=None, query=None):
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
+    def __build_sql_command(where=None, query=None):
         cols = OrderedDict([("id", "users.id"),
             ("email", "users.email"),
             ("full_name", "users.full_name"),
@@ -139,8 +145,23 @@ class User(UserMixin):
             .set_search(qsearch)
             .set_order_by(order_by)
             .set_page(page))
-        return PagedResult.execute_select(db, sqlcmd)
+        return sqlcmd
 
+    @staticmethod
+    def __list_by_sql_where(db, where="", vals=()):
+        result = User.__list_by_sql_where_query(db, where=WhereExpression(where, vals), query=None)
+        return result.results
+
+    @staticmethod
+    def __list_by_sql_where_query(db, where=None, query=None):
+        sqlcmd = User.__build_sql_command(where, query)
+        return User.__list_by_sql_command(db, sqlcmd)
+
+    @staticmethod
+    def __list_by_sql_command(db, sqlcmd):
+        if db is None:
+            db = sql_pool.get_conn()
+        return PagedResult.execute_select(db, sqlcmd)
 
     @staticmethod
     def create(new_values, db=None):

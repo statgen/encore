@@ -143,7 +143,19 @@ class Job:
         params["user_id"] = user_id
         where, joins = Job.__params_to_where(params)
         results = Job.__list_by_sql_where_query(db, where=where, query=query)
-        return results 
+        return results
+
+
+    @staticmethod
+    def list_all_for_user_shared_with(user_id, shared_user_id, config=None, query=None):
+        db = sql_pool.get_conn()
+        params = query.params
+        params["is_active"] = True
+        params["user_id"] = user_id
+        params["shared_with"] = shared_user_id
+        where, joins = Job.__params_to_where(params)
+        results = Job.__list_by_sql_where_query(db, where=where, query=query)
+        return results
 
     @staticmethod
     def list_all_for_phenotype(pheno_id, config=None, query=None):
@@ -153,7 +165,7 @@ class Job:
         params["pheno_id"] = pheno_id
         where, joins = Job.__params_to_where(params)
         results = Job.__list_by_sql_where_query(db, where=where, query=query)
-        return results 
+        return results
 
     @staticmethod
     def list_all_for_genotype(geno_id, config=None, query=None):

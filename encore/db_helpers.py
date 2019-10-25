@@ -120,11 +120,12 @@ class SelectQuery:
         self.joins = []
         self.where = None
         self.qsearch = None
+        self.group = None
         self.order = None
         self.page = None
 
     @staticmethod
-    def __base_sql(cols=[], table="", joins=[], where=None, order=None, page=None):
+    def __base_sql(cols=[], table="", joins=[], where=None, group=None, order=None, page=None):
         vals = ()
         sql = "SELECT "
         sql += ", ".join(cols)
@@ -135,6 +136,8 @@ class SelectQuery:
             w, v =  where.to_clause()
             sql += " " + w
             vals += v
+        if group is not None and len(group)>1:
+            sql += " GROUP BY " + ",".join(group)
         if order:
             sql += " " + order.to_clause()
         if page:
@@ -144,7 +147,7 @@ class SelectQuery:
 
     def cmd_select(self):
         sql, vals = SelectQuery.__base_sql(self.cols, self.table, self.joins,
-            WhereClause(self.where, self.qsearch), self.order, self.page)
+            WhereClause(self.where, self.qsearch), self.group, self.order, self.page)
         return sql, vals
 
     def cmd_count(self):
@@ -183,6 +186,16 @@ class SelectQuery:
 
     def set_search(self, qsearch):
         self.qsearch = qsearch
+        return self
+
+    def set_group_by(self, group):
+        self.group = group
+        return self
+
+    def add_group_by(self, group):
+        if self.group is None:
+            self.group = []
+        self.group.append(group)
         return self
 
     def set_order_by(self, order):

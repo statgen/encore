@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% set backlink = "/collaborate/" %}
+{% block header %}
+	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
+	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='js/dt_api_interface.js') }}"></script>
+
+	<script type="text/javascript">
+		function initJobsTable() {
+			$("#users-table").DataTable({
+				ajax: encoreApi("{{ url_for("api.get_collaborations_with_user", user_id=collaborator_id)}}"),
+				serverSide: true,
+				order: [[1, "desc"]],
+				columns: [
+					{data: "name", title: "Job Name", render: $.fn.dataTable.render.text()},
+					{data: "creation_date", title: "Date Created"},
+					{data: "status", title: "Status"},
+					{title: "Job", data: "id", render: function(data) {
+						return "<a href='/jobs/" + data + "'>View</a>" 
+					}, orderable: false, className: "dt-body-center"}
+				],
+				stateSave: true
+			})
+		}
+		function formatNumbers() {
+			$(".pretty-number").each(function(x) {
+				$(this).text(parseInt($(this).text()).toLocaleString())
+			})
+		}
+		function makeLinks() {
+			$(".link-button").click(function() {
+				var url = $(this).data("url");
+				if (url) {
+					document.location = url;
+				}
+			});
+		}
+		function init() {
+			initJobsTable();
+			formatNumbers();
+			makeLinks();
+		}
+		$(document).ready(init);
+	</script>
+
+{% endblock %}
+{% block content %}
+	<div class="section">
+		<div class="section-title row">
+			<div class="col-md-12">
+				<h2>Shared Jobs</h2>
+			</div>
+		</div>
+	</div>
+
+	{% if collaborator %}
+	<div class="section">
+		<p>These are the jobs you have shared with <strong>{{collaborator.email}}</strong></p>
+		<div class="col-md-12">
+			<table id="users-table"> </table>
+		</div>
+	</div>
+	{% else %}
+	<div class="section">
+		<p>You have no jobs shared with this user</p>
+	</div>
+	{% endif %}
+
+{% endblock %}

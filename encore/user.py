@@ -42,6 +42,14 @@ class User(UserMixin):
         cur.execute(sql, (self.rid, ))
         db.commit()
 
+    def get_collaborator(self, rid, db=None):
+        where = WhereAll(
+            WhereExpression("users.id in (select user_id from job_users where job_id in " +
+              "(select job_id from job_users where user_id=%s and role_id=1) and user_id != %s)", (self.rid, self.rid)),
+            WhereExpression("users.id = %s", (rid ,))
+        )
+        return User.__get_by_sql_where(db, where)
+
     def get_collaborators(self, query, db=None):
         where = WhereAll(
             WhereExpression("job_users.job_id in (select job_id from job_users where user_id=%s)", (self.rid,)),
@@ -92,7 +100,6 @@ class User(UserMixin):
 
     @staticmethod
     def from_email(email, db):
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
         where = WhereExpression("email=%s", (email, ))
         return User.__get_by_sql_where(db, where)
 
@@ -100,7 +107,6 @@ class User(UserMixin):
     def from_id(rid, db = None):
         if db is None:
             db = sql_pool.get_conn()
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
         where = WhereExpression("id=%s", (rid, ))
         return User.__get_by_sql_where(db, where)
 
@@ -119,7 +125,14 @@ class User(UserMixin):
 
     @staticmethod
     def __get_by_sql_where(db, where=None):
-        results = User.__list_by_sql_where_query(db, where=where).results
+        sqlcmd = User.__build_default_sql_command(where)
+        return User.__get_by_sql_command(db, sqlcmd)
+
+    @staticmethod
+    def __get_by_sql_command(db, sqlcmd):
+        if db is None:
+            db = sql_pool.get_conn()
+        results = User.__list_by_sql_command(db, sqlcmd=sqlcmd).results
         if len(results)!=1:
             return None
         res = results[0]

@@ -47,9 +47,12 @@ class User(UserMixin):
             WhereExpression("job_users.job_id in (select job_id from job_users where user_id=%s)", (self.rid,)),
             WhereExpression("job_users.user_id != %s", (self.rid,))
         )
-        sqlcmd = User.__build_sql_command(where, query)
-        sqlcmd.set_group_by([re.sub(r'AS \w+$','',x) for x in sqlcmd.cols])
-        sqlcmd.add_col("count(*) as count")
+        cols = User.__default_cols()
+        group_by = list(cols.keys())
+        cols["count"] = "count(*)"
+        qcols = User.__default_qcols()
+        sqlcmd = User.__build_sql_command(cols, qcols, where, query)
+        sqlcmd.set_group_by(group_by)
         sqlcmd.add_join(TableJoin("job_users", "job_users.user_id = users.id"))
         return User.__list_by_sql_command(db, sqlcmd)
 
@@ -124,8 +127,8 @@ class User(UserMixin):
             res["full_name"], res["affiliation"], res["is_active"])
 
     @staticmethod
-    def __build_sql_command(where=None, query=None):
-        cols = OrderedDict([("id", "users.id"),
+    def __default_cols():
+        return OrderedDict([("id", "users.id"),
             ("email", "users.email"),
             ("full_name", "users.full_name"),
             ("affiliation", "users.affiliation"),
@@ -134,7 +137,19 @@ class User(UserMixin):
             ("last_login_date", "DATE_FORMAT(users.last_login_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
             ("is_active", "users.is_active")
         ])
-        qcols = ["id", "email", "full_name", "affiliation", "creation_date", "last_login_date"]
+
+    def __default_qcols():
+        return ["id", "email", "full_name", "affiliation", "creation_date", "last_login_date"]
+
+    @staticmethod
+    def __build_default_sql_command(where=None, query=None):
+        return User.__build_sql_command(
+            User.__default_cols(),
+            User.__default_qcols(),
+            where, query)
+
+    @staticmethod
+    def __build_sql_command(cols, qcols=None, where=None, query=None):
         page, order_by, qsearch = SelectQuery.translate_query(query, cols, qcols)
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))
@@ -154,7 +169,7 @@ class User(UserMixin):
 
     @staticmethod
     def __list_by_sql_where_query(db, where=None, query=None):
-        sqlcmd = User.__build_sql_command(where, query)
+        sqlcmd = User.__build_default_sql_command(where, query)
         return User.__list_by_sql_command(db, sqlcmd)
 
     @staticmethod

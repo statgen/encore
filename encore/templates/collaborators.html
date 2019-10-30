@@ -18,6 +18,13 @@
 					}, orderable: false, className: "dt-body-center"}
 				],
 				stateSave: true
+			}).on("init.dt", function(e, settings, data) {
+				if (data.recordsTotal > 0) {
+					// records returned
+				} else {
+					$("#sharetable").hide()
+					$("#noshares").show()
+				}
 			})
 		}
 		function formatNumbers() {
@@ -52,9 +59,14 @@
 	</div>
 
 	<div class="section">
-		<p>These are the users you have shared jobs with</p>
-		<div class="col-md-12">
+		<div class="col-md-12" id="sharetable">
+			<p>These are the users you have shared jobs with...</p>
 			<table id="users-table"> </table>
+		</div>
+		<div class="col-md-12" id="noshares" style="display:none">
+			<p>You have not shared any jobs with other users. If you would
+			like to share a job, click the "Share" button on a job page to
+			allow a collaborator to log in to view those results.</p>
 		</div>
 	</div>
 

@@ -52,7 +52,7 @@ class User(UserMixin):
 
     def get_collaborators(self, query, db=None):
         where = WhereAll(
-            WhereExpression("job_users.job_id in (select job_id from job_users where user_id=%s)", (self.rid,)),
+            WhereExpression("job_users.job_id in (select job_id from job_users where user_id=%s and role_id=1)", (self.rid,)),
             WhereExpression("job_users.user_id != %s", (self.rid,))
         )
         cols = User.__default_cols()

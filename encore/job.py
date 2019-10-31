@@ -372,7 +372,7 @@ class Job:
             cur.execute(sql, (job_id, user.rid, role, current_user.rid))
             db.commit()
         except:
-            ex = sys.exc_info()[0]
+            ex = sys.exc_info()[1]
         finally:
             cur.close()
         if ex is not None:
@@ -394,14 +394,43 @@ class Job:
                 """
             cur.execute(sql, (job_id, user.rid))
             db.commit()
-            success = True
         except:
-            ex = sys.exc_info()[0]
+            ex = sys.exc_info()[1]
         finally:
             cur.close()
         if ex is not None:
             raise ex
         return True
+
+    @staticmethod
+    def share_drop_collaborator(owner_id, collaborator_id, config=None):
+        ex = None
+        db = sql_pool.get_conn()
+        owner = User.from_id(owner_id, db)
+        collaborator = User.from_id(collaborator_id, db)
+        if owner is None:
+            raise Exception("Unrecognized owner id: {}".format(owner_id))
+        if collaborator is None:
+            raise Exception("Unrecognized collaborator id: {}".format(collaborator_id))
+        records = 0
+        try:
+            cur = db.cursor()
+            sql = """
+                DELETE FROM job_users
+                WHERE user_id=%s and job_id in
+                    (SELECT * FROM (SELECT job_id from job_users where user_id=%s and role_id=1) as hack)
+                """
+            cur.execute(sql, (collaborator.rid, owner.rid))
+            records = cur.rowcount
+            db.commit()
+        except:
+            ex = sys.exc_info()[1]
+        finally:
+            cur.close()
+        if ex is not None:
+            raise ex
+        result = {"records": records}
+        return result
 
     @staticmethod
     def counts(by=None, filters=None, config=None):

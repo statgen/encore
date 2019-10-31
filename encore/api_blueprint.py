@@ -719,6 +719,15 @@ def get_collaborations_with_user(user_id):
     jobs = Job.list_all_for_user_shared_with(current_user.rid, user_id, query=query)
     return ApiResult(jobs)
 
+@api.route("/collaborations/people/<user_id>", methods=["DELETE"])
+@login_required
+def delete_collaborations_with_user(user_id):
+    try:
+        result = Job.share_drop_collaborator(current_user.rid, user_id)
+        return ApiResult(result)
+    except Exception as e:
+        raise ApiException("COULD NOT DROP COLLABORATOR", details=str(e))
+
 @api.route("/models", methods=["GET"])
 @login_required
 def get_models():

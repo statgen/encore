@@ -386,6 +386,8 @@ def get_job_zoom(job_id, job=None):
             header[7] = "NS"
         if len(header)>11 and header[11] == "p.value":
             header[11] = "PVALUE"
+        if len(header)>12 and header[12] == "p.value":
+            header[12] = "PVALUE"
     assert len(header) > 0
     chrom = request.args.get("chrom", "")
     start_pos = int(request.args.get("start_pos", "0"))

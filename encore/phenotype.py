@@ -29,11 +29,16 @@ class Phenotype:
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))
 
+    def get_column_class(self, covar_name):
+        covar = self.__get_column(covar_name)
+        return covar.get("class", "")
+
+    def get_column_type(self, covar_name):
+        covar = self.__get_column(covar_name)
+        return covar.get("type", "")
+
     def get_column_levels(self, covar_name):
-        covar = [x for x in self.meta.get("columns", []) if x.get("name", "")==covar_name]
-        if len(covar) != 1:
-            raise Exception("Could not find column: {}".format(covar_name))
-        covar = covar[0]
+        covar = self.__get_column(covar_name)
         return covar.get("levels", [])
 
     def check_usable(self):
@@ -48,6 +53,12 @@ class Phenotype:
         obj["meta"] = self.meta
         obj["is_usable"], obj["usable_result"] = self.check_usable()
         return obj
+
+    def __get_column(self, covar_name):
+        covar = [x for x in self.meta.get("columns", []) if x.get("name", "")==covar_name]
+        if len(covar) != 1:
+            raise Exception("Could not find column: {}".format(covar_name))
+        return covar[0]
 
     @staticmethod
     def get(pheno_id, config):

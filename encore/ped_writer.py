@@ -115,7 +115,7 @@ class BinaryColumn(Column):
         if options and "event" in options:
             self.set_event_level(options["event"])
         else:
-            self.set_event_level(self.levels[0])
+            self.set_event_level(self.levels[-1])
 
     def headers(self):
         return [self.name + "_" + self.event_level]

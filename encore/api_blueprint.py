@@ -142,7 +142,7 @@ def create_new_job():
         model.validate_model_spec(job_desc)
     except Exception as e:
         print(e)
-        raise ApiException("INVALID MODEL REQUEST")
+        raise ApiException("INVALID MODEL REQUEST", details=str(e))
     # valid model request
     try:
         param_hash = Job.calc_param_hash(job_desc)

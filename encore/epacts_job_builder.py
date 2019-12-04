@@ -154,6 +154,40 @@ class EpactsModel(BaseModel):
             if hasattr(self, "filters"):
                 model_spec["variant_filter"] = self.filters[0][0]
 
+        resp = model_spec.get("response", None)
+        if not resp:
+            raise Exception("Missing model response")
+
+        if isinstance(resp, dict):
+            resp_name = resp.get("name", None)
+        else:
+            resp_name = resp
+
+        pheno = self.get_pheno(model_spec)
+        resp_class = pheno.get_column_class(resp_name)
+        if resp_class == "binary":
+            if not isinstance(resp, dict):
+                resp = {"name": resp}
+            resp_event = resp.get("event", None)
+            levels = pheno.get_column_levels(resp_name)
+            if not levels:
+                raise Exception(("Variable {} does not appear to be a binary trait "
+                    "(No levels found)").format(resp_name))
+            if len(levels) != 2:
+                raise Exception("Response must have exactly 2 levels, found {}: {}".
+                    format(len(levels), ",".join(levels)))
+            if resp_event:
+                if not resp_event in levels:
+                    raise Exception(("Requested event level does not match data. "
+                        "Requested: {}; Data: {}").format(resp_event, ",".join(levels)))
+            else:
+                resp_event = levels[1]
+
+            resp["event"] = resp_event
+            model_spec["response"] = resp
+            model_spec["response_desc"] = "Pr({} = {})".format(resp_name, resp_event)
+        elif resp_class != "numeric":
+            raise Exception("Response must be binary or numeric, found: {}".format(resp_class))
         
 class LMEpactsModel(EpactsModel):
     model_code = "lm"

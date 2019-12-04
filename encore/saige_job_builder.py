@@ -185,15 +185,15 @@ class BinarySaigeModel(SaigeModel):
         pheno = self.get_pheno(model_spec)
         levels = pheno.get_column_levels(resp_name)
         if not levels:
-            raise Exception("Variable {} does not appear to be a binary trait " + 
-                "(No levels found)".format(resp_name))
+            raise Exception(("Variable {} does not appear to be a binary trait "
+                "(No levels found)").format(resp_name))
         if len(levels) != 2:
-            raise Exception("Response must have exactly 2 levels, found {}: {}", 
+            raise Exception("Response must have exactly 2 levels, found {}: {}".
                 format(len(levels), ",".join(levels)))
         if resp_event:
             if not resp_event in levels:
-                raise Exception("Requested event level does not match data. " + 
-                    "Requested: {}; Data: {}".format(resp_event, ",".join(levels)))
+                raise Exception(("Requested event level does not match data. "
+                    "Requested: {}; Data: {}").format(resp_event, ",".join(levels)))
         else:
             resp_event = levels[1]
 

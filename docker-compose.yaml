@@ -9,14 +9,14 @@ services:
       MYSQL_ROOT_PASSWORD: my_pwd
       MYSQL_USER: my_user
       MYSQL_PASSWORD: my_pwd
-      MYSQL_DATABASE: my_db 
+      MYSQL_DATABASE: encore
   encore:
     build:
       context: .
       dockerfile: Dockerfile.prod
     environment:
       MYSQL_HOST: db
-      MYSQL_DB: my_db
+      MYSQL_DB: encore
       MYSQL_USER: my_user
       MYSQL_PASSWORD: my_pwd
       SERVER_NAME: localhost

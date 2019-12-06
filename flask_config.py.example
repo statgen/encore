@@ -17,7 +17,7 @@ DEFAULT_CONFIG = {
     'MYSQL_DB': 'my_db',
     'MYSQL_USER': 'my_user',
     'MYSQL_PASSWORD': 'my_pwd',
-    'SECRET_KEY': None,
+    'SECRET_KEY': os.urandom(24),
     'JWT_SECRET_KEY': None,
     'GOOGLE_LOGIN_CLIENT_ID': None,
     'GOOGLE_LOGIN_CLIENT_SECRET': None,

@@ -22,7 +22,7 @@ class SlurmJob:
            "#SBATCH --partition={}".format(self.config.get("QUEUE_PARTITION", "encore")),
            "#SBATCH --job-name=gasp_{}".format(self.job_id), 
            "#SBATCH --mem-per-cpu={}".format(mem_per_cpu), 
-           "#SBATCH --workdir={}".format(self.job_directory), 
+           "#SBATCH --chdir={}".format(self.job_directory),
            "#SBATCH --cpus-per-task={}".format(cores_per_job),  
            "#SBATCH --time=14-0", 
            "#SBATCH --nodes=1",

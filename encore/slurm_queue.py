@@ -15,18 +15,26 @@ class SlurmJob:
             self.config = dict()
 
     def get_batch_headers(self, model_plan):
-        mem_per_cpu = model_plan.get("mem_per_cpu", 6500)
-        cores_per_job= model_plan.get("mem_per_cpu", 56)
+        mem_per_cpu = model_plan.get("mem_per_cpu", self.config.get("JOB_MEM_PER_CPU", 6500))
+        cores_per_job = model_plan.get("cores_per_job", self.config.get("JOB_CORES_PER_TASK", 56))
+        
+        sbatch_headers = ["#!/bin/bash"]
 
-        return ["#!/bin/bash", 
-           "#SBATCH --partition={}".format(self.config.get("QUEUE_PARTITION", "encore")),
-           "#SBATCH --job-name=gasp_{}".format(self.job_id), 
-           "#SBATCH --mem-per-cpu={}".format(mem_per_cpu), 
-           "#SBATCH --chdir={}".format(self.job_directory),
-           "#SBATCH --cpus-per-task={}".format(cores_per_job),  
-           "#SBATCH --time=14-0", 
-           "#SBATCH --nodes=1",
-           "export OPENBLAS_NUM_THREADS=1"]
+        if "SLURM_ACCOUNT" in self.config:
+            sbatch_headers.append(
+                "#SBATCH --account={}".format(self.config.get("SLURM_ACCOUNT")))
+
+        sbatch_headers.append(
+            "#SBATCH --partition={}".format(self.config.get("QUEUE_PARTITION", "encore")),
+            "#SBATCH --job-name=gasp_{}".format(self.job_id),
+            "#SBATCH --mem-per-cpu={}".format(mem_per_cpu),
+            "#SBATCH --chdir={}".format(self.job_directory),
+            "#SBATCH --cpus-per-task={}".format(cores_per_job),
+            "#SBATCH --time={}".format(self.config.get("JOB_TIME", "14-0"),
+            "#SBATCH --nodes=1",
+            "export OPENBLAS_NUM_THREADS=1")
+
+        return sbatch_headers
 
     def write_batch_script(self, batch_script_path, model_plan):
         with open(batch_script_path, "w") as f:

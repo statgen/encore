@@ -24,7 +24,7 @@ class SlurmJob:
             sbatch_headers.append(
                 "#SBATCH --account={}".format(self.config.get("SLURM_ACCOUNT")))
 
-        sbatch_headers.append(
+        sbatch_headers.extend((
             "#SBATCH --partition={}".format(self.config.get("QUEUE_PARTITION", "encore")),
             "#SBATCH --job-name=gasp_{}".format(self.job_id),
             "#SBATCH --mem-per-cpu={}".format(mem_per_cpu),
@@ -32,7 +32,7 @@ class SlurmJob:
             "#SBATCH --cpus-per-task={}".format(cores_per_job),
             "#SBATCH --time={}".format(self.config.get("JOB_TIME", "14-0")),
             "#SBATCH --nodes=1",
-            "export OPENBLAS_NUM_THREADS=1")
+            "export OPENBLAS_NUM_THREADS=1"))
 
         return batch_headers
 

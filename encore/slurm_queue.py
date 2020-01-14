@@ -34,7 +34,7 @@ class SlurmJob:
             "#SBATCH --nodes=1",
             "export OPENBLAS_NUM_THREADS=1"))
 
-        return batch_headers
+        return sbatch_headers
 
     def write_batch_script(self, batch_script_path, model_plan):
         with open(batch_script_path, "w") as f:

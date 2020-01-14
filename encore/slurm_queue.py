@@ -17,6 +17,7 @@ class SlurmJob:
     def get_batch_headers(self, model_plan):
         mem_per_cpu = model_plan.get("mem_per_cpu", self.config.get("JOB_MEM_PER_CPU", 6500))
         cores_per_job = model_plan.get("cores_per_job", self.config.get("JOB_CORES_PER_TASK", 56))
+        
         sbatch_headers = ["#!/bin/bash"]
 
         if "SLURM_ACCOUNT" in self.config:
@@ -27,7 +28,7 @@ class SlurmJob:
             "#SBATCH --partition={}".format(self.config.get("QUEUE_PARTITION", "encore")),
             "#SBATCH --job-name=gasp_{}".format(self.job_id),
             "#SBATCH --mem-per-cpu={}".format(mem_per_cpu),
-            "#SBATCH --workdir={}".format(self.job_directory),
+            "#SBATCH --chdir={}".format(self.job_directory),
             "#SBATCH --cpus-per-task={}".format(cores_per_job),
             "#SBATCH --time={}".format(self.config.get("JOB_TIME", "14-0"),
             "#SBATCH --nodes=1",

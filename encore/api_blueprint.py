@@ -864,8 +864,6 @@ def get_api_annotations(resource):
         return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/genes/', params=request.args).content
     elif resource == "recomb":
         return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/recomb/results/', params=request.args).content
-    elif resource == "constraint":
-        return requests.post('http://exac.broadinstitute.org/api/constraint', data=request.form).content
     else:
         return "Not Found", 404
 

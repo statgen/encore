@@ -42,7 +42,6 @@ $(document).ready(function() {
     var apiBase = "/api/lz/";
     data_sources.add("epacts", new EpactsDS)
       .add("ld", ["LDEP", apiBase + "ld-"])
-      .add("constraint", ["GeneConstraintLZ", { url: apiBase + "constraint" }])
       .add("sig", ["StaticJSON", [{ "x": 0, "y": 4.522 }, { "x": 2881033286, "y": 4.522 }] ]);
 
     if (genome_build == "GRCh37") {
@@ -133,9 +132,18 @@ $(document).ready(function() {
                 }]}
             })
         );
+        var gene_data_layer = LocusZoom.Layouts.get("data_layer", "genes");
+        var gene_tooltip = LocusZoom.Layouts.get("tooltip", "standard_genes");
+        gene_tooltip.html = "<h4><strong><i>{{gene_name}}</i></strong></h4>" +
+            "<p>Gene ID: <strong>{{gene_id}}</strong></p>" +
+            "<p>Transcript ID: <strong>{{transcript_id}}</strong></p>";
+        gene_data_layer.fields =  ["gene:gene"];
+        gene_data_layer.tooltip = gene_tooltip;
+
         var gene_mods = {
             namespace: {"gene": "gene"},
-            dashboard: {components: []}
+            dashboard: {components: []},
+            data_layers: [ gene_data_layer ],
         };
         var layout = {
             width: 1000,

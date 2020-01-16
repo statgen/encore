@@ -1,0 +1,9 @@
+#,Email,First Name,Last Name,Phone,Date Added
+1,jhossler@umich.edu,Julie,Balk,None,2019-11-25
+2,junzli@med.umich.edu,Jun,Li,None,2019-11-26
+3,alextsoi@umich.edu,Alex,Tsoi,None,2019-11-26
+4,pstuart@umich.edu,Philip,Stuart,None,2019-12-03
+5,jrai@umich.edu,Jacque,Adams,None,2019-12-03
+6,lishalin@umich.edu,Lisha,Lin,None,2019-12-06
+7,jasamack@umich.edu,Jasmine,Mack,None,2019-12-06
+8,clarknic@umich.edu,Nicole,Clark,None,2019-12-08

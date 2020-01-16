@@ -11,6 +11,11 @@ import datetime
 googleinfo = requests.get("https://accounts.google.com/.well-known/openid-configuration")
 google_params = googleinfo.json()
 
+
+umichinfo=requests.get("https://shibboleth.umich.edu/.well-known/openid-configuration")
+umich_params=umichinfo.json()
+
+
 auth = Blueprint("auth", __name__)
 
 login_manager = LoginManager()
@@ -63,7 +68,13 @@ def user_loader(email):
 def get_sign_in():
     if request.args.get("orig", None):
         session["post_login_page"] = request.args.get("orig")
-    return get_sign_in_view("sign-in") 
+    return get_sign_in_view("sign-in")
+
+@auth.route("/signin", methods=["GET"])
+def get_signin():
+    if request.args.get("orig", None):
+        session["post_login_page"] = request.args.get("orig")
+    return get_sign_in_oidcview("signin")
 
 @auth.route("/get-auth-token", methods=["GET"])
 @login_required
@@ -78,12 +89,28 @@ def unauthorized():
         orig = request.full_path
         if orig == "/?":
             orig = None
-        return redirect(url_for("auth.get_sign_in", orig=orig))
+        return redirect(url_for("auth.get_signin", orig=orig))
 
 @auth.route("/sign-out", methods=["GET"])
 def sign_out():
     logout_user()
-    return redirect(url_for("auth.get_sign_in"))
+    return redirect(url_for("auth.get_signin"))
+
+def load_userfullname(fullname):
+    print("in load user fullname")
+    print(fullname)
+    db = sql_pool.get_conn()
+    print(db)
+    user = User.from_full_name(fullname, db)
+    if user:
+        #try:
+        user.log_login(db)
+        #except:
+        #    pass
+        return user
+    else:
+        return None
+
 
 def load_user(email):
     db = sql_pool.get_conn()
@@ -96,6 +123,51 @@ def load_user(email):
         return user
     else:
         return None
+def get_sign_in_oidcview(target):
+    signin_url = request.url_root + target
+    oauth_service = OAuth2Service(
+        name="Encore",
+        client_id=current_app.config.get("UMICH_LOGIN_CLIENT_ID", None),
+        client_secret=current_app.config.get("UMICH_LOGIN_CLIENT_SECRET", None),
+        authorize_url=umich_params.get("authorization_endpoint"),
+        base_url=umich_params.get("userinfo_endpoint"),
+        access_token_url=umich_params.get("token_endpoint"))
+    if "code" in request.args:
+        oauth_session = oauth_service.get_auth_session(
+            data={"code": request.args["code"],
+                  "grant_type": "authorization_code",
+                  "redirect_uri": signin_url},
+            decoder=json.loads)
+        user_data = oauth_session.get("").json()
+        user = load_userfullname(user_data["sub"])
+        if user:
+            if user.is_active():
+                flask_login.login_user(user)
+                redirect_to = session.pop("post_login_page", None)
+                try:
+                    endpoint, arguments = current_app.url_map.bind('localhost').match(redirect_to)
+                    print("3")
+                except Exception as e:
+                    redirect_to = None
+                if redirect_to:
+                    return redirect(redirect_to)
+                else:
+                    return redirect(url_for("user.index"))
+            else:
+                error_message = "Account not active ({})".format(user_data["email"])
+                return render_template("/signin.html", error_message=error_message)
+        else:
+            error_message = "Not an authorized user ({})".format(user_data["email"])
+            return render_template("/signin.html", error_message=error_message)
+    elif "authorize" in request.args:
+        return redirect(oauth_service.get_authorize_url(
+            scope="openid",
+            response_type="code",
+            prompt="select_account",
+            redirect_uri=signin_url))
+    else:
+        return render_template("/signin.html")
+
 
 def get_sign_in_view(target):
     signin_url = request.url_root + target

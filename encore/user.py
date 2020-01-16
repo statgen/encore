@@ -8,13 +8,14 @@ from .db_helpers import SelectQuery, PagedResult, OrderClause, OrderExpression, 
 
 
 class User(UserMixin):
-    __dbfields = ["id", "email", "can_analyze", "full_name", "affiliation", "is_active"]
+    __dbfields = ["id", "email", "can_analyze", "full_name","unique_name", "affiliation", "is_active"]
 
-    def __init__(self, email, rid, can_analyze, full_name, affiliation, is_active):
+    def __init__(self, email, rid, can_analyze, full_name,unique_name, affiliation, is_active):
         self.email = email
         self.rid = rid
         self.can_analyze = can_analyze
         self.full_name = full_name
+        self.unique_name = unique_name
         self.affiliation = affiliation
         self._is_active = is_active
 
@@ -103,6 +104,16 @@ class User(UserMixin):
         where = WhereExpression("email=%s", (email, ))
         return User.__get_by_sql_where(db, where)
 
+    def from_full_name(fullname, db):
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        where = WhereExpression("full_name=%s", (fullname, ))
+        return User.__get_by_sql_where(db, where)
+
+    def from_unique_name(fullname, db):
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        where = WhereExpression("unique_name=%s", (fullname, ))
+        return User.__get_by_sql_where(db, where)
+
     @staticmethod
     def from_id(rid, db = None):
         if db is None:
@@ -137,13 +148,14 @@ class User(UserMixin):
             return None
         res = results[0]
         return User(res["email"], res["id"], res["can_analyze"],
-            res["full_name"], res["affiliation"], res["is_active"])
+            res["full_name"],res["unique_name"], res["affiliation"], res["is_active"])
 
     @staticmethod
     def __default_cols():
         return OrderedDict([("id", "users.id"),
             ("email", "users.email"),
             ("full_name", "users.full_name"),
+            ("unique_name", "users.unique_name"),
             ("affiliation", "users.affiliation"),
             ("can_analyze", "users.can_analyze"),
             ("creation_date", "DATE_FORMAT(users.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
@@ -152,7 +164,7 @@ class User(UserMixin):
         ])
 
     def __default_qcols():
-        return ["id", "email", "full_name", "affiliation", "creation_date", "last_login_date"]
+        return ["id", "email", "full_name","unique_name", "affiliation", "creation_date", "last_login_date"]
 
     @staticmethod
     def __build_default_sql_command(where=None, query=None):

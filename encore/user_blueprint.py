@@ -47,12 +47,17 @@ def get_job(job_id, job=None):
 @user_area.route("/jobs/<job_id>/output", methods=["get"])
 @check_view_job
 def get_job_output(job_id, job=None):
-    return get_job_output(job, "output.epacts.gz", True)
+    file_name = job.get_output_primary_file()
+    short_name = job_id.partition("-")[0]
+    send_as = short_name + "-" + file_name
+    return get_job_output(job, file_name, True, send_as=send_as)
 
 @user_area.route("/jobs/<job_id>/output/<file_name>", methods=["get"])
 @check_view_job
 def get_job_output_file(job_id, file_name, job=None):
-    return get_job_output(job, file_name, True)
+    short_name = job_id.partition("-")[0]
+    send_as = short_name + "-" + file_name
+    return get_job_output(job, file_name, True, send_as=send_as)
 
 @user_area.route("/jobs/<job_id>/locuszoom/<region>", methods=["GET"])
 @check_view_job
@@ -134,7 +139,7 @@ def get_model_build():
     else:
         return render_template("not_authorized_to_analyze.html")
 
-def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None):
+def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None, send_as=None):
     try:
         output_file = job.relative_path(filename)
         if tail or head:
@@ -151,7 +156,8 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
                 resp.headers["Content-Type"] = mimetype
             return resp
         else:
-            return send_file(output_file, as_attachment=as_attach, mimetype=mimetype)
+            return send_file(output_file, mimetype=mimetype,
+                as_attachment=as_attach, attachment_filename=send_as)
     except Exception as e:
         print(e)
         return "File Not Found", 404

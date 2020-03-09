@@ -54,10 +54,17 @@ class Job:
         add_if_exists("output.filtered.001.gz", "Filtered Results (p-val<0.001)")
         return files
 
-    def get_output_file_path(self):
+    def get_output_primary_file(self):
         files = [x for x in self.get_output_files() if x.get("primary", False)]
         if len(files)==1:
-            return self.relative_path(files[0]["path"])
+            return files[0]["path"]
+        else:
+            return None
+
+    def get_output_file_path(self):
+        file_name = self.get_output_primary_file()
+        if file_name:
+            return self.relative_path(file_name)
         else:
             return None
 

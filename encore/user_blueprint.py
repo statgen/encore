@@ -128,6 +128,11 @@ def get_collaborations_with(user_id):
     collaborator = current_user.get_collaborator(user_id)
     return render_template("collaborate_with.html", collaborator_id=user_id, collaborator=collaborator)
 
+@user_area.route("/me/api-token", methods=["GET"])
+def get_api_token():
+    return render_template("api_token.html")
+
+
 @user_area.route("/help", methods=["GET"])
 def get_help():
     return render_template("help.html", user=current_user)

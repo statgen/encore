@@ -15,11 +15,18 @@ auth = Blueprint("auth", __name__)
 
 login_manager = LoginManager()
 
-def encode_auth_token(user_id):
+def encode_auth_token(user_id, duration = "4hour"):
+    now_time = datetime.datetime.utcnow()
+    if duration == "4hour":
+        expire_time = now_time + datetime.timedelta(hours=4, seconds=0)
+    elif duration == "7day":
+        expire_time = now_time + datetime.timedelta(days=7, seconds=0)
+    else:
+        raise Exception("Invalid token duration: %s".format(duration))
     try:
         payload = {
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7, seconds=0),
-            'iat': datetime.datetime.utcnow(),
+            'exp': expire_time,
+            'iat': now_time,
             'sub': user_id
         }
         return jwt.encode(
@@ -68,7 +75,8 @@ def get_sign_in():
 @auth.route("/get-auth-token", methods=["GET"])
 @login_required
 def get_auth_token():
-    return encode_auth_token(current_user.email)
+    duration = request.args.get("duration", "4hour")
+    return encode_auth_token(current_user.email, duration)
 
 @login_manager.unauthorized_handler
 def unauthorized():

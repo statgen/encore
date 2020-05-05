@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `is_active` bool DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `email_UNIQUE` (`email` ASC))
+
 ENGINE = InnoDB;
 
 

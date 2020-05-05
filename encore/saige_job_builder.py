@@ -1,4 +1,5 @@
 from .base_model import BaseModel
+from .base_model import BaseModel
 from .ped_writer import PedWriter
 import os
 from .chunk_progress import get_chr_chunk_progress

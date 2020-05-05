@@ -43,6 +43,12 @@ class User(UserMixin):
         cur.execute(sql, (self.rid, ))
         db.commit()
 
+    def set_inactive(self,db):
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = "UPDATE users SET is_active = %s"
+        cur.execute(sql, (self.rid, ))
+        db.commit()
+
     def get_collaborator(self, rid, db=None):
         where = WhereAll(
             WhereExpression("users.id in (select user_id from job_users where job_id in " +
@@ -148,7 +154,8 @@ class User(UserMixin):
             return None
         res = results[0]
         return User(res["email"], res["id"], res["can_analyze"],
-            res["full_name"],res["unique_name"], res["affiliation"], res["is_active"])
+            res["full_name"],res["unique_name"
+                                 ""], res["affiliation"], res["is_active"])
 
     @staticmethod
     def __default_cols():
@@ -227,6 +234,18 @@ class User(UserMixin):
         new_user = User.from_id(new_id, db=db)
         result = {"user": new_user}
         return result
+
+    @staticmethod
+    def createUser(values,db):
+        cur = db.cursor()
+        cur.execute("""
+            INSERT INTO users ( email,can_analyze,full_name,unique_name,affiliation,is_active)
+            VALUES (%s, %s, %s, %s, %s, %s)
+                       """, (values['email'], values["can_analyze"], values["fullname"], values["uniquename"],values["affiliation"], values["is_active"]))
+        print("above commit")
+        db.commit()
+        print("done commit")
+
 
 
     def as_object(self):

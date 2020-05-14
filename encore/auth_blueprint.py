@@ -40,11 +40,9 @@ umichinfo=requests.get("https://shibboleth.umich.edu/.well-known/openid-configur
 
 umich_params=umichinfo.json()
 
-AUTHMACHINE_URL = "https://shib-idp-test.www.umich.edu/.well-known/openid-configuration"
-AUTHMACHINE_CLIENT_ID = '7844ca9e-1540-4ec5-a7f0-f9bf4c951d5e'
-AUTHMACHINE_CLIENT_SECRET = '63d9f408-c16a-446b-ba56-458cebaa6b39'
-AUTHMACHINE_API_TOKEN = umich_params.get("token_endpoint")
-AUTHMACHINE_SCOPE = 'openid edumember'
+# AUTHMACHINE_URL = "https://shib-idp-test.www.umich.edu/.well-known/openid-configuration"
+# AUTHMACHINE_API_TOKEN = umich_params.get("token_endpoint")
+ENCORE_SCOPE = 'openid edumember email'
 
 
 auth = Blueprint("auth", __name__)
@@ -118,175 +116,83 @@ def get_signin():
     #return redirect(get_authorization_url())
 
 
-def get_authorization_url():
-    print("authorize")
-    nonce = rndstr()
-
-    args = {
-        'client_id': current_app.config.get("UMICH_LOGIN_CLIENT_ID", None),
-        'response_type': 'code',
-        'scope': 'openid edumember',
-        'nonce': nonce,
-        'redirect_uri': "http://localhost:5000/oidc-callback",
-        'state': 'some-state-which-will-be-returned-unmodified'
-    }
-    url = umich_params.get("authorization_endpoint") + '?' + urlencode(args, True)
-    print(url)
-    return url
-
-
-def get_client():
-    client = Client(client_authn_method={
-        'client_secret_post': ClientSecretPost,
-        'client_secret_basic': ClientSecretBasic
-    })
-    client.provider_config(AUTHMACHINE_URL)
-    client.client_id = AUTHMACHINE_CLIENT_ID
-    client.client_secret = AUTHMACHINE_CLIENT_SECRET
-    client.verify_ssl = True
-    return client
-
-
 @auth.route("/checkin", methods=["GET"])
 def get_checkin():
     if request.args.get("orig", None):
         session["post_login_page"] = request.args.get("orig")
     return get_check_in_oidcview("checkin")
 
-@auth.route('/oidc-callback')
-def auth_callback():
-    print ("call for signin")
-    print("in the auth callback")
-    aresp = get_authorization_response()
-    session['user_info'] = get_userinfo(aresp)
-    return redirect(url_for('index'))
-
-
-def get_userinfo(client, authorization_response):
-    """Returns Open ID userinfo as dict.
-    """
-
-    get_access_token(authorization_response)
-    user_info = client.do_user_info_request(
-        state=authorization_response['state'],
-        authn_method='client_secret_post')
-    return user_info.to_dict()
-
-def get_authorization_response(self):
-    print("in the authorization response")
-    authorization_response = self.client.parse_response(
-        AuthorizationResponse,
-        info=request.args,
-        sformat='dict')
-    print(authorization_response)
-    return authorization_response
-
-
-
-def get_access_token(self, aresp):
-    """Gets access token from AuthMachine.
-    Args:
-        aresp (AuthorizationResponse):
-    """
-    args = {
-        'code': aresp['code'],
-        'client_id': self.client.client_id,
-        'client_secret': self.client.client_secret,
-        'redirect_uri': self.host + url_for('auth_callback')
-    }
-
-    return self.client.do_access_token_request(
-        scope=AUTHMACHINE_SCOPE,
-        state=aresp['state'],
-        request_args=args,
-        authn_method='client_secret_post')
-
-
 
 def get_check_in_oidcview(target):
-    print("sign is oidc : "+target)
+    #print("sign is oidc : "+target)
     signin_url = request.url_root + target
-    print("sign is url : "+signin_url)
+    #print("sign is url : "+signin_url)
     client = Client(client_authn_method=CLIENT_AUTHN_METHOD)
-    info = {"client_id": "7844ca9e-1540-4ec5-a7f0-f9bf4c951d5e", "client_secret": "63d9f408-c16a-446b-ba56-458cebaa6b39"}
+    info = {"client_id": current_app.config.get("UMICH_LOGIN_CLIENT_ID", None), "client_secret": current_app.config.get("UMICH_LOGIN_CLIENT_SECRET", None)}
     client_reg = RegistrationResponse(**info)
     client.store_registration_info(client_reg)
 
-    print(request.url_root + 'oidc-callback')
+    # #print(request.url_root + 'oidc-callback')
+    # print(umich_params.get("authorization_endpoint"))
+    # print(umich_params.get("token_endpoint"))
+    # print(umich_params.get("userinfo_endpoint"))
+    # print(umich_params.get("jwks_uri"))
+
     op_info = ProviderConfigurationResponse(
-        version="1.0", issuer="https://shibboleth.umich.edu",
-        authorization_endpoint="https://shibboleth.umich.edu/idp/profile/oidc/authorize",
-        token_endpoint="https://shibboleth.umich.edu/idp/profile/oidc/token",
-        userinfo_endpoint="https://shibboleth.umich.edu/idp/profile/oidc/userinfo",
-        jwks_uri="https://shibboleth.umich.edu/idp/profile/oidc/keyset",
+        version="1.0", issuer=umich_params.get("issuer"),
+        authorization_endpoint=umich_params.get("authorization_endpoint"),
+        token_endpoint=umich_params.get("token_endpoint"),
+        userinfo_endpoint=umich_params.get("userinfo_endpoint"),
+        jwks_uri=umich_params.get("jwks_uri"),
         )
     client.handle_provider_config(op_info, op_info['issuer'])
 
-
-
-
-
-
-
     # //SO if the user is part of that encore group, then will check if the user exist in the table using unique name , if not then create user using following command
     # //and then allow acccess
-
-
-
-
-
     if "code" in request.args:
-        print("1")
-        print(request.args)
         authorization_response = client.parse_response(
             AuthorizationResponse,
             info=request.args,
             sformat='dict')
-        #print("*****************************************************authorization reposnse***************************")
-        #print(authorization_response)
-        #session['user_info'] = get_userinfo(client,authorization_response)
+        print("*****************************************************authorization reposnse***************************")
         args = {
             'code': authorization_response['code'],
             'client_id': client.client_id,
             'client_secret': client.client_secret,
-            'redirect_uri': "http://localhost:5000/signin"
+            'redirect_uri': signin_url
         }
 
         access_token_ret= client.do_access_token_request(
-            scope=AUTHMACHINE_SCOPE,
+            scope=ENCORE_SCOPE,
             state=authorization_response['state'],
             request_args=args,
             authn_method='client_secret_post')
 
-        #print("***************************************************** access_token_ret ***************************")
-        #print(access_token_ret['access_token'])
-
+        print("***************************************************** access_token_ret ***************************")
+        #print(access_token_ret)
         access_token2 = access_token_ret['access_token']
 
         #userinfo_request(access_token)
         # Parameters:	access_token (str) – Bearer access token to use when fetching userinfo
         # Returns:	UserInfo Response
         # Return type:	oic.oic.message.OpenIDSchema
+
         user_info2=client.user_info_request(
             access_token=access_token2
         )
-
-        #print("***************************************************** user_info2 ***************************")
+        print("***************************************************** user_info2 ***************************")
         #print(user_info2)
-
         user_info = client.do_user_info_request(
             state=authorization_response['state'],
             authn_method='client_secret_post')
-
-
-        #print("***************************************************** user_info ***************************")
+        print("***************************************************** user_info ***************************")
         #print(user_info)
         #print(user_info['sub'])
         useremail= user_info['email']
         usersub = user_info['sub']
-        #groupinfo={'edumember_ismemberof': [], 'sub': 'snehal', 'email': 'snehal@umich.edu'}
         groupinfo= user_info['edumember_ismemberof']
         user = load_uniquename(usersub)
+
         if 'encore mgi' in groupinfo:
             print("user is inside the group")
             #print("***************** is present or not in the db")
@@ -299,7 +205,7 @@ def get_check_in_oidcview(target):
                     print(redirect_to)
                     try:
                         endpoint, arguments = current_app.url_map.bind('localhost').match(redirect_to)
-                        print("in try")
+                        #print("in try")
                         print(endpoint)
                         print(arguments)
                     except Exception as e:
@@ -320,23 +226,20 @@ def get_check_in_oidcview(target):
                 userdev['email']=useremail
                 userdev['fullname']=usersub
                 userdev['uniquename']=usersub
-                userdev['affiliation']=''
-                userdev['creation_date']="DATE_FORMAT(2020-02-17 19:45:17, '%%Y-%%m-%%d %%H:%%i:%%s')"
-                userdev['last_login_date']="DATE_FORMAT(2020-02-17 19:45:17, '%%Y-%%m-%%d %%H:%%i:%%s')"
+                userdev['affiliation']='test'
+                #userdev['creation_date']="DATE_FORMAT(2020-02-17 19:45:17, '%%Y-%%m-%%d %%H:%%i:%%s')"
+                #userdev['last_login_date']="DATE_FORMAT(2020-02-17 19:45:17, '%%Y-%%m-%%d %%H:%%i:%%s')"
                 userdev['can_analyze']=1
                 userdev['is_active']=1
-                print("After the creating dictonary")
+
+                ##Pass the dictionary to db cursor and then create user
                 usercreate = User.createUser(userdev,db)
-                print("After the creating dictonary")
-                user.log_login(db)
+                usercreate.log_login(db)
                 flask_login.login_user(usercreate)
                 redirect_to = session.pop("post_login_page", None)
-                print(redirect_to)
+
                 try:
                     endpoint, arguments = current_app.url_map.bind('localhost').match(redirect_to)
-                    print("in try")
-                    print(endpoint)
-                    print(arguments)
                 except Exception as e:
                     redirect_to = None
                 if redirect_to:
@@ -354,44 +257,22 @@ def get_check_in_oidcview(target):
                 return render_template("/signin.html", error_message=error_message)
             error_message = "Not an authorized user ({})".format(user_info['email'])
             return render_template("/signin.html", error_message=error_message)
-
-
-        # token = oauth_session.fetch_token(token_url=umich_params.get("token_endpoint"),
-        #                           client_id=current_app.config.get("UMICH_LOGIN_CLIENT_ID", None),
-        #                           client_secret=current_app.config.get("UMICH_LOGIN_CLIENT_SECRET", None),
-        #                           include_client_id=True)
-
-        # print(dir(oauth_session))
-        # pprint(vars(oauth_session))
-        # print("access token")
-        # print(oauth_session.get("access_token"))
-        #
-        # print(oauth_session)
-        # r = oauth_session.get(umich_params.get("userinfo_endpoint"), params={'format': 'json'})
-        # print (r.json())
-
-        #user_data = oauth_session.get("").json()
-        #print(user_data)
-
-        user = load_userfullname('snehal')
-
     elif "authorize" in request.args:
         print("authorize")
         nonce = rndstr()
-
         args = {
             'client_id': current_app.config.get("UMICH_LOGIN_CLIENT_ID", None),
             'response_type': 'code',
-            'scope': 'openid edumember email',
+            'scope': ENCORE_SCOPE,
             'nonce': nonce,
-            'redirect_uri': "http://localhost:5000/signin",
+            'redirect_uri': signin_url,
             'state': 'some-state-which-will-be-returned-unmodified'
         }
         url = umich_params.get("authorization_endpoint") + '?' + urlencode(args, True)
-        print(url)
+        #print(url)
         return redirect(url)
     else:
-        return render_template("/checkin.html")
+        return render_template("/signin.html")
 
 
 @auth.route("/get-auth-token", methods=["GET"])
@@ -453,7 +334,7 @@ def load_user(email):
     user = User.from_email(email, db)
     if user:
         #try:
-        user.log_login(db) 
+        user.log_login(db)
         #except:
         #    pass
         return user
@@ -481,7 +362,7 @@ def get_sign_in_oidcview(target):
         userdev['fullname']=""
         userdev['uniquename']='test'
         userdev['affiliation']=''
-        userdev['creation_date']="DATE_FORMAT(2020-02-17 19:45:17, '%%Y-%%m-%%d %%H:%%i:%%s')"
+        userdev['creation_date']="DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s'), '%%Y-%%m-%%d %%H:%%i:%%s')"
         userdev['last_login_date']="DATE_FORMAT(2020-02-17 19:45:17, '%%Y-%%m-%%d %%H:%%i:%%s')"
         userdev['can_analyze']=0
         userdev['is_active']=0
@@ -549,7 +430,7 @@ def get_sign_in_oidcview(target):
     elif "authorize" in request.args:
         print("authorize")
         authorize_url =oauth_service.get_authorize_url(
-            scope="openid edumember",
+            scope=ENCORE_SCOPE,
             response_type="code",
             prompt="select_account",
             redirect_uri=signin_url)

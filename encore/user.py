@@ -38,6 +38,7 @@ class User(UserMixin):
         return self._is_active
 
     def log_login(self, db):
+        #print("in log login")
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         sql = "UPDATE users SET last_login_date = NOW() WHERE id = %s"
         cur.execute(sql, (self.rid, ))
@@ -236,16 +237,17 @@ class User(UserMixin):
         return result
 
     @staticmethod
-    def createUser(values,db):
-        cur = db.cursor()
+    def createUser(values,db=None):
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
         cur.execute("""
             INSERT INTO users ( email,can_analyze,full_name,unique_name,affiliation,is_active)
             VALUES (%s, %s, %s, %s, %s, %s)
                        """, (values['email'], values["can_analyze"], values["fullname"], values["uniquename"],values["affiliation"], values["is_active"]))
-        print("above commit")
+        #print("above commit")
         db.commit()
-        print("done commit")
-
+        new_id = cur.lastrowid
+        new_user = User.from_id(new_id, db=db)
+        return new_user
 
 
     def as_object(self):

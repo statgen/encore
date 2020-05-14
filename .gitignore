@@ -1,5 +1,7 @@
 .DS_Store
 .idea
+.RData
+.Rhistory 
 venv/
 .pytest_cache/
 flask_config.py

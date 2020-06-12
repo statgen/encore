@@ -134,6 +134,16 @@ class Genotype:
                 return readme
         return ""
 
+    def get_chromosomes(self):
+        if "chrs" in self.meta:
+            chrs = self.meta["chrs"]
+            if chrs == "autosomes":
+                chrs = " ".join(map(str, range(1,23)))
+            elif chrs == "autosomesX":
+                chrs = " ".join(map(str, range(1,23))) + " X"
+            return chrs
+        return None
+
     def get_info_stats(self):
         if "info_stats_path" in self.meta:
             stats_stub = self.meta.get("info_stats_path", "info.json")

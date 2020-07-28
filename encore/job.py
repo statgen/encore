@@ -229,6 +229,8 @@ class Job:
         cols = OrderedDict([("id", "bin_to_uuid(jobs.id)"),
             ("name", "jobs.name"),
             ("status", "statuses.name"),
+            ("geno_id", "bin_to_uuid(jobs.geno_id)"),
+            ("pheno_id", "bin_to_uuid(jobs.pheno_id)"),
             ("creation_date", "DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
             ("modified_date", "DATE_FORMAT(jobs.modified_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
             ("user_email", "users.email"),

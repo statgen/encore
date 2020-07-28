@@ -28,10 +28,15 @@
 				}
 			});
 			$("#copy-token").click(function() {
-			    var copyText = $("#token-output")[0];
-				copyText.select();
-				copyText.setSelectionRange(0, 99999);
-				document.execCommand("copy");
+				var token = $("#token-output").val();
+				if (token) {
+					var copyText = $("#token-output")[0];
+					copyText.select();
+					copyText.setSelectionRange(0, 99999);
+					document.execCommand("copy");
+				} else {
+					alert("First press 'Generate Token' then click to copy to clipboard");
+				}
 			});
 		}
 		$(document).ready(init);
@@ -61,7 +66,7 @@
 				</select>
 				<button class="btn btn-info" id="generate-token" data-action="{{url_for("auth.get_auth_token")}}">Generate Token</button>
 				<input id="token-output" readonly style="width:80%" placeholder="(token will appear here)"></input>
-				<button type="button" id="copy-token" class="btn btn-default"><span class="glyphicon glyphicon-copy" aria-hidden="true"></span></button>
+				<button type="button" id="copy-token" class="btn btn-default" title="Copy token to clipboard"><span class="glyphicon glyphicon-copy" aria-hidden="true"></span></button>
 			</p>
 		</div>
 	</div>

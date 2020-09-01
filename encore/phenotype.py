@@ -122,7 +122,7 @@ class Phenotype:
             ("md5sum", "phenotypes.md5sum"),
             ("creation_date", "DATE_FORMAT(phenotypes.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
             ("is_active", "phenotypes.is_active")])
-        qcols = ["id", "name", "user_email", "status"]
+        qcols = ["id", "name", "user_email"]
         page, order_by, qsearch = SelectQuery.translate_query(query, cols, qcols)
         if not order_by:
             order_by = OrderClause(OrderExpression(cols["creation_date"], "DESC"))

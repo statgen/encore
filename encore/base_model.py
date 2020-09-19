@@ -1,5 +1,6 @@
 from .genotype import Genotype
 from .phenotype import Phenotype 
+from .ped_writer import PedWriter
 import os
 
 class BaseModel(object):
@@ -22,6 +23,17 @@ class BaseModel(object):
             else:
                 raise Exception("No phenotype information in job")
         return pheno
+
+    def get_ped_writer(self, model_spec, geno, pheno):
+        ped_writer = PedWriter(pheno.get_pheno_reader(), \
+            model_spec["response"], model_spec.get("covariates",[]))
+        if "genopheno" in model_spec and len(model_spec["genopheno"])>0:
+            ped_writer.merge_covar(geno.get_pheno_reader(), \
+                model_spec["genopheno"])
+        return ped_writer
+
+    def get_response_values(self, model_spec, geno, pheno):
+        return self.get_ped_writer(model_spec, geno, pheno).get_response_values()
 
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.working_directory, *args))

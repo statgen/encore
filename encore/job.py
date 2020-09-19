@@ -15,13 +15,14 @@ class Job:
     __dbfields = ["user_id","name","error_message","status_id","creation_date","modified_date", "is_active"]
     __extfields = ["status", "role"]
 
-    def __init__(self, job_id, meta=None):
+    def __init__(self, job_id, meta=None, config=None):
         self.job_id = job_id
         for x in self.__dbfields + self.__extfields:
             setattr(self, x, None)
         self.root_path = "" 
         self.users = []
         self.meta = meta
+        self.config = config
 
     def get_adjusted_phenotypes(self):
         phe_file = self.relative_path("output.phe")
@@ -31,6 +32,13 @@ class Job:
                 for line in f:
                     (sample, val) = line.split()
                     phenos[sample] = float(val)
+        else:
+            model = self.get_model(self.config)
+            model_spec = self.meta
+            geno = model.get_geno(model_spec)
+
+            pheno = model.get_pheno(model_spec)
+            phenos = model.get_response_values(model_spec, geno, pheno)
         return phenos
 
     def relative_path(self, *args):
@@ -39,8 +47,8 @@ class Job:
     def get_genotype_id(self):
         return self.meta.get("genotype", None) 
 
-    def get_model(self):
-        return ModelFactory.get(self.meta.get("type", None), self.root_path, None)
+    def get_model(self, config=None):
+        return ModelFactory.get(self.meta.get("type", None), self.root_path, config)
 
     def get_output_files(self):
         files = []
@@ -101,7 +109,7 @@ class Job:
                 meta = json.load(meta_file)
         else:
            meta = dict()
-        j = Job(job_id, meta)
+        j = Job(job_id, meta, config=config)
         j.root_path = job_folder
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)

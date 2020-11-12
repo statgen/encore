@@ -852,7 +852,8 @@ def get_uuid():
     return ApiResult({"uuid": str(uuid.uuid4())})
 
 @api.route('/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
-def get_api_annotations(resource):
+@api.route('/lz/<resource>/<path:path>', methods=["GET", "POST"], strict_slashes=False)
+def get_api_annotations(resource, path=None):
     if resource == "ld-results":
         ldresp =  requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/results/', params=request.args)
         if ldresp.status_code != 500:
@@ -860,6 +861,13 @@ def get_api_annotations(resource):
         else:
             empty = "{\"data\": {\"position2\": []}}"
             return empty
+    elif resource == "ld":
+        ldserver = current_app.config.get("LD_SERVER")
+        if not ldserver:
+            return Response("No LD Server Configured", status=503)
+        ldurl =  ldserver + (path or "")
+        ldresp = requests.get(ldurl, params=request.args)
+        return Response(ldresp.content, mimetype=ldresp.headers.get('content-type'), status=ldresp.status_code)
     elif resource == "gene":
         return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/genes/', params=request.args).content
     elif resource == "recomb":

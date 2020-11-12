@@ -27,6 +27,7 @@ DEFAULT_CONFIG = {
     'JWT_SECRET_KEY': None,
     'GOOGLE_LOGIN_CLIENT_ID': None,
     'GOOGLE_LOGIN_CLIENT_SECRET': None,
+    'LD_SERVER': 'https://portaldev.sph.umich.edu/ld/',
     'HELP_EMAIL': '',
     'BUILD_REF': {
         'GRCh37': {

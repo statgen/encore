@@ -205,8 +205,14 @@ function getDataCols(cols, job_id) {
         {data: "pos", title:"Plot",
             render:function(data, type, row) {
                 if (data !== undefined && data !== null) {
-                    var fn = "event.preventDefault();" + 
-                        "jumpToLocusZoom(\"" + job_id + "\",\"" + row.chrom + "\"," + data + ")";
+                    let params = [job_id, row.chrom, data];
+                    if (row.other && row.other.MARKER_ID) {
+                        params.push(row.other.MARKER_ID);
+                    } else if (row.variant) {
+                        params.push(row.variant);
+                    }
+                    let cmd = "jumpToLocusZoom(" + params.map(x => `"${x}"`).join(", ")  + ")";
+                    let fn = "event.preventDefault();" + cmd ;
                     return "<a href='#' onclick='" + fn + "'>View</a>";
                 } else {
                     return "";
@@ -453,11 +459,12 @@ function single_lookup(x) {
                 chrom: resp.data.CHROM[min_index],
                 pos: resp.data.BEGIN[min_index],
                 pval: parseFloat(resp.data.PVALUE[min_index]),
+                variant: resp.data.MARKER_ID[min_index],
                 found: 1
             };
         }
         //no results found
-        return {term: x.term, chrom: null, pos:null, pval: null, 
+        return {term: x.term, chrom: null, pos:null, pval: null, variant: null,
             found: 0, message: "No p-value in range"};
     });
 }
@@ -484,11 +491,15 @@ function result_lookup(term) {
     });
 }
 
-function jumpToLocusZoom(job_id, chr, pos) {
+function jumpToLocusZoom(job_id, chr, pos, variant) {
     if (job_id && chr && pos) {
         pos = parseInt(pos);
         var region = chr + ":" + (pos-100000) + "-" + (pos+100000);
-        document.location.href = "/jobs/" + job_id + "/locuszoom/" + region;
+        var plot_url = "/jobs/" + job_id + "/locuszoom/" + region;
+        if (variant) {
+            plot_url += "?variant=" + encodeURIComponent(variant)
+        }
+        document.location.href = plot_url;
     }
 }
 

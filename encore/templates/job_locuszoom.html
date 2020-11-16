@@ -25,6 +25,7 @@
 
 	<script type="text/javascript">
 		job_id = "{{ job.job_id }}";
+		variant = "{{ variant }}";
 		ld_info = {{ ld_info | tojson | safe }};
 		genome_build = "{{ build }}"
 		api_url = "{{ url_for("api.get_job_zoom", job_id = job.job_id) }}"

@@ -175,6 +175,9 @@ $(document).ready(function() {
                 LocusZoom.Layouts.get("panel", "genes", gene_mods)
             ]
         };
+        if (variant) {
+            layout.state = {ldrefvar: variant};
+        }
         return layout;
     }
 

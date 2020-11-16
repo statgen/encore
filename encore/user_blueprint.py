@@ -65,8 +65,9 @@ def get_job_locuszoom_plot(job_id, region, job=None):
     geno = Genotype.get(job.get_genotype_id(), current_app.config)
     build = geno.build
     ld_info = geno.get_ld_info(current_app.config)
+    variant = request.args.get("variant", "")
     return render_template("job_locuszoom.html", job=job.as_object(),
-        ld_info = ld_info or {}, build=build, region=region)
+        variant=variant, ld_info = ld_info or {}, build=build, region=region)
 
 @user_area.route("/jobs/<job_id>/variant", methods=["GET"])
 @check_view_job

@@ -424,7 +424,7 @@ def get_job_zoom(job_id, job=None):
     for r in results:
         if r[headerpos["PVALUE"]] != "NA":
             json_response_data["CHROM"].append(r[headerpos["CHROM"]])
-            json_response_data["BEGIN"].append(r[headerpos["BEGIN"]])
+            json_response_data["BEGIN"].append(int(r[headerpos["BEGIN"]]))
             if "END" in headerpos:
                 json_response_data["END"].append(r[headerpos["END"]])
             if "MARKER_ID" in headerpos:

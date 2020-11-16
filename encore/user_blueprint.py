@@ -62,12 +62,11 @@ def get_job_output_file(job_id, file_name, job=None):
 @user_area.route("/jobs/<job_id>/locuszoom/<region>", methods=["GET"])
 @check_view_job
 def get_job_locuszoom_plot(job_id, region, job=None):
-    if job.meta.get("genome_build"):
-        build = job.meta["genome_build"]
-    else:
-        geno = Genotype.get(job.get_genotype_id(), current_app.config)
-        build = geno.build
-    return render_template("job_locuszoom.html", job=job.as_object(), build=build, region=region)
+    geno = Genotype.get(job.get_genotype_id(), current_app.config)
+    build = geno.build
+    ld_info = geno.get_ld_info(current_app.config)
+    return render_template("job_locuszoom.html", job=job.as_object(),
+        ld_info = ld_info or {}, build=build, region=region)
 
 @user_area.route("/jobs/<job_id>/variant", methods=["GET"])
 @check_view_job

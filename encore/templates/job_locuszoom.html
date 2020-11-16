@@ -5,9 +5,9 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/job_details.css') }}">
 
 	<!--LocusZoom Resources -->
-    <link rel="stylesheet" href="//statgen.github.io/locuszoom/versions/0.5.6/locuszoom.css"/>
-    <script src="//statgen.github.io/locuszoom/versions/0.7.0/locuszoom.vendor.min.js"></script>
-    <script src="//statgen.github.io/locuszoom/versions/0.5.6/locuszoom.app.js"></script>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/locuszoom@0.12.2/dist/locuszoom.css"/>
+    <script src="//cdn.jsdelivr.net/npm/d3@^5.16.0"></script>
+    <script src="//cdn.jsdelivr.net/npm/locuszoom@0.12.2"></script>
 
     <script type="text/javascript" src="{{ url_for('static', filename='js/job_locuszoom.js') }}"></script>
 
@@ -25,6 +25,7 @@
 
 	<script type="text/javascript">
 		job_id = "{{ job.job_id }}";
+		ld_info = {{ ld_info | tojson | safe }};
 		genome_build = "{{ build }}"
 		api_url = "{{ url_for("api.get_job_zoom", job_id = job.job_id) }}"
 	</script>

@@ -6,43 +6,58 @@ var lzplot;
 $(document).ready(function() {
 
     var data_sources = new LocusZoom.DataSources();
-    var EpactsDS = LocusZoom.Data.Source.extend();
-    EpactsDS.prototype.getURL = function (state)
-    {
+    var EpactsDS = LocusZoom.Adapters.get("AssociationLZ");
+    EpactsDS.prototype.getURL = function (state) {
         return api_url + "?chrom=" + state.chr + "&start_pos=" + state.start + "&end_pos=" + state.end;
     };
-    var EpactsLD = LocusZoom.Data.Source.extend(function(init) {
-        this.parseInit(init);
-    }, "LDEP", LocusZoom.Data.LDSource);
-    var origGet = LocusZoom.Data.LDSource.prototype.getURL;
-    EpactsLD.prototype.getURL = function(state, chain, fields) {
-        var ns = Object.assign({}, state);
-        ns.chr = ns.chr.replace("chr", "");
-        var url = origGet.call(this, ns, chain, fields);
-        url = url.replace("variant1 eq 'chr","variant1 eq '");
-        return url;
-    };
-    EpactsLD.prototype.findMergeFields = function() {
-        return {
-            id: "epacts:MARKER_ID",
-            position: "epacts:BEGIN",
-            pvalue: "epacts:PVALUE|neglog10"
-        };
-    };
-    EpactsLD.prototype.parseData = function(x, fields, outnames, trans) {
-        var data = LocusZoom.Data.Source.prototype.parseData(x, fields, outnames, trans);
-        for(var i=0; i<data.length; i++) {
-            if (data[i].chr) {
-                data[i].chr = data[i].chr.replace("chr","");
-            }
-        }
-        return data;
-    };
+    EpactsDS.prototype.preGetData = function(state, fields, outnames, trans) {
+        const id_field = this.params.id_field || 'id';
+        return {fields: fields, outnames:outnames, trans:trans};
+    }
 
     var apiBase = "/api/lz/";
-    data_sources.add("epacts", new EpactsDS)
-      .add("ld", ["LDEP", apiBase + "ld-"])
+    data_sources.add("epacts", new EpactsDS({url: api_url, params: {
+        id_field: "MARKER_ID", position_field: "BEGIN"}}))
       .add("sig", ["StaticJSON", [{ "x": 0, "y": 4.522 }, { "x": 2881033286, "y": 4.522 }] ]);
+
+    if (Object.keys(ld_info).length !== 0) {
+        data_sources.add("ld",
+            ["LDServer", {
+                url: apiBase + "ld/",
+                params: {
+                    source: ld_info.panel,
+                    population: ld_info.population,
+                    build: ld_info.build
+                }
+            }]);
+        data_sources.get("ld").getURL = function(state, chain, fields) {
+            // The default implementation mangles the refvar (removes the "chr")
+            // That might be necessary for 1000G ref, but doesn't work for TOPMed
+            const build = state.genome_build || this.params.build || 'GRCh37';
+            const source = state.ld_source || this.params.source || '1000G';
+            const population = state.ld_pop || this.params.population || 'ALL';
+            const method = this.params.method || 'rsquare';
+
+            let refVar = this.getRefvar(state, chain, fields);
+            chain.header.ldrefvar = refVar;
+
+            return  [
+                this.url, 'genome_builds/', build, '/references/', source, '/populations/', population, '/variants',
+                '?correlation=', method,
+                '&variant=', encodeURIComponent(refVar),
+                '&chrom=', encodeURIComponent(state.chr),
+                '&start=', encodeURIComponent(state.start),
+                '&stop=', encodeURIComponent(state.end),
+            ].join('');
+        };
+        data_sources.get("ld").findMergeFields = function() {
+            return {
+                id: "epacts:MARKER_ID",
+                position: "epacts:BEGIN",
+                pvalue: "epacts:PVALUE|neglog10"
+            };
+        };
+    }
 
     if (genome_build == "GRCh37") {
         data_sources
@@ -59,10 +74,12 @@ $(document).ready(function() {
         if (ns.chr) {
             ns.chr = ns.chr.replace("chr","");
         }
-        return LocusZoom.Data.GeneSource.prototype.getURL.call(this, ns, chain, fields);
+        return LocusZoom.Adapters.get("GeneLZ").prototype.getURL.call(this, ns, chain, fields);
     };
 
-    LocusZoom.TransformationFunctions.set("scinotation", function(x) {
+
+
+    LocusZoom.TransformationFunctions.add("scinotation2", function(x) {
         var log;
         if (x=="NA") {return "-";}
         x = parseFloat(x);
@@ -83,15 +100,15 @@ $(document).ready(function() {
         var has_maf = avail_fields.indexOf("MAF") !== -1;
         var has_beta = avail_fields.indexOf("BETA") !== -1;
         var has_ns = avail_fields.indexOf("NS") !== -1;
-        var fields = ["epacts:MARKER_ID", "epacts:CHROM", 
-            "epacts:BEGIN", "epacts:PVALUE|neglog10", 
-            "epacts:PVALUE|scinotation", "epacts:PVALUE", 
-            "ld:state", "ld:isrefvar"];
+        var has_ld = Object.keys(ld_info).length !== 0;
+        var fields = ["epacts:MARKER_ID", "epacts:CHROM",
+            "epacts:BEGIN", "epacts:PVALUE|neglog10",
+            "epacts:PVALUE|scinotation2", "epacts:PVALUE"];
         var tooltip = "<div style='text-align: right'>"
             + "<strong>{{epacts:MARKER_ID}}</strong><br>"
             + "Chrom: <strong>{{epacts:CHROM}}</strong><br/>"
             + "Pos: <strong>{{epacts:BEGIN}}</strong><br/>"
-            + "P Value: <strong>{{epacts:PVALUE|scinotation}}</strong><br>"
+            + "P Value: <strong>{{epacts:PVALUE|scinotation2}}</strong><br>"
             + ((has_maf)? "MAF: <strong>{{epacts:MAF}}</strong><br/>" : "")
             + ((has_beta) ? "BETA: <strong>{{epacts:BETA}}</strong><br/>" : "")
             + ((has_ns) ? "N: <strong>{{epacts:NS}}</strong><br/>" : "")
@@ -104,6 +121,10 @@ $(document).ready(function() {
         }
         if (has_ns) {
             fields.push("epacts:NS");
+        }
+        if (has_ld) {
+            fields.push("ld:state");
+            fields.push("ld:isrefvar");
         }
         var assoc_mods = {
             dashboard: {components: []},
@@ -193,8 +214,8 @@ $(document).ready(function() {
         plot.applyState(new_state);
     }
 
-    LocusZoom.createCORSPromise("GET",api_url).then(function(x) {
-        x = JSON.parse(x);
+    fetch(api_url).then(function(x) {
+        x = x.json();
         var cols = [];
         if (x.header && x.header.variant_columns) {
             cols = x.header.variant_columns;

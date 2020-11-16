@@ -222,6 +222,27 @@ class Genotype:
     def get_geno_reader(self, config):
         return GenoReader(self, config)
 
+    def get_ld_info(self, config):
+        if not "ld_server" in self.meta:
+            return None
+        metald = self.meta["ld_server"]
+        ld_panel = self.geno_id
+        ld_population = "ALL"
+        ld_build = self.build
+        if type(metald) == bool:
+            if not metald:
+                return None
+        elif type(metald) == str:
+            ld_panel = metald
+        elif isinstance(metald, dict):
+            ld_panel = metald.get("panel", ld_panel)
+            ld_population = metald.get("population", ld_population)
+            ld_build = metald.get("build", ld_build)
+        else:
+            raise Exception("Unrecognized type for ld_server config:" + type(metald))
+        return {"panel": ld_panel, "population": ld_population,
+            "build": ld_build}
+
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))
 

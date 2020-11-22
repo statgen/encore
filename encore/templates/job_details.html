@@ -22,6 +22,7 @@
 		genome_build = "{{ job.details.genome_build or job.details.genotype.build }}"
 		job_api_url = "{{url_for("api.get_job", job_id=job.job_id) }}"
 		zoom_api_url = "{{ url_for("api.get_job_zoom", job_id = job.job_id) }}"
+		chrom_api_url = "{{ url_for("api.get_genotype_chromosome_ranges", geno_id = job.details.genotype.geno_id) }}"
 		$(document).ready(function() {
 			init_page();
 		});

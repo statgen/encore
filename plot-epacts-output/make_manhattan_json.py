@@ -114,7 +114,8 @@ def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglo
         rec = {
             'chrom': variant.chrom,
             'pos': variant.pos,
-            'pval': round_sig(variant.pval, 2)
+            'pval': round_sig(variant.pval, 2),
+            'variant': variant.id
         }
         for field, export_as in exports:
             if field in variant.other:
@@ -135,7 +136,7 @@ def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglo
 
     return binned_variants, unbinned_variants
 
-AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval other'.split())
+AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval id other'.split())
 class AssocResultReader:
     def __init__(self, path):
         self.path = path
@@ -164,7 +165,9 @@ class AssocResultReader:
             "POS": "BEGIN",
             "SNPID": "MARKER_ID",
             "N": "NS",
-            "p.value": "PVALUE"}
+            "p.value": "PVALUE",
+            "Allele1": "ref",
+            "Allele2": "alt"}
         for i, col in enumerate(header):
             if aliases.get(col):
                 header[i] = aliases.get(col)
@@ -175,33 +178,34 @@ class AssocResultReader:
         v = row.rstrip().split('\t')
         if v[column_indices["PVALUE"]] == 'NA':
             return None
+        marker_id = v[column_indices["MARKER_ID"]]
+        chrom = v[column_indices["CHROM"]]
+        pos = int(v[column_indices["BEGIN"]])
+        pval = float(v[column_indices["PVALUE"]])
+        if pval < 1e-308:
+            pval = 1e-308
+        other = { k: v[i] for k,i in column_indices.items()};
+        match = _single_id_regex.match(marker_id)
+        if match:
+            chrom2, pos2, ref2, alt2, name2 = match.groups()
+            assert chrom == chrom2
+            assert pos == int(pos2)
+            other["ref"] = ref2
+            other["alt"] = alt2
+            if name2:
+                other["label"] = name2
         else:
-            chrom = v[column_indices["CHROM"]]
-            pos = int(v[column_indices["BEGIN"]])
-            pval = float(v[column_indices["PVALUE"]])
-            if pval < 1e-308:
-                pval = 1e-308
-            marker_id = v[column_indices["MARKER_ID"]]
-            other = { k: v[i] for k,i in column_indices.items()};
-            match = _single_id_regex.match(marker_id)
+            match = _group_id_regex.match(marker_id)
             if match:
-                chrom2, pos2, ref2, alt2, name2 = match.groups()
-                assert chrom == chrom2
-                assert pos == int(pos2)
-                other["ref"] = ref2
-                other["alt"] = alt2
+                chrom2, begin2, end2, name2 = match.groups()
+                other["start"] = begin2
+                other["stop"] = end2
                 if name2:
                     other["label"] = name2
-            else:
-                match = _group_id_regex.match(marker_id)
-                if match:
-                    chrom2, begin2, end2, name2 = match.groups()
-                    other["start"] = begin2
-                    other["stop"] = end2
-                    if name2:
-                        other["label"] = name2
-            chrom = chrom.replace("chr", "")
-            return AssocResult(chrom, pos, pval, other)
+            elif marker_id == ".":
+                marker_id = chrom + ":" + str(pos) + "_" + \
+                    v[column_indices["ref"]] + "/" + v[column_indices["alt"]]
+        return AssocResult(chrom, pos, pval, marker_id, other)
 
     def __iter__(self):
         self.itr = iter(self.f)
@@ -256,6 +260,7 @@ def process_file(results, bin_length, bin_threshold, max_unbinned, neglog10_pval
         'variant_bins': variant_bins,
         'unbinned_variants': unbinned_variants,
     }
+
     print('num unbinned:', len(unbinned_variants))
     return rv
 

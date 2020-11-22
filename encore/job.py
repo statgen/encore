@@ -47,6 +47,9 @@ class Job:
     def get_genotype_id(self):
         return self.meta.get("genotype", None) 
 
+    def get_phenotype_id(self):
+        return self.meta.get("phenotype", None)
+
     def get_model(self, config=None):
         return ModelFactory.get(self.meta.get("type", None), self.root_path, config)
 

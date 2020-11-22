@@ -30,8 +30,8 @@ def get_jobs():
 @user_area.route("/jobs/<job_id>", methods=["GET"])
 @check_view_job
 def get_job(job_id, job=None):
-    pheno = Phenotype.get(job.meta.get("phenotype", ""), current_app.config)
-    geno = Genotype.get(job.meta.get("genotype", ""), current_app.config)
+    pheno = Phenotype.get(job.get_phenotype_id(), current_app.config)
+    geno = Genotype.get(job.get_genotype_id(), current_app.config)
     job_obj = job.as_object()
     owner = job.get_owner()
     if pheno is not None:

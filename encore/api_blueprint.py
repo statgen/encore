@@ -97,6 +97,11 @@ def get_genotype_info_stats(geno_id):
     g = Genotype.get(geno_id, current_app.config)
     return ApiResult(g.get_info_stats())
 
+@api.route("/genos/<geno_id>/chroms", methods=["GET"])
+def get_genotype_chromosome_ranges(geno_id):
+    g = Genotype.get(geno_id, current_app.config)
+    return ApiResult(g.get_chromosome_ranges() or [])
+
 @api.route("/genos/<geno_id>/jobs", methods=["GET"])
 def get_genotype_jobs(geno_id):
     query = get_query_info(request)

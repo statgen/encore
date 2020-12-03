@@ -95,6 +95,12 @@ $(document).ready(function() {
         }
     });
 
+    LocusZoom.TransformationFunctions.add("sig3", function(x) {
+        if (x=="NA") {return "-";}
+        var x = parseFloat(x);
+        return x.toPrecision(3);
+    });
+
 
     function getlayout(avail_fields, build) {
         var has_maf = avail_fields.indexOf("MAF") !== -1;
@@ -104,13 +110,13 @@ $(document).ready(function() {
         var fields = ["epacts:MARKER_ID", "epacts:CHROM",
             "epacts:BEGIN", "epacts:PVALUE|neglog10",
             "epacts:PVALUE|scinotation2", "epacts:PVALUE"];
-        var tooltip = "<div style='text-align: right'>"
+        var tooltipText = "<div style='text-align: right'>"
             + "<strong>{{epacts:MARKER_ID}}</strong><br>"
             + "Chrom: <strong>{{epacts:CHROM}}</strong><br/>"
             + "Pos: <strong>{{epacts:BEGIN}}</strong><br/>"
             + "P Value: <strong>{{epacts:PVALUE|scinotation2}}</strong><br>"
-            + ((has_maf)? "MAF: <strong>{{epacts:MAF}}</strong><br/>" : "")
-            + ((has_beta) ? "BETA: <strong>{{epacts:BETA}}</strong><br/>" : "")
+            + ((has_maf)? "MAF: <strong>{{epacts:MAF|sig3}}</strong><br/>" : "")
+            + ((has_beta) ? "BETA: <strong>{{epacts:BETA|sig3}}</strong><br/>" : "")
             + ((has_ns) ? "N: <strong>{{epacts:NS}}</strong><br/>" : "")
             + "</div>";
         if (has_maf) {
@@ -135,6 +141,9 @@ $(document).ready(function() {
         if ( build != "GRCh38" ) {
             assoc_mods.data_layers.push( LocusZoom.Layouts.get("data_layer", "recomb_rate") );
         }
+        let tooltip = LocusZoom.Layouts.get("tooltip", "standard_association");
+        tooltip.html = tooltipText;
+        tooltip.closable = false;
         assoc_mods.data_layers.push( 
             LocusZoom.Layouts.get("data_layer", "association_pvalues", {
                 namespace: {"assoc": "epacts"} ,
@@ -142,18 +151,16 @@ $(document).ready(function() {
                 id_field: fields[0],
                 x_axis: {field: "epacts:BEGIN"},
                 y_axis: {field: "epacts:PVALUE|neglog10"},
-                tooltip: {html: tooltip, 
-                    closable: false, 
-                    "show": { "or": ["highlighted"] },
-                    "hide": { "and": ["unhighlighted"] }
-                },
+                tooltip: tooltip,
                 behaviors: {"onclick": [{
                     action: "link",
+                    status: "selected",
                     href: "../variant?chrom={{epacts:CHROM}}&pos={{epacts:BEGIN}}&variant_id={{epacts:MARKER_ID|urlencode}}"
                 }]}
             })
         );
         var gene_data_layer = LocusZoom.Layouts.get("data_layer", "genes");
+        tooltip.closable = false;
         var gene_tooltip = LocusZoom.Layouts.get("tooltip", "standard_genes");
         gene_tooltip.html = "<h4><strong><i>{{gene_name}}</i></strong></h4>" +
             "<p>Gene ID: <strong>{{gene_id}}</strong></p>" +
@@ -217,8 +224,7 @@ $(document).ready(function() {
         plot.applyState(new_state);
     }
 
-    fetch(api_url).then(function(x) {
-        x = x.json();
+    fetch(api_url).then(x => x.json()).then(function(x) {
         var cols = [];
         if (x.header && x.header.variant_columns) {
             cols = x.header.variant_columns;

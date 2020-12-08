@@ -634,6 +634,7 @@ def post_pheno():
     if not pheno_id:
         raise ApiException("COULD NOT GENERATE PHENO ID")
     pheno_file = request.files["pheno_file"]
+    print(pheno_file)
     orig_file_name = pheno_file.filename
     pheno_name = suggest_pheno_name(orig_file_name)
     pheno_directory = os.path.join(current_app.config.get("PHENO_DATA_FOLDER", "./"), pheno_id)
@@ -641,6 +642,7 @@ def post_pheno():
         os.mkdir(pheno_directory)
         pheno_file_path = os.path.join(pheno_directory, "pheno.txt")
         pheno_meta_path = os.path.join(pheno_directory, "meta.json")
+        print(pheno_meta_path)
         pheno_file.save(pheno_file_path)
         md5 =  hashfile(open(pheno_file_path, "rb")).hex()
     except Exception as e:

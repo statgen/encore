@@ -126,7 +126,7 @@ def get_checkin():
 def get_check_in_oidcview(target):
     #print("sign is oidc : "+target)
     signin_url = request.url_root + target
-    #print("sign is url : "+signin_url)
+    print("sign is url : "+signin_url)
     client = Client(client_authn_method=CLIENT_AUTHN_METHOD)
     info = {"client_id": current_app.config.get("UMICH_LOGIN_CLIENT_ID", None), "client_secret": current_app.config.get("UMICH_LOGIN_CLIENT_SECRET", None)}
     client_reg = RegistrationResponse(**info)
@@ -169,7 +169,7 @@ def get_check_in_oidcview(target):
             authn_method='client_secret_post')
 
         print("***************************************************** access_token_ret ***************************")
-        #print(access_token_ret)
+        print(access_token_ret)
         access_token2 = access_token_ret['access_token']
 
         #userinfo_request(access_token)
@@ -181,13 +181,14 @@ def get_check_in_oidcview(target):
             access_token=access_token2
         )
         print("***************************************************** user_info2 ***************************")
-        #print(user_info2)
+        print(user_info2)
+
+        print("***************************************************** Running user_info now  ***************************")
         user_info = client.do_user_info_request(
-            state=authorization_response['state'],
-            authn_method='client_secret_post')
+            access_token=access_token2)
         print("***************************************************** user_info ***************************")
-        #print(user_info)
-        #print(user_info['sub'])
+        print(user_info)
+        print(user_info['sub'])
         useremail= user_info['email']
         usersub = user_info['sub']
         groupinfo= user_info['edumember_ismemberof']

@@ -113,6 +113,7 @@ def strip_comments(item, token="#"):
             yield line
 
 def get_comments(item, token="#"):
+    print(item);
     for line in item:
         s = line.strip()
         if not s.startswith(token) and len(s)>0:

@@ -230,11 +230,22 @@ function getDataCols(cols, job_id) {
             render:function(data, type, row) {
                 if (data !== undefined && data !== null) {
                     let params = [job_id, row.chrom, data];
+                    let variant = "";
                     if (row.other && row.other.MARKER_ID) {
-                        params.push(row.other.MARKER_ID);
+                        variant = row.other.MARKER_ID;
                     } else if (row.variant) {
-                        params.push(row.variant);
+                        variant = row.variant;
                     }
+                    if (variant == ".") {
+                        // Fix for old JSON format
+                        let ref = row.other && (row.other.ref || row.other.Allele1);
+                        let alt = row.other && (row.other.alt || row.other.Allele2);
+                        variant = (ref && alt) ? row.chrom + ":" + data + "_" + ref + "/" + alt : "";
+                    }
+                    if (variant) {
+                        params.push(variant);
+                    }
+
                     let cmd = "jumpToLocusZoom(" + params.map(x => `"${x}"`).join(", ")  + ")";
                     let fn = "event.preventDefault();" + cmd ;
                     return "<a href='#' onclick='" + fn + "'>View</a>";

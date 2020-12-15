@@ -872,6 +872,7 @@ def get_api_annotations(resource):
 @api.route("/help", methods=["POST"])
 def post_help():
     form_data = request.form
+    print(form_data)
     user_email = form_data.get("user_email", current_user.email)
     user_fullname = form_data.get("user_fullname", current_user.full_name)
     user_message = form_data.get("message", None)
@@ -883,7 +884,25 @@ def post_help():
             current_user)
         return ApiResult({"sent": True, "from_page": from_page})
     except Exception as e:
-        raise ApiException("FAILED TO SEND MESSAGE", details=str(e)) 
+        raise ApiException("FAILED TO SEND MESSAGE", details=str(e))
+
+
+@api.route("/feedback", methods=["POST"])
+def post_feedback():
+    form_data = request.form
+    user_email = form_data.get("user_email", current_user.email)
+    user_fullname = form_data.get("user_fullname", current_user.full_name)
+    user_message = form_data.get("message", None)
+    from_page = form_data.get("from_page", None)
+    if not user_message:
+        raise ApiException("EMPTY MESSAGE")
+    try:
+        get_notifier().send_user_feedback(user_email, user_fullname, user_message, from_page,
+                                          current_user)
+        return ApiResult({"sent": True, "from_page": from_page})
+    except Exception as e:
+        raise ApiException("FAILED TO SEND MESSAGE", details=str(e))
+
 
 @api.route("/notices", methods=["GET"])
 def get_api_notices():

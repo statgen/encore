@@ -1,0 +1,216 @@
+{% extends "layout.html" %}
+{% block header %}
+
+
+<script>
+
+
+
+
+</script>
+
+<script type="text/javascript">
+	$(function() {
+		$("#helpForm").submit(function(evt) {evt.preventDefault();});
+		$("button.submit-message").click(function(evt) {
+			evt.preventDefault();
+
+			var obj = new Object();
+
+
+			var data =new Object();
+
+
+			data.message = $("#helpForm").find("#" + "message").val().trim();
+			data.message2 = $("#helpForm").find("#" + "message2").val().trim();
+			data.from_page = $("#helpForm").find("#" + "from_page").val().trim();
+			data.user_email= $("#helpForm").find("#" + "user_email").val().trim();
+			data.user_fullname =  $("#helpForm").find("#" + "user_fullname").val().trim();
+			data.Q1 = "5";
+			alert($('input[name=stars1]:checked').val());
+			data.Q2 = "4";
+			data.Q3 = "3";
+
+
+
+
+			console.log(data);
+
+
+			function linkButton($button, url) {
+				if (url) {
+					$button.click(function(evt) {
+						evt.preventDefault()
+						document.location.href = url;
+					});
+				} else {
+					$button.hide();
+				}
+
+			}
+			var submit_url = $(this).data("action");
+			$.post(submit_url, data).done( function(data) {
+				$("#helpForm #message").val("");
+				var $modal = $("#messageModal")
+				$modal.find(".modal-message").text("Message successfully sent")
+				linkButton($modal.find("button.go-main"), "{{url_for("user.index")}}");
+				linkButton($modal.find("button.go-return"), data.from_page);
+				$modal.modal();
+			}).fail(function(data) {
+				var $modal = $("#messageModal")
+				errorMsg = data.responseJSON && data.responseJSON.error || "Unknown error";
+				$modal.find(".modal-message").text("ERROR: " + errorMsg)
+				linkButton($modal.find("button.go-main"), "{{url_for("user.index")}}");
+				linkButton($modal.find("button.go-return"), "");
+				$modal.modal();
+			});
+		});
+	})
+</script>
+{% endblock %}
+{% block content %}
+        <div class="section">
+            <div class="section-title">
+                <h2>Feedback Form</h2>
+            </div>
+			<p>For help, you can either e-mail us at 
+			<a href="mailto:{{config["HELP_EMAIL"]}}">{{config["HELP_EMAIL"]}}</a></p>
+
+			<p>...or fill out this form to send us your feedback</p>
+			<form class="form-horizontal" id="helpForm">
+				<div class="form-group">
+					<label for="message" class="control-label col-xs-2">Name</label>
+					<div class="col-xs-10">
+						<input type="text" class="form-control" id="user_fullname" value="{{user.full_name or ''}}"></input>	
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="message" class="control-label col-xs-2">Reply-To</label>
+					<div class="col-xs-10">
+						<input type="text" class="form-control" id="user_email" value="{{user.email or ''}}"></input>	
+					</div>
+				</div>
+
+
+				<div class="form-group">
+					<label for="message" class="control-label col-xs-2">Ratings:</label>
+					<div class="col-xs-10">
+
+						<table>
+							<tr>
+								<td>Have you visited website before?</td>
+								<td><div class="text-right">
+									<label for="Q1-5">Yes</label>
+									<input  id="Q1-5" type="radio" value="yes" name="star"/>
+									<label  for="Q1-4">No</label>
+									<input  id="Q1-4" type="radio" value="no" name="star"/>
+
+
+
+								</div></td>
+							</tr>
+
+							<tr>
+								<td>How was your experince with job submission? </td>
+								<td><div class="stars1" >
+									<label class="star star-5" for="Q2-5"></label>
+									<input class="star star-5" id="Q2-5" type="radio" value="5" name="stars1"/>
+
+									<input class="star star-4" id="Q2-4" type="radio" value="4" name="stars1"/>
+									<label class="star star-4" for="Q2-4"></label>
+									<input class="star star-3" id="Q2-3" type="radio" value="3" name="stars1"/>
+									<label class="star star-3" for="Q2-3"></label>
+									<input class="star star-2" id="Q2-2" type="radio" value="3" name="stars1"/>
+									<label class="star star-2" for="Q2-2"></label>
+									<input class="star star-1" id="Q2-1" type="radio" value="1" name="stars1"/>
+									<label class="star star-1" for="Q2-1"></label>
+
+								</div></td>
+							</tr>
+							<tr>
+								<td>Overall, can you please rate the content of the website?  </td>
+								<td><div class="stars2">
+
+									<input class="star star-5" id="Q3-5" type="radio" value="5" name="stars2"/>
+									<label class="star star-5" for="Q3-5"></label>
+									<input class="star star-4" id="Q3-4" type="radio" value="4" name="stars2"/>
+									<label class="star star-4" for="Q3-4"></label>
+									<input class="star star-3" id="Q3-3" type="radio" value="3" name="stars2"/>
+									<label class="star star-3" for="Q3-3"></label>
+									<input class="star star-2" id="Q3-2" type="radio" value="3" name="stars2"/>
+									<label class="star star-2" for="Q3-2"></label>
+									<input class="star star-1" id="Q3-1" type="radio" value="1" name="stars2"/>
+									<label class="star star-1" for="Q3-1"></label>
+
+								</div></td>
+							</tr>
+							<tr>
+								<td>How was your experince accessing/sharing the results?.</td>
+								<td><div class="stars3">
+
+									<input class="star star-5" id="Q4-5" type="radio" value="5" name="stars3"/>
+									<label class="star star-5" for="Q4-5"></label>
+									<input class="star star-4" id="Q4-4" type="radio" value="4" name="stars3"/>
+									<label class="star star-4" for="Q4-4"></label>
+									<input class="star star-3" id="Q4-3" type="radio" value="3" name="stars3"/>
+									<label class="star star-3" for="Q4-3"></label>
+									<input class="star star-2" id="Q4-2" type="radio" value="3" name="stars3"/>
+									<label class="star star-2" for="Q4-2"></label>
+									<input class="star star-1" id="Q4-1" type="radio" value="1" name="stars3"/>
+									<label class="star star-1" for="Q4-1"></label>
+
+								</div></td>
+							</tr>
+							<tr>
+
+							</tr>
+
+						</table>
+
+
+
+					</div>
+
+
+				</div>
+				<div class="form-group">
+					<label for="message" class="control-label col-xs-2">What could we make easier to find?</label>
+					<div class="col-xs-10">
+						<textarea class="form-control" id="message" rows="8"></textarea>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="message" class="control-label col-xs-2">Please share any additional feedback that could help us improve our site experience.</label>
+					<div class="col-xs-10">
+						<textarea class="form-control" id="message2" rows="8"></textarea>
+					</div>
+				</div>
+
+
+				<div class="form-group">
+					<div class="col-xs-offset-2 col-xs-10">
+						<button class="btn-success submit-message"
+							data-action="{{url_for("api.post_help")}}">Submit</button>
+					</div>
+				</div>
+				<input type="hidden" id="from_page" value="{{request.referrer}}"/>
+			</form>
+        </div>
+		<div class="modal fade" id="messageModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Get Help</h4>
+					</div>
+					<div class="modal-body">
+					<p class="modal-message"></p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default go-main">Main Page</button>
+						<button type="button" class="btn btn-success go-return">Return</button>
+					</div>
+				</div>
+			</div>
+		</div>
+{% endblock %}

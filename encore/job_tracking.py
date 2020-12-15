@@ -7,6 +7,7 @@ import os
 import datetime
 import pwd
 from .notifier import get_notifier
+from flask import current_app
 
 class Job(object):
     def __init__(self, rid, status):
@@ -83,7 +84,8 @@ class Tracker(object):
                     pass
 
     def update_job_statuses(self, db, jobs):
-        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", pwd.getpwuid(os.getuid())[0], \
+        sacct = current_app.config.get("SACCT_JOB_BINARY")  #'/usr/cluster/bin/sacct'
+        p = subprocess.Popen([sacct, "-u", pwd.getpwuid(os.getuid())[0], \
             "--format", "jobid,state,exitcode,jobname,submit", "--noheader", "-P", \
             "-S", (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")], \
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)

@@ -127,6 +127,11 @@ def get_collaborations_with(user_id):
 def get_help():
     return render_template("help.html", user=current_user)
 
+@user_area.route("/feedback", methods=["GET"])
+def get_feedback():
+    return render_template("feedback.html", user=current_user)
+
+
 @user_area.route("/model-build", methods=["GET"])
 def get_model_build():
     if current_user.can_analyze:

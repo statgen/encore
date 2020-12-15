@@ -3,6 +3,7 @@ import os
 import subprocess
 import pwd
 from .model_factory import ModelFactory
+from flask import current_app
 
 class SlurmJob:
 
@@ -120,12 +121,12 @@ class SlurmJob:
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.job_directory, *args))
 
-def get_queue(self):
+def get_queue():
     cols = [["job_id", "%i"], ["job_name", "%j"], ["state", "%t"],
         ["time", "%M"], ["reason", "%R"]]
     col_names = [x[0] for x in cols]
     col_formats = [x[1] for x in cols]
-    squeue = self.config.get("SQUEUE_JOB_BINARY", "squeue")
+    squeue = current_app.config.get("SQUEUE_JOB_BINARY")
     cmd = [squeue,
         "-u", pwd.getpwuid(os.getuid())[0], 
         "-p", "encore",

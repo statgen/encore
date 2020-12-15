@@ -24,16 +24,17 @@ RESPONSE = ""
 RESPONSETYPE = quantitative
 INVNORM = FALSE
 COVAR = ""
-BINSIZE = 500000
+BINSIZE = 1500000
 THREADS = 8 
 STEP1OPT = --memoryChunk=2
 STEP2OPT = --minMAF=0.001 --IsOutputAFinCaseCtrl=FALSE
 
-RLIBPATH = /net/encore1/saige/lib-v35.8.8
-RSCRIPT = R_LIBS=$(RLIBPATH) /net/encore1/R-3.5.1/bin/Rscript
+#RLIBPATH = /net/encore1/saige/lib-v35.8.8
+RSCRIPT = R_LIBS=/sw/ph/centos7/R-modules/:/sw/ph/centos7/saige-py2.7/SAIGE /sw/arcts/centos7/stacks/gcc/8.2.0/R/3.6.1/bin/Rscript
 STEP1SCRIPT = $(APPDIR)step1_fitNULLGLMM_v35.R
 STEP2SCRIPT = $(APPDIR)step2_SPATests_savvy_v35.R
-APPDIR = /net/encore1/saige/
+APPDIR = /sw/ph/centos7/encore/scripts/saige/
+TABIX = /sw/ph/centos7/tabix/1.9/bin
 
 ifeq ("$(wildcard $(REFFILEINDEX))","")
 $(error Cannot read REFFILEINDEX ($(REFFILEINDEX)) in order to create chunks for step 2)

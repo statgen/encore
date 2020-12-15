@@ -2,7 +2,7 @@
 {% block header %}
 <script type="text/javascript">
 	$(function() {
-		$("#helpForm").submit(function(evt) {evt.preventDefault();})
+		$("#helpForm").submit(function(evt) {evt.preventDefault();});
 		$("button.submit-message").click(function(evt) {
 			evt.preventDefault();
 			var data = ["message", "from_page", "user_email", "user_fullname"].reduce(function(obj, x) {

@@ -124,19 +124,11 @@ def get_checkin():
 
 
 def get_check_in_oidcview(target):
-    #print("sign is oidc : "+target)
     signin_url = request.url_root + target
-    print("sign is url : "+signin_url)
     client = Client(client_authn_method=CLIENT_AUTHN_METHOD)
     info = {"client_id": current_app.config.get("UMICH_LOGIN_CLIENT_ID", None), "client_secret": current_app.config.get("UMICH_LOGIN_CLIENT_SECRET", None)}
     client_reg = RegistrationResponse(**info)
     client.store_registration_info(client_reg)
-
-    # #print(request.url_root + 'oidc-callback')
-    # print(umich_params.get("authorization_endpoint"))
-    # print(umich_params.get("token_endpoint"))
-    # print(umich_params.get("userinfo_endpoint"))
-    # print(umich_params.get("jwks_uri"))
 
     op_info = ProviderConfigurationResponse(
         version="1.0", issuer=umich_params.get("issuer"),
@@ -154,7 +146,7 @@ def get_check_in_oidcview(target):
             AuthorizationResponse,
             info=request.args,
             sformat='dict')
-        print("*****************************************************authorization reposnse***************************")
+       # print("*****************************************************authorization reposnse***************************")
         args = {
             'code': authorization_response['code'],
             'client_id': client.client_id,
@@ -168,8 +160,8 @@ def get_check_in_oidcview(target):
             request_args=args,
             authn_method='client_secret_post')
 
-        print("***************************************************** access_token_ret ***************************")
-        print(access_token_ret)
+        #print("***************************************************** access_token_ret ***************************")
+        #print(access_token_ret)
         access_token2 = access_token_ret['access_token']
 
         #userinfo_request(access_token)
@@ -180,35 +172,28 @@ def get_check_in_oidcview(target):
         user_info2=client.user_info_request(
             access_token=access_token2
         )
-        print("***************************************************** user_info2 ***************************")
-        print(user_info2)
+        #print("***************************************************** user_info2 ***************************")
 
-        print("***************************************************** Running user_info now  ***************************")
+
+        #print("***************************************************** Running user_info now  ***************************")
         user_info = client.do_user_info_request(
             access_token=access_token2)
-        print("***************************************************** user_info ***************************")
-        print(user_info)
-        print(user_info['sub'])
         useremail= user_info['email']
         usersub = user_info['sub']
         groupinfo= user_info['edumember_ismemberof']
         user = load_uniquename(usersub)
 
         if 'encore mgi' in groupinfo:
-            print("user is inside the group")
+            #print("user is inside the group")
             #print("***************** is present or not in the db")
             if user:
-                print("user is present in the db")
+                #print("user is present in the db")
                 if user.is_active():
-                    print("user is active")
+                   #print("user is active")
                     flask_login.login_user(user)
                     redirect_to = session.pop("post_login_page", None)
-                    print(redirect_to)
                     try:
                         endpoint, arguments = current_app.url_map.bind('localhost').match(redirect_to)
-                        #print("in try")
-                        print(endpoint)
-                        print(arguments)
                     except Exception as e:
                         redirect_to = None
                     if redirect_to:
@@ -221,7 +206,7 @@ def get_check_in_oidcview(target):
                     return render_template("/signin.html", error_message=error_message)
             else:
                 db = sql_pool.get_conn()
-                print("user is not present in the db")
+                #print("user is not present in the db")
                 print("create user")
                 userdev= {}
                 userdev['email']=useremail
@@ -248,9 +233,9 @@ def get_check_in_oidcview(target):
                 else:
                     return redirect(url_for("user.index"))
         else:
-            print("user is not the part of the group")
+            #print("user is not the part of the group")
             if user:
-                print("user is not in the encore group but available in the database")
+                #print("user is not in the encore group but available in the database")
                 user.is_active = 0
                 db = sql_pool.get_conn()
                 db.commit()
@@ -259,7 +244,6 @@ def get_check_in_oidcview(target):
             error_message = "Not an authorized user ({})".format(user_info['email'])
             return render_template("/signin.html", error_message=error_message)
     elif "authorize" in request.args:
-        print("authorize")
         nonce = rndstr()
         args = {
             'client_id': current_app.config.get("UMICH_LOGIN_CLIENT_ID", None),
@@ -299,10 +283,7 @@ def sign_out():
 
 
 def load_userfullname(fullname):
-    print("in load user fullname")
-    print(fullname)
     db = sql_pool.get_conn()
-    print(db)
     user = User.from_full_name(fullname, db)
     if user:
         #try:
@@ -316,10 +297,7 @@ def load_userfullname(fullname):
 
 
 def load_uniquename(uniquename):
-    print("in load user uniquename")
-    print(uniquename)
     db = sql_pool.get_conn()
-    print(db)
     user = User.from_unique_name(uniquename, db)
     if user:
         #try:
@@ -341,104 +319,7 @@ def load_user(email):
         return user
     else:
         return None
-def get_sign_in_oidcview(target):
-    print("sign is oidc"+target)
-    signin_url = request.url_root + target
-    print("sign is url"+signin_url)
 
-    # //SO if the user is part of that encore group, then will check if the user exist in the table using unique name , if not then create user using following command
-    # //and then allow acccess
-
-    db = sql_pool.get_conn()
-
-    user = User.from_email('inspiresnehal@gmail.com', db)
-    if user:
-        print("found user")
-    else:
-        db = sql_pool.get_conn()
-        print("user is not present in the db")
-        print("create user")
-        userdev= {}
-        userdev['email']=""
-        userdev['fullname']=""
-        userdev['uniquename']='test'
-        userdev['affiliation']=''
-        userdev['creation_date']="DATE_FORMAT(jobs.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s'), '%%Y-%%m-%%d %%H:%%i:%%s')"
-        userdev['last_login_date']="DATE_FORMAT(2020-02-17 19:45:17, '%%Y-%%m-%%d %%H:%%i:%%s')"
-        userdev['can_analyze']=0
-        userdev['is_active']=0
-        print("After the creating dictonary")
-        usercreate = User.createUser(userdev,db)
-        print("After the creating dictonary")
-
-    oauth_service = OAuth2Service(
-        name="Encore",
-        client_id=current_app.config.get("UMICH_LOGIN_CLIENT_ID", None),
-        client_secret=current_app.config.get("UMICH_LOGIN_CLIENT_SECRET", None),
-        authorize_url=umich_params.get("authorization_endpoint"),
-        base_url=umich_params.get("userinfo_endpoint"),
-        access_token_url=umich_params.get("token_endpoint"))
-    if "code" in request.args:
-        print("1")
-        print(request.args)
-        oauth_session = oauth_service.get_auth_session(
-            data={"code": request.args["code"],
-                  "grant_type": "authorization_code",
-                  "redirect_uri": signin_url},
-            decoder=json.loads)
-
-        # token = oauth_session.fetch_token(token_url=umich_params.get("token_endpoint"),
-        #                           client_id=current_app.config.get("UMICH_LOGIN_CLIENT_ID", None),
-        #                           client_secret=current_app.config.get("UMICH_LOGIN_CLIENT_SECRET", None),
-        #                           include_client_id=True)
-
-        print(dir(oauth_session))
-        pprint(vars(oauth_session))
-        print("access token")
-        print(oauth_session.get("access_token"))
-
-        print(oauth_session)
-        r = oauth_session.get(umich_params.get("userinfo_endpoint"), params={'format': 'json'})
-        print (r.json())
-        for i, tweet in enumerate(r.json(), 1):
-            print(tweet)
-        #user_data = oauth_session.get("").json()
-        #print(user_data)
-
-        user = load_userfullname('snehal')
-        if user:
-            if user.is_active():
-                print("user is active")
-                flask_login.login_user(user)
-                redirect_to = session.pop("post_login_page", None)
-                try:
-                    endpoint, arguments = current_app.url_map.bind('localhost').match(redirect_to)
-                    print("in try")
-                    print(endpoint)
-                    print(arguments)
-                except Exception as e:
-                    redirect_to = None
-                if redirect_to:
-                    return redirect(redirect_to)
-                else:
-                    return redirect(url_for("user.index"))
-            else:
-                error_message = "Account not active ({})".format(user_data["email"])
-                return render_template("/signin.html", error_message=error_message)
-        else:
-            error_message = "Not an authorized user ({})".format(user_data["email"])
-            return render_template("/signin.html", error_message=error_message)
-    elif "authorize" in request.args:
-        print("authorize")
-        authorize_url =oauth_service.get_authorize_url(
-            scope=ENCORE_SCOPE,
-            response_type="code",
-            prompt="select_account",
-            redirect_uri=signin_url)
-        print(authorize_url)
-        return redirect(authorize_url)
-    else:
-        return render_template("/signin.html")
 
 
 def get_sign_in_view(target):
@@ -460,9 +341,7 @@ def get_sign_in_view(target):
 
 
         user_data = oauth_session.get("").json()
-        print(user_data)
         user = load_user(user_data["email"])
-        print(user)
         if user:
             if user.is_active():
                 print("user is active")

@@ -26,10 +26,11 @@
 			data.from_page = $("#helpForm").find("#" + "from_page").val().trim();
 			data.user_email= $("#helpForm").find("#" + "user_email").val().trim();
 			data.user_fullname =  $("#helpForm").find("#" + "user_fullname").val().trim();
-			data.Q1 = "5";
-			alert($('input[name=stars1]:checked').val());
-			data.Q2 = "4";
-			data.Q3 = "3";
+
+			data.Q1 = $('input[name=star1]:checked').val();
+			data.Q2 = $('input[name=stars2]:checked').val();
+			data.Q3 = $('input[name=stars3]:checked').val();
+			data.Q4 = $('input[name=stars4]:checked').val();
 
 
 
@@ -101,9 +102,9 @@
 								<td>Have you visited website before?</td>
 								<td><div class="text-right">
 									<label for="Q1-5">Yes</label>
-									<input  id="Q1-5" type="radio" value="yes" name="star"/>
+									<input  id="Q1-5" type="radio" value="yes" name="star1"/>
 									<label  for="Q1-4">No</label>
-									<input  id="Q1-4" type="radio" value="no" name="star"/>
+									<input  id="Q1-4" type="radio" value="no" name="star1"/>
 
 
 
@@ -112,51 +113,51 @@
 
 							<tr>
 								<td>How was your experince with job submission? </td>
-								<td><div class="stars1" >
+								<td><div class="stars2" >
 									<label class="star star-5" for="Q2-5"></label>
-									<input class="star star-5" id="Q2-5" type="radio" value="5" name="stars1"/>
+									<input class="star star-5" id="Q2-5" type="radio" value="5" name="stars2"/>
 
-									<input class="star star-4" id="Q2-4" type="radio" value="4" name="stars1"/>
+									<input class="star star-4" id="Q2-4" type="radio" value="4" name="stars2"/>
 									<label class="star star-4" for="Q2-4"></label>
-									<input class="star star-3" id="Q2-3" type="radio" value="3" name="stars1"/>
+									<input class="star star-3" id="Q2-3" type="radio" value="3" name="stars2"/>
 									<label class="star star-3" for="Q2-3"></label>
-									<input class="star star-2" id="Q2-2" type="radio" value="3" name="stars1"/>
+									<input class="star star-2" id="Q2-2" type="radio" value="3" name="stars2"/>
 									<label class="star star-2" for="Q2-2"></label>
-									<input class="star star-1" id="Q2-1" type="radio" value="1" name="stars1"/>
+									<input class="star star-1" id="Q2-1" type="radio" value="1" name="stars2"/>
 									<label class="star star-1" for="Q2-1"></label>
 
 								</div></td>
 							</tr>
 							<tr>
 								<td>Overall, can you please rate the content of the website?  </td>
-								<td><div class="stars2">
+								<td><div class="stars3">
 
-									<input class="star star-5" id="Q3-5" type="radio" value="5" name="stars2"/>
+									<input class="star star-5" id="Q3-5" type="radio" value="5" name="stars3"/>
 									<label class="star star-5" for="Q3-5"></label>
-									<input class="star star-4" id="Q3-4" type="radio" value="4" name="stars2"/>
+									<input class="star star-4" id="Q3-4" type="radio" value="4" name="stars3"/>
 									<label class="star star-4" for="Q3-4"></label>
-									<input class="star star-3" id="Q3-3" type="radio" value="3" name="stars2"/>
+									<input class="star star-3" id="Q3-3" type="radio" value="3" name="stars3"/>
 									<label class="star star-3" for="Q3-3"></label>
-									<input class="star star-2" id="Q3-2" type="radio" value="3" name="stars2"/>
+									<input class="star star-2" id="Q3-2" type="radio" value="3" name="stars3"/>
 									<label class="star star-2" for="Q3-2"></label>
-									<input class="star star-1" id="Q3-1" type="radio" value="1" name="stars2"/>
+									<input class="star star-1" id="Q3-1" type="radio" value="1" name="stars3"/>
 									<label class="star star-1" for="Q3-1"></label>
 
 								</div></td>
 							</tr>
 							<tr>
 								<td>How was your experince accessing/sharing the results?.</td>
-								<td><div class="stars3">
+								<td><div class="stars4">
 
-									<input class="star star-5" id="Q4-5" type="radio" value="5" name="stars3"/>
+									<input class="star star-5" id="Q4-5" type="radio" value="5" name="stars4"/>
 									<label class="star star-5" for="Q4-5"></label>
-									<input class="star star-4" id="Q4-4" type="radio" value="4" name="stars3"/>
+									<input class="star star-4" id="Q4-4" type="radio" value="4" name="stars4"/>
 									<label class="star star-4" for="Q4-4"></label>
-									<input class="star star-3" id="Q4-3" type="radio" value="3" name="stars3"/>
+									<input class="star star-3" id="Q4-3" type="radio" value="3" name="stars4"/>
 									<label class="star star-3" for="Q4-3"></label>
-									<input class="star star-2" id="Q4-2" type="radio" value="3" name="stars3"/>
+									<input class="star star-2" id="Q4-2" type="radio" value="3" name="stars4"/>
 									<label class="star star-2" for="Q4-2"></label>
-									<input class="star star-1" id="Q4-1" type="radio" value="1" name="stars3"/>
+									<input class="star star-1" id="Q4-1" type="radio" value="1" name="stars4"/>
 									<label class="star star-1" for="Q4-1"></label>
 
 								</div></td>
@@ -190,7 +191,7 @@
 				<div class="form-group">
 					<div class="col-xs-offset-2 col-xs-10">
 						<button class="btn-success submit-message"
-							data-action="{{url_for("api.post_help")}}">Submit</button>
+							data-action="{{url_for("api.post_feedback")}}">Submit</button>
 					</div>
 				</div>
 				<input type="hidden" id="from_page" value="{{request.referrer}}"/>

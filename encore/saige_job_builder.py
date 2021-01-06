@@ -32,7 +32,7 @@ class SaigeModel(BaseModel):
                 region = region[3:]
             opts.append("CHRS={}".format(region))
             opts.append("BINSIZE={}".format(100000))
-        if geno.get_chromosomes():
+        elif geno.get_chromosomes():
             opts.append("CHRS='{}'".format(geno.get_chromosomes()))
         return opts 
 

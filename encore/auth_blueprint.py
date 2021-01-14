@@ -180,10 +180,11 @@ def get_check_in_oidcview(target):
             access_token=access_token2)
         useremail= user_info['email']
         usersub = user_info['sub']
-        groupinfo= user_info['edumember_ismemberof']
+
         user = load_uniquename(usersub)
 
-        if 'encore mgi' in groupinfo:
+        if 'edumember_ismemberof' in user_info.keys():
+            groupinfo= user_info['edumember_ismemberof']
             #print("user is inside the group")
             #print("***************** is present or not in the db")
             if user:

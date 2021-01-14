@@ -33,6 +33,8 @@ class SlurmJob:
             "#SBATCH --cpus-per-task={}".format(cores_per_job),
             "#SBATCH --time={}".format(self.config.get("JOB_TIME", "14-0")),
             "#SBATCH --nodes=1",
+            "source /home/encore-web/.bashrc"
+            "export PYTHONPATH={}".format(self.config.get("PYTHONPATH")),
             "export OPENBLAS_NUM_THREADS=1"))
 
         return sbatch_headers

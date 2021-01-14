@@ -331,6 +331,7 @@ def get_job_results(job_id, job=None):
 def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None):
     try:
         output_file = job.relative_path(filename)
+        print("output_file from the get_job_output",output_file)
         if tail or head:
             if tail and head:
                 return "Cannot specify tail AND head", 500
@@ -370,6 +371,7 @@ def get_api_job_manhattan(job_id, job=None):
 def get_job_zoom(job_id, job=None):
     header = []
     output_filename = job.get_output_file_path()
+    print("output_filename",output_filename)
     with gzip.open(output_filename, "rt") as f:
         header = f.readline().rstrip('\n').split('\t')
         if header[1] == "BEG":

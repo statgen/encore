@@ -16,7 +16,7 @@ LOGNAME = saige.log
 PLINKFILE = plink.bed
 SAVFILE = chr1.sav
 SAMPLEFILE = samples.txt
-REFFILE = hs38DH.fa
+REFFILE = /Users/snehalpatil/Documents/GithubProjects/ForkEncore/encore/anno/hs38DH.fa
 REFFILEINDEX = $(addsuffix .fai, $(REFFILE))
 PHENOFILE = pheno.txt
 PHENOFILEIDCOL = IND_ID
@@ -79,7 +79,14 @@ $(OUTDIR)step2.bin.%.txt: $(OUTDIR)step1.rda
 STEP2FILES = $(foreach bin,$(BINS),$(OUTDIR)step2.bin.$(bin).txt)
 STEP2LOGS = $(foreach bin,$(STEP2FILES),$(bin).log)
 $(OUTDIR)$(OUTNAME): $(STEP2FILES)
-	awk 'FNR!=1 || NR==1' $^ | tr " " "\t" | bgzip -c > $@ && rm $^
+	awk 'FNR!=1 || NR==1' $^ | tr " " "\t" | bgzip -c > $@ 
+	
+clean:
+    rm 	$(OUTDIR)$(OUTNAME)
+	
+	
+	
+	
 
 $(OUTDIR)$(OUTNAME).tbi: $(OUTDIR)$(OUTNAME)
 	tabix -s1 -b2 -e2 -S1 $^

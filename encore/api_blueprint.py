@@ -74,6 +74,25 @@ def before_request():
     # Just here to trigger the login_required before any request
     pass
 
+@api.route("/", methods=["GET"])
+def list_endpoints():
+    endpoints = [
+        {"key": "geno-list", "url": url_for("api.get_genotypes"),
+            "description": "List available genotypes", "verb": "GET"},
+        {"key": "job-list", "url": url_for("api.get_jobs"),
+            "description": "List available jobs", "verb": "GET"},
+        {"key": "job-get", "url": url_for("api.get_genotype", geno_id="_JOBID_"),
+            "description": "Get specific job", "verb": "GET",
+            "url-params": [{"key": "JOBID", "description": "Requested job ID", "pattern": "_JOBID_"}]},
+        {"key": "pheno-list", "url": url_for("api.get_phenotypes"),
+            "description": "List available phenotype files", "verb": "GET"},
+        {"key": "pheno-get", "url": url_for("api.get_pheno", pheno_id="_PHENOID_"),
+            "description": "Get specific phenotype", "verb": "GET",
+            "url-params": [{"key": "PHENOID", "description": "Requested phenotype ID", "pattern": "_PHENOID_"}]},
+    ]
+    header = {"api_version": "0.1"}
+    return ApiResult(endpoints, header=header)
+
 @api.route("/genos", methods=["GET"])
 def get_genotypes():
     genos = Genotype.list_all_for_user(current_user.rid)

@@ -7,13 +7,31 @@
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 	<script type="text/javascript" src="{{ url_for('static', filename='js/dt_api_interface.js') }}"></script>
 
-	<style>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/css/bootstrap-dialog.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.35.4/js/bootstrap-dialog.min.js"></script>
+
+
+<style>
 		.home-nav-list li {padding: 10px 0}
 		#carousel h3 {
 			color: rgb(1, 45, 107);
 			font-weight: bold;
 			font-size: .75em;
 			margin: 5px 10px;
+		}
+
+		.modal-dialog {
+			position: absolute;
+			top: 200px;
+			right: 100px;
+			bottom: 0;
+			left: 0;
+			z-index: 10040;
+			overflow: auto;
+			overflow-y: auto;
 		}
 	</style>
 	<script type="text/javascript">
@@ -35,6 +53,70 @@
 		$(document).ready(function() {
 			init_job_table("{{ url_for("api.get_jobs") }}");
 			init_vcf_stats("{{ url_for("api.get_genotypes") }}");
+
+			console.log( {{usigncon}} );
+
+			var usigncon =  {{usigncon}};
+;
+
+			if(usigncon ==  0)
+			{
+				var dialog = new BootstrapDialog({
+					message: function(dialogRef){
+						var $message = $('<div>  I agree not to reconstruct genetic data and attempt to identify participants.' +
+								'</br> <label for="inputName">Please sign the name</label>' +
+								'                            <input type="text" class="form-control" id="inputName"></div></br></br>');
+						var $button = $(' <button class="btn btn-primary btn-sm btn-block padding-top: 30px; \n' +
+								'\tpadding bottom: 10px; ">Submit</button></span>');
+						$button.on('click', {dialogRef: dialogRef}, function(event){
+							console.log($('#inputName').val());
+							var useid = {{uid}};
+							console.log(useid);
+							var username= $('#inputName').val();
+
+
+							$.ajax({
+								url: "/api/usersign",
+								type: "post",
+								data: {name: username, useid:useid},
+								success: function(response) {
+									alert("thank you for signning the user agrrement");
+								},
+								error: function(xhr) {
+									//Do Something to handle error
+								}
+							});
+
+							event.data.dialogRef.close();
+						});
+						$message.append($button);
+
+						return $message;
+					},
+					closable: false
+				});
+				dialog.realize();
+				dialog.getModalHeader().hide();
+				dialog.getModalFooter().hide();
+				dialog.setSize(BootstrapDialog.SIZE_SMALL);
+
+				dialog.getModalBody().css('background-color', '#fff');
+				dialog.getModalBody().css('color', 'black');
+
+				dialog.open();
+
+
+			}
+
+
+
+
+			$('#exampleModal').on('click','#paramsOkay', function (e) {
+				console.log($('#recipient-name').text());
+				console.log(e);
+			});
+
+
 		});
 	</script>
 
@@ -44,6 +126,7 @@
 			<div class="col-sm-6">
 				<h2>Welcome</h2>
 				{% if current_user.can_analyze %}
+
 				<ul class="home-nav-list">
 					<li><a href="{{ url_for("user.get_pheno_upload") }}">Upload New Phenotype File</a></li>
 					{% if phenos %}
@@ -97,5 +180,7 @@
 				<h2>Jobs</h2>
 			</div>
 			<table id="jobs-table" width="100%"></table>
+
+
 		</div>
 {% endblock %}

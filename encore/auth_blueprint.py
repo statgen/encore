@@ -218,6 +218,8 @@ def get_check_in_oidcview(target):
                 #userdev['last_login_date']="DATE_FORMAT(2020-02-17 19:45:17, '%%Y-%%m-%%d %%H:%%i:%%s')"
                 userdev['can_analyze']=1
                 userdev['is_active']=1
+                userdev['signed_con']=1
+
 
                 ##Pass the dictionary to db cursor and then create user
                 usercreate = User.createUser(userdev,db)

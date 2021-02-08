@@ -20,12 +20,30 @@
 
 			var data =new Object();
 
+			var anany =  $("input[name='anany']:checked").val();
 
-			data.message = $("#helpForm").find("#" + "message").val().trim();
+
+			if (anany == "yes")
+			{
+				data.user_email= 'anonymous';
+				data.user_fullname =  'anonymous';
+
+
+			}
+			else
+			{
+
+
+				data.user_email= $("#helpForm").find("#" + "user_email").val().trim();
+				data.user_fullname =  $("#helpForm").find("#" + "user_fullname").val().trim();
+
+
+			}
+
+
 			data.message2 = $("#helpForm").find("#" + "message2").val().trim();
 			data.from_page = $("#helpForm").find("#" + "from_page").val().trim();
-			data.user_email= $("#helpForm").find("#" + "user_email").val().trim();
-			data.user_fullname =  $("#helpForm").find("#" + "user_fullname").val().trim();
+
 
 			data.Q1 = $('input[name=star1]:checked').val();
 			data.Q2 = $('input[name=stars2]:checked').val();
@@ -35,10 +53,13 @@
 
 
 
+
 			console.log(data);
 
 
+
 			function linkButton($button, url) {
+				console.log(url);
 				if (url) {
 					$button.click(function(evt) {
 						evt.preventDefault()
@@ -50,6 +71,8 @@
 
 			}
 			var submit_url = $(this).data("action");
+			console.log(submit_url);
+
 			$.post(submit_url, data).done( function(data) {
 				$("#helpForm #message").val("");
 				var $modal = $("#messageModal")
@@ -183,12 +206,24 @@
 				</div>
 
 
+
+
+				<div class="form-check">
+					<div class="col-xs-offset-2 col-xs-10">
+					<input class="form-check-input" type="checkbox" value="yes" name="anany"  id="anany">
+					<label class="form-check-label" for="anany">
+						Please check here if you would like to submit the feedback anonymously.
+					</label>
+					</div>
+				</div>
+
 				<div class="form-group">
 					<div class="col-xs-offset-2 col-xs-10">
 						<button class="btn-success submit-message"
-							data-action="{{url_for("api.post_feedback")}}">Submit</button>
+								data-action="{{url_for("api.post_feedback")}}">Submit</button>
 					</div>
 				</div>
+
 				<input type="hidden" id="from_page" value="{{request.referrer}}"/>
 			</form>
         </div>

@@ -11,6 +11,7 @@ $(document).ready(function() {
     {
         return api_url + "?chrom=" + state.chr + "&start_pos=" + state.start + "&end_pos=" + state.end;
     };
+    console.log(state.chr);
     var EpactsLD = LocusZoom.Data.Source.extend(function(init) {
         this.parseInit(init);
     }, "LDEP", LocusZoom.Data.LDSource);

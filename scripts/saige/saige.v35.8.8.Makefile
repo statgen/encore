@@ -80,13 +80,6 @@ STEP2FILES = $(foreach bin,$(BINS),$(OUTDIR)step2.bin.$(bin).txt)
 STEP2LOGS = $(foreach bin,$(STEP2FILES),$(bin).log)
 $(OUTDIR)$(OUTNAME): $(STEP2FILES)
 	awk 'FNR!=1 || NR==1' $^ | tr " " "\t" | bgzip -c > $@ 
-	
-clean:
-    rm 	$(OUTDIR)$(OUTNAME)
-	
-	
-	
-	
 
 $(OUTDIR)$(OUTNAME).tbi: $(OUTDIR)$(OUTNAME)
 	tabix -s1 -b2 -e2 -S1 $^
@@ -94,3 +87,6 @@ $(OUTDIR)$(OUTNAME).tbi: $(OUTDIR)$(OUTNAME)
 $(OUTDIR)$(LOGNAME).gz: $(OUTDIR)$(OUTNAME).tbi
 	cat $(OUTDIR)$(LOGNAME) $(STEP2LOGS) | gzip -c > $@  && rm $(STEP2LOGS) && rm $(OUTDIR)$(LOGNAME)
 
+clean:
+        rm -f $(OUTDIR)$(OUTNAME)
+        rm -f $(OUTDIR)$(LOGNAME)

@@ -8,9 +8,9 @@ from .db_helpers import SelectQuery, PagedResult, OrderClause, OrderExpression, 
 
 
 class User(UserMixin):
-    __dbfields = ["id", "email", "can_analyze", "full_name","unique_name", "affiliation", "is_active"]
+    __dbfields = ["id", "email", "can_analyze", "full_name","unique_name", "affiliation", "is_active","signed_con"]
 
-    def __init__(self, email, rid, can_analyze, full_name,unique_name, affiliation, is_active):
+    def __init__(self, email, rid, can_analyze, full_name,unique_name, affiliation, is_active,signed_con):
         self.email = email
         self.rid = rid
         self.can_analyze = can_analyze
@@ -18,6 +18,7 @@ class User(UserMixin):
         self.unique_name = unique_name
         self.affiliation = affiliation
         self._is_active = is_active
+        self.signed_con = signed_con
 
     def get_id(self):
         return self.email
@@ -156,7 +157,7 @@ class User(UserMixin):
         res = results[0]
         return User(res["email"], res["id"], res["can_analyze"],
             res["full_name"],res["unique_name"
-                                 ""], res["affiliation"], res["is_active"])
+                                 ""], res["affiliation"], res["is_active"], res["signed_con"])
 
     @staticmethod
     def __default_cols():
@@ -168,11 +169,12 @@ class User(UserMixin):
             ("can_analyze", "users.can_analyze"),
             ("creation_date", "DATE_FORMAT(users.creation_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
             ("last_login_date", "DATE_FORMAT(users.last_login_date, '%%Y-%%m-%%d %%H:%%i:%%s')"),
-            ("is_active", "users.is_active")
+            ("is_active", "users.is_active"),
+            ("signed_con", "users.signed_con")
         ])
 
     def __default_qcols():
-        return ["id", "email", "full_name","unique_name", "affiliation", "creation_date", "last_login_date"]
+        return ["id", "email", "full_name","unique_name", "affiliation", "creation_date", "last_login_date","signed_con"]
 
     @staticmethod
     def __build_default_sql_command(where=None, query=None):
@@ -240,9 +242,9 @@ class User(UserMixin):
     def createUser(values,db=None):
         cur = db.cursor(MySQLdb.cursors.DictCursor)
         cur.execute("""
-            INSERT INTO users ( email,can_analyze,full_name,unique_name,affiliation,is_active)
+            INSERT INTO users ( email,can_analyze,full_name,unique_name,affiliation,is_active,signed_con)
             VALUES (%s, %s, %s, %s, %s, %s)
-                       """, (values['email'], values["can_analyze"], values["fullname"], values["uniquename"],values["affiliation"], values["is_active"]))
+                       """, (values['email'], values["can_analyze"], values["fullname"], values["uniquename"],values["affiliation"], values["is_active"],values["signed_con"]))
         #print("above commit")
         db.commit()
         new_id = cur.lastrowid

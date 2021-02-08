@@ -48,6 +48,20 @@ class Notifier:
         subject = "Encore User Feedback ({})".format(user_fullname)
         self.send_feedback_mail(to_address, subject, message, {"reply-to": user_email})
 
+
+    def send_user_agreement(self, usename, useid):
+        to_address = self.help_email
+        if not to_address:
+            raise Exception("HELP EMAIL NOT CONFIGURED")
+        user_id =useid
+        message = '' + \
+                  "\n\nUser Info:\n" + \
+                  "Name: {}: {}\nID:{} \n".format(usename, user_id ) + \
+                  "User submitted the contract \n" + \
+                  "\n"
+        subject = "Encore User Agrrement ({})".format(user_id)
+        self.send_feedback_mail(to_address, subject, message, {"reply-to": ''})
+
     def send_failed_job(self, job_id="11111111-1111"):
         to_address = self.help_email 
         subject = "Encore Failed Job ({})".format(job_id[:8])

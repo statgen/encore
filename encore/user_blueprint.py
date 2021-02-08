@@ -20,8 +20,11 @@ def before_request():
 @user_area.route("/")
 def index():
     phenos = Phenotype.list_all_for_user(current_user.rid)
+    print(current_user.signed_con)
+    uid = current_user.rid
+    usigncon = current_user.signed_con
     notices = Notice.list_current()
-    return render_template("home.html", phenos=phenos, notices=notices)
+    return render_template("home.html", phenos=phenos, notices=notices,uid=uid,usigncon=usigncon)
 
 @user_area.route("/jobs", methods=["GET"])
 def get_jobs():
@@ -31,7 +34,9 @@ def get_jobs():
 @check_view_job
 def get_job(job_id, job=None):
     pheno = Phenotype.get(job.meta.get("phenotype", ""), current_app.config)
+    print(pheno)
     geno = Genotype.get(job.meta.get("genotype", ""), current_app.config)
+    print(geno)
     job_obj = job.as_object()
     owner = job.get_owner()
     if pheno is not None:
@@ -42,6 +47,7 @@ def get_job(job_id, job=None):
         job_obj["can_edit"] = True
     else:
         job_obj["can_edit"] = False
+    print(job_obj)
     return render_template("job_details.html", job=job_obj, owner=owner)
 
 @user_area.route("/jobs/<job_id>/output", methods=["get"])

@@ -26,10 +26,34 @@ CREATE TABLE IF NOT EXISTS `users` (
   `last_login_date` DATETIME,
   `can_analyze` bool DEFAULT 0,
   `is_active` bool DEFAULT 1,
+  `signed_con` bool DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `email_UNIQUE` (`email` ASC))
 
 ENGINE = InnoDB;
+
+
+
+
+
+-- -----------------------------------------------------
+-- Table `users`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `users_contract` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `email` VARCHAR(256) NOT NULL,
+  `full_name` VARCHAR(150),
+  `unique_name` VARCHAR(150),
+  `affiliation` VARCHAR(150),
+  `creation_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_login_date` DATETIME,
+  `can_analyze` bool DEFAULT 0,
+  `is_active` bool DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `email_UNIQUE` (`email` ASC))
+
+ENGINE = InnoDB;
+
 
 
 -- -----------------------------------------------------

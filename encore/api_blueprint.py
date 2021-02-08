@@ -1,6 +1,9 @@
+import MySQLdb
 from flask import Blueprint, Response, json, render_template, current_app, request, send_file, url_for
 from flask_login import current_user, login_required
 from werkzeug.urls import url_encode
+
+from encore import sql_pool
 from .user import User
 from .job import Job 
 from .auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno, admin_required
@@ -902,8 +905,7 @@ def post_feedback():
     Q3 = form_data.get("Q3", None)
     Q4 = form_data.get("Q4", None)
 
-    if not user_message:
-        raise ApiException("EMPTY MESSAGE")
+
     try:
         get_notifier().send_user_feedback2(user_email, user_fullname, from_page,
                                           current_user,message, message2,Q1,Q2,Q3,Q4)
@@ -911,6 +913,45 @@ def post_feedback():
     except Exception as e:
         raise ApiException("FAILED TO SEND MESSAGE", details=str(e))
 
+
+
+@api.route("/usersign", methods=["POST"])
+def post_useragreement():
+    form_data = request.form
+    print(form_data)
+    print(current_user)
+
+    user_id= form_data.get("useid", None)
+    user_name = form_data.get("name", None)
+
+    current_user.signed_con = 1
+
+    user = User.from_id(current_user.rid)
+    uname = user.unique_name
+    print(uname)
+    print(user.signed_con)
+    user.signed_con = 1
+    db = sql_pool.get_conn()
+    cur = db.cursor(MySQLdb.cursors.DictCursor)
+    sql = "UPDATE users SET signed_con = 1  WHERE unique_name = (%s)"
+    cur.execute(sql, [uname])
+
+    db.commit()
+
+
+    print(db)
+
+    bob = User.from_id(14).signed_con
+    print(bob)  # {}
+
+    print(user_name)
+
+
+    try:
+        get_notifier().send_user_agreement(user_id, user_name)
+        return ApiResult({"sent": True, "from_page": from_page})
+    except Exception as e:
+        raise ApiException("FAILED TO SEND MESSAGE", details=str(e))
 
 @api.route("/notices", methods=["GET"])
 def get_api_notices():

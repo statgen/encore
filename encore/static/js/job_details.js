@@ -99,11 +99,35 @@ function init_job_cancel_button(job_id, selector) {
 
 function init_manhattan(job_id, selector) {
     selector = selector || "#tab1";
-    $.getJSON("/api/jobs/" + job_id + "/plots/manhattan").done(function(variants) {
-        create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, function(chrom, pos) {
+    const data_sources = [];
+    data_sources.push($.getJSON("/api/jobs/" + job_id + "/plots/manhattan"));
+    data_sources.push($.getJSON(chrom_api_url));
+    Promise.all(data_sources).then((values) => {
+        const chrom_extents = {};
+        const variants = values[0]
+        if (values.length==2) {
+            const ranges = values[1];
+            if (Array.isArray(ranges) && ranges.length > 0) {
+                ranges.forEach( x => chrom_extents[x.chrom] = [x.start, x.stop]);
+            }
+            // Fix for when manhattan script stripped "chr" from chromosome name
+            const refHasChr = Object.keys(chrom_extents).every(x => x.startsWith("chr"));
+            if (variants.unbinned_variants && variants.unbinned_variants.length>0) {
+               const manHasChr = variants.unbinned_variants[0].chrom.startsWith("chr");
+               if (refHasChr && !manHasChr) {
+                   variants.unbinned_variants.forEach((x, i, a) => {
+                        a[i].chrom = "chr" + a[i].chrom;
+                   })
+                   variants.variant_bins.forEach((x, i, a) => {
+                        a[i].chrom = "chr" + a[i].chrom;
+                   });
+               };
+            };
+        };
+        create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, chrom_extents,
+        function(chrom, pos) {
             jumpToLocusZoom(job_id, chrom, pos);
         });
-
     });
 }
 
@@ -205,8 +229,25 @@ function getDataCols(cols, job_id) {
         {data: "pos", title:"Plot",
             render:function(data, type, row) {
                 if (data !== undefined && data !== null) {
-                    var fn = "event.preventDefault();" + 
-                        "jumpToLocusZoom(\"" + job_id + "\",\"" + row.chrom + "\"," + data + ")";
+                    let params = [job_id, row.chrom, data];
+                    let variant = "";
+                    if (row.other && row.other.MARKER_ID) {
+                        variant = row.other.MARKER_ID;
+                    } else if (row.variant) {
+                        variant = row.variant;
+                    }
+                    if (variant == ".") {
+                        // Fix for old JSON format
+                        let ref = row.other && (row.other.ref || row.other.Allele1);
+                        let alt = row.other && (row.other.alt || row.other.Allele2);
+                        variant = (ref && alt) ? row.chrom + ":" + data + "_" + ref + "/" + alt : "";
+                    }
+                    if (variant) {
+                        params.push(variant);
+                    }
+
+                    let cmd = "jumpToLocusZoom(" + params.map(x => `"${x}"`).join(", ")  + ")";
+                    let fn = "event.preventDefault();" + cmd ;
                     return "<a href='#' onclick='" + fn + "'>View</a>";
                 } else {
                     return "";
@@ -453,11 +494,12 @@ function single_lookup(x) {
                 chrom: resp.data.CHROM[min_index],
                 pos: resp.data.BEGIN[min_index],
                 pval: parseFloat(resp.data.PVALUE[min_index]),
+                variant: resp.data.MARKER_ID[min_index],
                 found: 1
             };
         }
         //no results found
-        return {term: x.term, chrom: null, pos:null, pval: null, 
+        return {term: x.term, chrom: null, pos:null, pval: null, variant: null,
             found: 0, message: "No p-value in range"};
     });
 }
@@ -484,11 +526,15 @@ function result_lookup(term) {
     });
 }
 
-function jumpToLocusZoom(job_id, chr, pos) {
+function jumpToLocusZoom(job_id, chr, pos, variant) {
     if (job_id && chr && pos) {
         pos = parseInt(pos);
         var region = chr + ":" + (pos-100000) + "-" + (pos+100000);
-        document.location.href = "/jobs/" + job_id + "/locuszoom/" + region;
+        var plot_url = "/jobs/" + job_id + "/locuszoom/" + region;
+        if (variant) {
+            plot_url += "?variant=" + encodeURIComponent(variant)
+        }
+        document.location.href = plot_url;
     }
 }
 

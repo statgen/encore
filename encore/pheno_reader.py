@@ -1,4 +1,5 @@
 import subprocess
+import math
 import re
 import csv
 from collections import defaultdict, Counter
@@ -37,6 +38,15 @@ def guess_atomic_column_class(rawtype, obs):
     n_vals = sum(obs.values())
     n_uniq_vals = len(obs)
     if n_vals == n_uniq_vals and rawtype != "float":
+        if rawtype == "int":
+            int_vals = [int(float(x)) for x in obs.elements()]
+            int_min = min(int_vals)
+            int_max = max(int_vals)
+            int_range = int_max - int_min
+            all_same_num_digits = math.floor(math.log10(int_min)) == math.floor(math.log10(int_max))
+            bigger_range = math.log10(int_range+1) >  math.log10(n_vals+1) + 2 # 2 order of mag larger
+            if not all_same_num_digits and bigger_range:
+                return {"class": "numeric", "type": rawtype}
         return {"class": "id", "type": rawtype}
     if n_uniq_vals == 1:
         return {"class": "fixed", "type": rawtype, "value": next(iter(obs.keys()))}
@@ -319,7 +329,7 @@ class PhenoReader:
     def get_samples(self):
         sample_col = next(iter([x for x in self.get_columns() if x["class"]=="sample_id"]), None)
         if not sample_col:
-            return None
+            return
         sample_col_idx = self.get_column_indexes()[sample_col["name"]]
         for row in self.row_extractor():
             yield row[sample_col_idx]

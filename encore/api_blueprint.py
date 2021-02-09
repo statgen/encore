@@ -100,6 +100,11 @@ def get_genotype_info_stats(geno_id):
     g = Genotype.get(geno_id, current_app.config)
     return ApiResult(g.get_info_stats())
 
+@api.route("/genos/<geno_id>/chroms", methods=["GET"])
+def get_genotype_chromosome_ranges(geno_id):
+    g = Genotype.get(geno_id, current_app.config)
+    return ApiResult(g.get_chromosome_ranges() or [])
+
 @api.route("/genos/<geno_id>/jobs", methods=["GET"])
 def get_genotype_jobs(geno_id):
     query = get_query_info(request)
@@ -429,7 +434,7 @@ def get_job_zoom(job_id, job=None):
     for r in results:
         if r[headerpos["PVALUE"]] != "NA":
             json_response_data["CHROM"].append(r[headerpos["CHROM"]])
-            json_response_data["BEGIN"].append(r[headerpos["BEGIN"]])
+            json_response_data["BEGIN"].append(int(r[headerpos["BEGIN"]]))
             if "END" in headerpos:
                 json_response_data["END"].append(r[headerpos["END"]])
             if "MARKER_ID" in headerpos:
@@ -859,7 +864,8 @@ def get_uuid():
     return ApiResult({"uuid": str(uuid.uuid4())})
 
 @api.route('/lz/<resource>', methods=["GET", "POST"], strict_slashes=False)
-def get_api_annotations(resource):
+@api.route('/lz/<resource>/<path:path>', methods=["GET", "POST"], strict_slashes=False)
+def get_api_annotations(resource, path=None):
     if resource == "ld-results":
         ldresp =  requests.get('http://portaldev.sph.umich.edu/api/v1/pair/LD/results/', params=request.args)
         if ldresp.status_code != 500:
@@ -867,6 +873,13 @@ def get_api_annotations(resource):
         else:
             empty = "{\"data\": {\"position2\": []}}"
             return empty
+    elif resource == "ld":
+        ldserver = current_app.config.get("LD_SERVER")
+        if not ldserver:
+            return Response("No LD Server Configured", status=503)
+        ldurl =  ldserver + (path or "")
+        ldresp = requests.get(ldurl, params=request.args)
+        return Response(ldresp.content, mimetype=ldresp.headers.get('content-type'), status=ldresp.status_code)
     elif resource == "gene":
         return requests.get('http://portaldev.sph.umich.edu/api/v1/annotation/genes/', params=request.args).content
     elif resource == "recomb":

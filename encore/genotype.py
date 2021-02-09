@@ -134,6 +134,37 @@ class Genotype:
                 return readme
         return ""
 
+    def get_chromosomes(self):
+        if "chrs" in self.meta:
+            chrs = self.meta["chrs"]
+            if chrs == "autosomes":
+                chrs = " ".join(map(str, range(1,23)))
+            elif chrs == "autosomesX":
+                chrs = " ".join(map(str, range(1,23))) + " X"
+            return chrs
+        return None
+
+    def get_chromosome_ranges(self):
+        if "chr_ranges" in self.meta:
+            chr_ranges = self.meta["chr_ranges"]
+            if type(chr_ranges) == str:
+                path = self.relative_path(chr_ranges)
+                if not os.path.exists(path):
+                    raise Exception("chr_ranges path not found: {}".format(path))
+                chrom_list = []
+                with open(path, "rt") as lines:
+                    for line in lines:
+                        if line.startswith("#"):
+                            continue
+                        chrom, start, stop = line.split()[0:3]
+                        start = int(start)
+                        stop = int(stop)
+                        chrom_list.append({"chrom": chrom, "start": start, "stop": stop})
+                return chrom_list
+            else:
+                raise Exception("Unexpected type for chr_ranges: {}".format(type(chr_ranges)))
+        return None
+
     def get_info_stats(self):
         if "info_stats_path" in self.meta:
             stats_stub = self.meta.get("info_stats_path", "info.json")
@@ -211,6 +242,27 @@ class Genotype:
 
     def get_geno_reader(self, config):
         return GenoReader(self, config)
+
+    def get_ld_info(self, config):
+        if not "ld_server" in self.meta:
+            return None
+        metald = self.meta["ld_server"]
+        ld_panel = self.geno_id
+        ld_population = "ALL"
+        ld_build = self.build
+        if type(metald) == bool:
+            if not metald:
+                return None
+        elif type(metald) == str:
+            ld_panel = metald
+        elif isinstance(metald, dict):
+            ld_panel = metald.get("panel", ld_panel)
+            ld_population = metald.get("population", ld_population)
+            ld_build = metald.get("build", ld_build)
+        else:
+            raise Exception("Unrecognized type for ld_server config:" + type(metald))
+        return {"panel": ld_panel, "population": ld_population,
+            "build": ld_build}
 
     def relative_path(self, *args):
         return os.path.expanduser(os.path.join(self.root_path, *args))

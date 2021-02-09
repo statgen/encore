@@ -239,6 +239,21 @@ class PedWriter:
     def get_covar_headers(self):
         return self.covarheaders
 
+    def _result_rows(self):
+        for idx in range(max((len(x) for x in self.allcols))):
+            vals = flatten([x.values(idx) for x in self.allcols])
+            has_missing = any((x is None for x in vals))
+            if not has_missing:
+                yield vals
+
+    def get_response_values(self):
+        id_index = 1
+        resp_index = 5
+        resp = dict()
+        for vals in self._result_rows():
+            resp[vals[id_index]] = float(vals[resp_index])
+        return resp
+
     def write_to_file(self, fconn, comment_header=True):
         row_count = 0
         self.expand_columns()
@@ -246,12 +261,9 @@ class PedWriter:
         if comment_header:
             header = "#" + header
         fconn.write(header)
-        for idx in range(max((len(x) for x in self.allcols))):
-            vals = flatten([x.values(idx) for x in self.allcols])
-            has_missing = any((x is None for x in vals))
-            if not has_missing:
-                fconn.write("\t".join(vals) + "\n")
-                row_count += 1
+        for vals in self._result_rows():
+            fconn.write("\t".join(vals) + "\n")
+            row_count += 1
         return row_count
 
 if __name__ == "__main__":

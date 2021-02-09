@@ -31,11 +31,10 @@ function get_tooltip_text(d) {
     return lines.join("<br/>");
 }
 
-function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_click) {
+function create_gwas_plot(selector, variant_bins, unbinned_variants, chrom_extents, on_variant_click) {
 
     var get_chrom_offsets = _.memoize(function() {
         var chrom_padding = 2e7;
-        var chrom_extents = {};
 
         var update_chrom_extents = function(variant) {
             if (!(variant.chrom in chrom_extents)) {
@@ -46,8 +45,12 @@ function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_
                 chrom_extents[variant.chrom][0] = variant.pos;
             }
         };
-        variant_bins.forEach(update_chrom_extents);
-        unbinned_variants.forEach(update_chrom_extents);
+        if (chrom_extents && Object.keys(chrom_extents).length>0) {
+            //precomputed by calling function
+        } else {
+            variant_bins.forEach(update_chrom_extents);
+            unbinned_variants.forEach(update_chrom_extents);
+        }
 
         var chroms = _.sortBy(Object.keys(chrom_extents), Number.parseInt);
 
@@ -108,9 +111,11 @@ function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_
         gwas_svg.call(significance_threshold_tooltip);
 
         var genomic_position_extent = (function() {
-            var extent1 = d3.extent(variant_bins, get_genomic_position);
-            var extent2 = d3.extent(unbinned_variants, get_genomic_position);
-            return d3.extent(extent1.concat(extent2));
+            let chrom_offsets = get_chrom_offsets()
+            return d3.extent(
+                chrom_offsets.chroms.flatMap(x => chrom_extents[x].map(y =>
+                    get_genomic_position({chrom: x, pos: y})))
+            );
         })();
 
         var x_scale = d3.scale.linear()
@@ -318,7 +323,7 @@ function create_gwas_plot(selector, variant_bins, unbinned_variants, on_variant_
                     plot_height + plot_margin.top + 20);
             })
             .text(function(d) {
-                return d.chrom;
+                return d.chrom.replace("chr","");
             })
             .style("fill", function(d) {
                 return color_by_chrom(d.chrom);

@@ -6,6 +6,7 @@ from .phenotype import Phenotype
 from .notice import Notice
 from .job import Job 
 from .user import User
+from .access_tracker import AccessTracker
 from .auth import check_view_job, check_edit_job, can_user_edit_job, access_pheno_page, check_edit_pheno, can_user_edit_pheno
 
 user_area = Blueprint("user", __name__,
@@ -34,9 +35,7 @@ def get_jobs():
 @check_view_job
 def get_job(job_id, job=None):
     pheno = Phenotype.get(job.meta.get("phenotype", ""), current_app.config)
-    print(pheno)
     geno = Genotype.get(job.meta.get("genotype", ""), current_app.config)
-    print(geno)
     job_obj = job.as_object()
     owner = job.get_owner()
     if pheno is not None:
@@ -47,28 +46,33 @@ def get_job(job_id, job=None):
         job_obj["can_edit"] = True
     else:
         job_obj["can_edit"] = False
-    print(job_obj)
+    AccessTracker.LogJobAccess(job_id, current_user.rid)
     return render_template("job_details.html", job=job_obj, owner=owner)
 
 @user_area.route("/jobs/<job_id>/output", methods=["get"])
 @check_view_job
 def get_job_output(job_id, job=None):
-    return get_job_output(job, "output.epacts.gz", True)
+    file_name = job.get_output_primary_file()
+    short_name = job_id.partition("-")[0]
+    send_as = short_name + "-" + file_name
+    return get_job_output(job, file_name, True, send_as=send_as)
 
 @user_area.route("/jobs/<job_id>/output/<file_name>", methods=["get"])
 @check_view_job
 def get_job_output_file(job_id, file_name, job=None):
-    return get_job_output(job, file_name, True)
+    short_name = job_id.partition("-")[0]
+    send_as = short_name + "-" + file_name
+    return get_job_output(job, file_name, True, send_as=send_as)
 
 @user_area.route("/jobs/<job_id>/locuszoom/<region>", methods=["GET"])
 @check_view_job
 def get_job_locuszoom_plot(job_id, region, job=None):
-    if job.meta.get("genome_build"):
-        build = job.meta["genome_build"]
-    else:
-        geno = Genotype.get(job.get_genotype_id(), current_app.config)
-        build = geno.build
-    return render_template("job_locuszoom.html", job=job.as_object(), build=build, region=region)
+    geno = Genotype.get(job.get_genotype_id(), current_app.config)
+    build = geno.build
+    ld_info = geno.get_ld_info(current_app.config)
+    variant = request.args.get("variant", "")
+    return render_template("job_locuszoom.html", job=job.as_object(),
+        variant=variant, ld_info = ld_info or {}, build=build, region=region)
 
 @user_area.route("/jobs/<job_id>/variant", methods=["GET"])
 @check_view_job
@@ -129,6 +133,11 @@ def get_collaborations_with(user_id):
     collaborator = current_user.get_collaborator(user_id)
     return render_template("collaborate_with.html", collaborator_id=user_id, collaborator=collaborator)
 
+@user_area.route("/me/api-token", methods=["GET"])
+def get_api_token():
+    return render_template("api_token.html")
+
+
 @user_area.route("/help", methods=["GET"])
 def get_help():
     return render_template("help.html", user=current_user)
@@ -145,7 +154,7 @@ def get_model_build():
     else:
         return render_template("not_authorized_to_analyze.html")
 
-def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None):
+def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None, send_as=None):
     try:
         output_file = job.relative_path(filename)
         if tail or head:
@@ -162,7 +171,8 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
                 resp.headers["Content-Type"] = mimetype
             return resp
         else:
-            return send_file(output_file, as_attachment=as_attach, mimetype=mimetype)
+            return send_file(output_file, mimetype=mimetype,
+                as_attachment=as_attach, attachment_filename=send_as)
     except Exception as e:
         print(e)
         return "File Not Found", 404

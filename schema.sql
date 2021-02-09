@@ -187,6 +187,28 @@ CREATE TABLE IF NOT EXISTS `notices` (
 ENGINE = InnoDB;
 
 -- -----------------------------------------------------
+-- Table `access_job_log`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `access_job_log` (
+  `access_date` DATE NOT NULL,
+  `user_id` INT UNSIGNED NOT NULL,
+  `job_id` BINARY(16) NOT NULL,
+  PRIMARY KEY (`access_date`, `user_id`, `job_id`),
+  INDEX `fk_access_job_users_idx` (`user_id` ASC),
+  INDEX `fk_access_job_jobs_idx` (`job_id` ASC),
+  CONSTRAINT `fk_access_job_users`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `users` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_access_job_jobs`
+    FOREIGN KEY (`job_id`)
+    REFERENCES `jobs` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+-- -----------------------------------------------------
 -- function uuid_to_bin
 -- -----------------------------------------------------
 

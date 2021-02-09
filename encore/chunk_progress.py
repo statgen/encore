@@ -98,6 +98,8 @@ def get_chr_chunk_progress(output_file_glob, fileregex):
         
         result = collapse_chunk_bins(bin_chunks_by_chr_and_age(chunks, now))
         return {"data": result, "header": {"format": "ideogram"}}
+    else:
+        return {"data": []}
 
             
 

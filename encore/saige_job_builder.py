@@ -1,4 +1,4 @@
-from .base_model import BaseModel
+
 from .base_model import BaseModel
 from .ped_writer import PedWriter
 import os
@@ -34,15 +34,9 @@ class SaigeModel(BaseModel):
                 region = region[3:]
             opts.append("CHRS={}".format(region))
             opts.append("BINSIZE={}".format(100000))
+        elif geno.get_chromosomes():
+            opts.append("CHRS='{}'".format(geno.get_chromosomes()))
         return opts 
-
-    def get_ped_writer(self, model, geno, pheno):
-        ped_writer = PedWriter(pheno.get_pheno_reader(), \
-            model["response"], model.get("covariates",[])) 
-        if "genopheno" in model and len(model["genopheno"])>0:
-            ped_writer.merge_covar(geno.get_pheno_reader(), \
-                model["genopheno"])
-        return ped_writer
 
     def get_analysis_commands(self, model_spec, geno, ped):
         pipeline = model_spec.get("pipeline_version", "saige-0.26")

@@ -45,7 +45,7 @@ class BEDReader:
         return None
 
 
-AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval other'.split())
+AssocResult = collections.namedtuple('AssocResult', 'chrom pos pval id other'.split())
 class AssocResultReader:
 
     _single_id_regex = re.compile(r'([^:]+):([0-9]+)_([-ATCG]+)\/([-ATCG]+)(?:_(.+))?')
@@ -81,7 +81,9 @@ class AssocResultReader:
             "POS": "BEGIN",
             "SNPID": "MARKER_ID",
             "N": "NS",
-            "p.value": "PVALUE"}
+            "p.value": "PVALUE",
+            "Allele1": "ref",
+            "Allele2": "alt"}
         for i, col in enumerate(header):
             if aliases.get(col):
                 header[i] = aliases.get(col)
@@ -115,7 +117,11 @@ class AssocResultReader:
                     other["stop"] = end2
                     if name2:
                         other["label"] = name2
-            return AssocResult(chrom, pos, pval, other)
+                elif marker_id == ".":
+                    marker_id = chrom + ":" + str(pos) + "_" + \
+                        v[column_indices["ref"]] + "/" + v[column_indices["alt"]]
+                    other["MARKER_ID"] = marker_id
+            return AssocResult(chrom, pos, pval, marker_id, other)
 
     def __iter__(self):
         return self
@@ -155,7 +161,7 @@ def process_file(results, window=5e5, sig_pvalue=5e-8, max_sites = 5000, max_bin
     bins=[]
     last_pval = None
     best_results = ExtremeCollection(max_sites, results, lambda x: x.pval)
-    exported_cols = ["name","chrom","pos","pval","other"]
+    exported_cols = ["name","chrom","pos","pval","variant","other"]
     if nearest_gene is not None:
         exported_cols += ["gene"]
     if window>0:
@@ -180,6 +186,7 @@ def process_file(results, window=5e5, sig_pvalue=5e-8, max_sites = 5000, max_bin
             rbin['pos'] = rbin['assoc'][0].pos
             rbin['pval'] = rbin['assoc'][0].pval
             rbin['other'] = rbin['assoc'][0].other
+            rbin['variant'] = rbin['assoc'][0].id
             rbin['sig_count'] = sum(x.pval < sig_pvalue for x in rbin['assoc'])
             rbin['snp_count'] = len(rbin['assoc'])
             del rbin['assoc']

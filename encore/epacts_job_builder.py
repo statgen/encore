@@ -1,4 +1,3 @@
-from .ped_writer import PedWriter
 from .base_model import BaseModel
 import os
 from .chunk_progress import get_chr_chunk_progress, get_gene_chunk_progress 
@@ -29,14 +28,6 @@ class EpactsModel(BaseModel):
             region = model.get("region") + ":0"
             opts.append("--region {}".format(region))
         return opts 
-
-    def get_ped_writer(self, model_spec, geno, pheno):
-        ped_writer = PedWriter(pheno.get_pheno_reader(), \
-            model_spec["response"], model_spec.get("covariates",[])) 
-        if "genopheno" in model_spec and len(model_spec["genopheno"])>0:
-            ped_writer.merge_covar(geno.get_pheno_reader(), \
-                model_spec["genopheno"])
-        return ped_writer
 
     def get_analysis_commands(self, model_spec, geno, ped):
         pipeline = model_spec.get("pipeline_version", "epacts-3.3")

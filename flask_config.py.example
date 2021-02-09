@@ -31,6 +31,7 @@ DEFAULT_CONFIG = {
     'UMICH_LOGIN_CLIENT_ID':'',
     'UMICH_LOGIN_CLIENT_SECRET' : '',
     'HELP_EMAIL': 'snehal@umich.edu',
+    'LD_SERVER': 'https://portaldev.sph.umich.edu/ld/',
     'BUILD_REF': {
         'GRCh37': {
             'fasta': '/data/ref/hs37d5.fa',

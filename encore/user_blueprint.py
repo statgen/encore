@@ -6,6 +6,7 @@ from .phenotype import Phenotype
 from .notice import Notice
 from .job import Job 
 from .user import User
+from .access_tracker import AccessTracker
 from .auth import check_view_job, check_edit_job, can_user_edit_job, access_pheno_page, check_edit_pheno, can_user_edit_pheno
 
 user_area = Blueprint("user", __name__,
@@ -42,6 +43,7 @@ def get_job(job_id, job=None):
         job_obj["can_edit"] = True
     else:
         job_obj["can_edit"] = False
+    AccessTracker.LogJobAccess(job_id, current_user.rid)
     return render_template("job_details.html", job=job_obj, owner=owner)
 
 @user_area.route("/jobs/<job_id>/output", methods=["get"])

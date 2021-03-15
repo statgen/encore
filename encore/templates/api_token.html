@@ -47,7 +47,7 @@
 	<div class="section">
 		<div class="section-title row">
 			<div class="col-md-12">
-				<h2>Api Tokens</h2>
+				<h2>API Tokens</h2>
 			</div>
 		</div>
 	</div>
@@ -75,53 +75,44 @@
 		<div class="section-title row">
 			<div class="col-md-12">
 				<h3>API Examples</h3>
-			</div>
-		</div>
-	</div>
 
-	<div class="section">
-		<div class="col-md-12">
-			<h4>Listing jobs</h4>
-			<p>You can access a list of your jobs in JSON format via curl. Just
-			replace "TOKEN" with the token you generated above</p>
-			<code>
-			curl -H "Authorization: Bearer TOKEN" {{ url_for("api.get_jobs", _external=True)}} 
-			</code>
-			<p>If you have <a href="https://stedolan.github.io/jq/">jq</a> installed, you can easily turn this into a csv file</p>
-			<code>
-			curl -H "Authorization: Bearer TOKEN" {{ url_for("api.get_jobs", _external=True)}}  |  jq -r '.data[] | [.id, .name, .creation_date, .status] | @csv'
-			</code>
-			<p>You could also access the data in R using the <a href="https://httr.r-lib.org/">httr</a> library</p>
-			<code>
-			library(httr) <br>
-			token &lt;- "TOKEN" <br>
-			xx &lt; GET("{{ url_for("api.get_jobs", _external=True)}}", <br>
-		    &nbsp;&nbsp;add_headers("Authorization"=paste("Bearer", token))) <br>
-		    dd &lt;- dplyr::bind_rows(content(xx)$data)
-			</code>
-			<h4>Downloading data</h4>
-			<p>You can also download data for a job via the API. You just need the JOBID which is the long
-			alpha-numeric string that's found in the URL for the job. For example here is a curl
-			command to download the results from a job. Again replace TOKEN with the generated
-			token and replace JOBID with the corresponding job ID</p>
-			<code>
-			curl -OJ -H "Authorization: Bearer TOKEN" {{ url_for("user.get_job_output", job_id="JOBID", _external=True)}} 
-			</code> 
-			<p>In R we can write a helper function to write the file directly to disk</p>
-			<code>
-			save_job_output &lt;- function(job_id, token, output_name=NULL, ...) { <br />
-			&nbsp;&nbsp;api_url &lt;- sub("JOBID", job_id, "{{ url_for("user.get_job_output", job_id="JOBID", _external=True) }}") <br />
-			&nbsp;&nbsp;if (is.null(output_name)) { <br />
-			&nbsp;&nbsp;&nbsp;&nbsp;xx &lt;- HEAD(api_url, <br />
-			&nbsp;&nbsp;&nbsp;&nbsp;add_headers("Authorization"=paste("Bearer", token))) <br />
-			&nbsp;&nbsp;&nbsp;&nbsp;output_name = sub(".*filename=", "", headers(xx)$`content-disposition`) <br />
-			&nbsp;&nbsp;} <br />
-			&nbsp;&nbsp;GET(api_url, <br />
-			&nbsp;&nbsp;&nbsp;&nbsp;add_headers("Authorization"=paste("Bearer", token)),  <br />
-			&nbsp;&nbsp;&nbsp;&nbsp;write_disk(output_name), ...) <br />
-			} <br />
-			save_job_output(job_id="JOBID", token="TOKEN")
-			</code>
+				<h4>Command Line</h4>
+				<p>You can access a list of your jobs in JSON format via curl. Just
+				replace "TOKEN" with the token you generated above</p>
+				<code>
+					curl -H "Authorization: Bearer TOKEN" {{ url_for("api.get_jobs", _external=True)}}
+				</code>
+				<p>If you have <a href="https://stedolan.github.io/jq/">jq</a> installed, you can easily turn this into a csv file</p>
+				<code>
+					curl -H "Authorization: Bearer TOKEN" {{ url_for("api.get_jobs", _external=True)}}  |  jq -r '.data[] | [.id, .name, .creation_date, .status] | @csv'
+				</code>
+				<p>You can also download data for a job via the API. You just need the JOBID which is the long
+				alpha-numeric string that's found in the URL for the job. For example here is a curl
+				command to download the results from a job. Again replace TOKEN with the generated
+				token and replace JOBID with the corresponding job ID</p>
+				<code>
+					curl -OJ -H "Authorization: Bearer TOKEN" {{ url_for("user.get_job_output", job_id="JOBID", _external=True)}}
+				</code>
+				<h4>Using R</h4>
+				<p>There is an <a href="https://github.com/statgen/encore-client-r">R package</a> that you can use
+				  to interact with the Encore API. You can install it with </p>
+				<code>
+					remotes::install_github("statgen/encore-client-r")
+				</code>
+				You then need to load the library and set your API access token
+				<code>
+					library(encore) <br/>
+					set_access_token("TOKEN")
+				</code>
+				Here's an example of finding your most recent job, recreating the Manhattan plot in ggplot2 and
+				downloading the raw results file
+				<code>
+					last_job &lt;- get_jobs(limit=1) <br/>
+					plot_manhattab(last_job) <br/>
+					download_job_output(last_job)
+				</code>
+				See the help files for these functions in the package for more details
+				</div>
 		</div>
 	</div>
 {% endblock %}

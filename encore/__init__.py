@@ -73,6 +73,8 @@ def register_helpers(app):
                 return "collab"
             elif path.startswith("/help"):
                 return "help"
+            elif path.startswith("/me/api-token"):
+                return "api"
             elif path.startswith("/admin/user"):
                 return "user"
             elif path.startswith("/admin/phenos"):
@@ -102,6 +104,7 @@ def register_helpers(app):
                 links["left"].append(("collab", "Collaborate", url_for("user.get_collaborators")))
                 if (user is not None) and hasattr(user, "is_admin") and user.is_admin():
                     links["right"].append(("admin","Admin", url_for("admin.get_admin_page")))
+                links["right"].append(("api","API", url_for("user.get_api_token")))
                 links["right"].append(("help","Help", url_for("user.get_help")))
             links["right"].append(("logout","Logout", url_for("auth.sign_out")))
             return links

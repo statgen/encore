@@ -368,6 +368,9 @@
 				genophenoSelect.val("").trigger("change");
 			});
 			var d1 = $.getJSON("{{url_for('api.get_genotypes')}}").then(function(resp) {
+				if (resp.header) {
+					resp = resp.data;
+				}
 				var genos = [];
 				resp.forEach(function(g) {
 					genos.push({id: g.id, text: g.name});

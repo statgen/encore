@@ -9,7 +9,7 @@
 	<script type="text/javascript">
 		function init_geno_table() {
 			$("#geno-table").DataTable({
-				ajax: {url: "{{ url_for("api.get_genotypes")}}", dataSrc: ""},
+				ajax: {url: "{{ url_for("api.get_genotypes")}}"},
 				order: [[1, "desc"]],
 				columns: [
 					{data: "name", title: "Name", render: $.fn.dataTable.render.text()},

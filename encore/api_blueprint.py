@@ -95,7 +95,8 @@ def list_endpoints():
 
 @api.route("/genos", methods=["GET"])
 def get_genotypes():
-    genos = Genotype.list_all_for_user(current_user.rid)
+    query = get_query_info(request)
+    genos = Genotype.list_all_for_user(current_user.rid, query=query)
     def get_stats(x):
         s = Genotype.get(x["id"],current_app.config).get_stats() 
         s["name"] = x["name"]
@@ -104,7 +105,8 @@ def get_genotypes():
         s["id"] = x["id"]
         return s
     stats = [get_stats(x) for x in genos]
-    return ApiResult(stats)
+    genos.results = stats
+    return ApiResult(genos, request=request)
 
 @api.route("/genos/<geno_id>", methods=["GET"])
 def get_genotype(geno_id):

@@ -23,3 +23,21 @@ class AccessTracker():
             db.commit()
         except (MySQLdb.Error, MySQLdb.Warning) as e:
             print("Logging error:  {}".format(e))
+
+    def LogAPIAccess(user_id = None, access_date = None):
+        if user_id is None:
+            user_id = current_user.rid
+        if access_date is None:
+            access_date = datetime.now().strftime('%Y-%m-%d')
+        db = sql_pool.get_conn()
+        cur = db.cursor(MySQLdb.cursors.DictCursor)
+        sql = "INSERT INTO access_api_log " \
+            "SET user_id = %s, " \
+            "access_date = %s " \
+            "ON DUPLICATE KEY UPDATE count=count+1;"
+        params = (user_id, access_date)
+        try:
+            cur.execute(sql, params)
+            db.commit()
+        except (MySQLdb.Error, MySQLdb.Warning) as e:
+            print("Logging error:  {}".format(e))

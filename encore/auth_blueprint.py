@@ -3,6 +3,7 @@ from flask_login import LoginManager, logout_user, login_required, current_user
 import requests
 from rauth import OAuth2Service
 from .user import User
+from .access_tracker import AccessTracker
 import flask_login
 from . import sql_pool
 import jwt
@@ -57,7 +58,10 @@ def user_loader_from_request(request):
     if auth_token:
         try:
             email = decode_auth_token(auth_token)
-            return load_user(email)
+            user = load_user(email)
+            if user:
+                AccessTracker.LogAPIAccess(user.rid)
+            return user
         except Exception as e:
             print(e)
     return None

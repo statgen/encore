@@ -183,6 +183,23 @@ CREATE TABLE IF NOT EXISTS `access_job_log` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
+
+-- -----------------------------------------------------
+-- Table `access_job_log`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `access_api_log` (
+  `access_date` DATE NOT NULL,
+  `user_id` INT UNSIGNED NOT NULL,
+  `count` INT UNSIGNED NOT NULL default 1,
+  PRIMARY KEY (`access_date`, `user_id`),
+  INDEX `fk_access_api_users_idx` (`user_id` ASC),
+  CONSTRAINT `fk_access_api_users`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `users` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
 -- -----------------------------------------------------
 -- function uuid_to_bin
 -- -----------------------------------------------------

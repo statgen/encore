@@ -12,10 +12,11 @@ class AccessTracker():
             access_date = datetime.now().strftime('%Y-%m-%d')
         db = sql_pool.get_conn()
         cur = db.cursor(MySQLdb.cursors.DictCursor)
-        sql = "INSERT IGNORE INTO access_job_log " \
+        sql = "INSERT INTO access_job_log " \
             "SET user_id = %s, " \
             "job_id = uuid_to_bin(%s),"  \
-            "access_date = %s"
+            "access_date = %s " \
+            "ON DUPLICATE KEY UPDATE count=count+1;"
         params = (user_id, job_id, access_date)
         try:
             cur.execute(sql, params)

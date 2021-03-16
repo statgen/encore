@@ -167,6 +167,7 @@ CREATE TABLE IF NOT EXISTS `access_job_log` (
   `access_date` DATE NOT NULL,
   `user_id` INT UNSIGNED NOT NULL,
   `job_id` BINARY(16) NOT NULL,
+  `count` INT UNSIGNED NOT NULL default 1,
   PRIMARY KEY (`access_date`, `user_id`, `job_id`),
   INDEX `fk_access_job_users_idx` (`user_id` ASC),
   INDEX `fk_access_job_jobs_idx` (`job_id` ASC),

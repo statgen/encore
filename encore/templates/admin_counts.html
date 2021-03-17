@@ -7,19 +7,34 @@
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 
 <script type="text/javascript">
-		var basejoburl = "{{ url_for('api.get_job_counts') }}";
-		var baseuserurl = "{{ url_for('api.get_user_counts') }}";
+        var basejoburl = "{{ url_for('api.get_job_counts') }}";
+        var baseuserurl = "{{ url_for('api.get_user_counts') }}";
+
+		var endp = {
+			job: "{{ url_for('api.get_job_counts') }}",
+			user: "{{ url_for('api.get_user_counts') }}",
+			auser: "{{ url_for('api.get_access_counts', what="users") }}",
+			ajob: "{{ url_for('api.get_access_counts', what="jobs") }}",
+			api: "{{ url_for('api.get_access_counts', what="api") }}"
+		}
 		var reports = [
-			{title: "Total Jobs By Status", action: draw_job_totals},
-			{title: "Successful Jobs By User", action: draw_job_users},
-			{title: "Successful Jobs By Month", action: draw_job_months},
-			{title: "Successful Jobs By User/Month", action: draw_job_user_months},
-			{title: "Successful Jobs By Genotype", action: draw_job_genos},
-			{title: "New Analysts By Month", action: draw_user_new_months},
-			{title: "New Analysts By Year", action: draw_user_new_years},
-			{title: "Active Analysts By Month", action: draw_user_activity_months},
-			{title: "Active Analysts By Year", action: draw_user_activity_years},
-			{title: "Active Users (have logged in)", action: draw_user_active}
+			{title: "Total Jobs By Status", url: {base: "job", q: "by=status"}},
+			{title: "Successful Jobs By User", url: {base: "job", q: "by=user&filter=successful"}},
+			{title: "Successful Jobs By Month", url: {base: "job", q: "by=month&filter=successful"}},
+			{title: "Successful Jobs By User/Month", url: {base: "job", q: "by=month,user&filter=successful"}},
+			{title: "Successful Jobs By Genotype", url: {base: "job", q: "by=geno&filter=successful"}},
+			{title: "New Users By Month", url: {base: "user", q: "by=creation-month&filter=can-analyze"}},
+			{title: "New Users By Year", url: {base: "user", q: "by=creation-year&filter=can-analyze"}},
+			{title: "Job Builders By Month", url: {base: "user", q: "by=job-month"}},
+			{title: "Job Builders By Year", url: {base: "user", q: "by=job-year"}},
+			{title: "Job Viewers By Month", url: {base: "auser", q: "by=month"}},
+			{title: "Job Viewers By Year", url: {base: "auser", q: "by=year"}},
+			{title: "Jobs Viewed By Month", url: {base: "ajob", q: "by=month"}},
+			{title: "Jobs Viewed By Year", url: {base: "ajob", q: "by=year"}},
+			{title: "API access By User", url: {base: "api", q: "by=user"}},
+			{title: "API access By Month", url: {base: "api", q: "by=month"}},
+			{title: "API access By User/Month", url: {base: "api", q: "by=month,user"}},
+			{title: "Active Users (have logged in)", url: {base: "user", q: "filter=has-logged-in"}}
 		];
 		var table;
 		function draw_table(data, columns) {
@@ -39,46 +54,6 @@
 				draw_table(data.data, data.header.columns)
 			})
 		}
-		function draw_job_totals() {
-			var url = basejoburl + "?by=status";
-			fetch_and_draw(url);
-		}
-		function draw_job_users() {
-			var url = basejoburl + "?by=user&filter=successful";
-			fetch_and_draw(url);
-		}
-		function draw_job_months() {
-			var url = basejoburl + "?by=month&filter=successful";
-			fetch_and_draw(url);
-		}
-		function draw_job_user_months() {
-			var url = basejoburl + "?by=month,user&filter=successful";
-			fetch_and_draw(url);
-		}
-		function draw_job_genos() {
-			var url = basejoburl + "?by=geno&filter=successful";
-			fetch_and_draw(url);
-		}
-		function draw_user_new_months() {
-			var url = baseuserurl + "?by=creation-month&filter=can-analyze";
-			fetch_and_draw(url);
-		}
-		function draw_user_new_years() {
-			var url = baseuserurl + "?by=creation-year&filter=can-analyze";
-			fetch_and_draw(url);
-		}
-		function draw_user_activity_months() {
-			var url = baseuserurl + "?by=job-month";
-			fetch_and_draw(url);
-		}
-		function draw_user_activity_years() {
-			var url = baseuserurl + "?by=job-year";
-			fetch_and_draw(url);
-		}
-		function draw_user_active() {
-			var url = baseuserurl + "?filter=has-logged-in";
-			fetch_and_draw(url);
-		}
 		function init_report_selector() {
 			var $rep = $("#reports");
 			reports.forEach(function(x, i) {
@@ -89,9 +64,21 @@
 			})
 			$rep.change(function() {
 				var id = this.value;
-				reports[id].action();
+				set_report(id)
 			})
-			reports[0].action();
+			set_report(0);
+		}
+		function set_report(index) {
+			var report = reports[index];
+			if (report.action) {
+				report.action()
+			} else if (report.url) {
+				var url = endp[report.url.base]
+				if (report.url.q) {
+					url = url + "?" + report.url.q;
+				}
+				fetch_and_draw(url);
+			}
 		}
 		function init_page() {
 			init_report_selector();

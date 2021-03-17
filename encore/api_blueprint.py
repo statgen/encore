@@ -11,6 +11,7 @@ from .pheno_reader import PhenoReader
 from .slurm_queue import SlurmJob, get_queue
 from .model_factory import ModelFactory
 from .notifier import get_notifier
+from .access_tracker import AccessTracker
 from .db_helpers import PagedResult, PageInfo, QueryInfo
 import os
 import re
@@ -26,6 +27,7 @@ import requests
 import numpy as np
 
 api = Blueprint("api", __name__)
+
 def safe_cast(val, to_type, default=None):
     try:
         return to_type(val)
@@ -860,7 +862,19 @@ def get_user_counts():
         return ApiResult(results)
     except Exception as e:
         print(e)
-        raise ApiException("COULD COUNT JOBS", details=str(e))
+        raise ApiException("COULD COUNT USERS", details=str(e))
+
+@api.route("/access/counts/<what>", methods=["GET"])
+@admin_required
+def get_access_counts(what=None):
+    try:
+        by = request.args.get("by")
+        filters = request.args.get("filter")
+        results = AccessTracker.counts(what=what, by=by, filters=filters, config=current_app.config)
+        return ApiResult(results)
+    except Exception as e:
+        print(e)
+        raise ApiException("COULD COUNT ACCESS", details=str(e))
 
 @api.route("/phenos/<pheno_id>/purge", methods=["DELETE"])
 @admin_required

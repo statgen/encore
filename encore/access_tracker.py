@@ -81,9 +81,9 @@ class AccessTracker():
         for filt in filters:
             raise Exception("Unrecognized filter: {}".format(filt))
         if what=="jobs":
-            select += ["COUNT(DISTINCT user_id) as count"]
-        elif what=="users":
             select += ["COUNT(DISTINCT job_id) as count"]
+        elif what=="users":
+            select += ["COUNT(DISTINCT user_id) as count"]
         elif what=="api":
             select += ["CAST(SUM(count) as SIGNED) as count"]
             table_from = "FROM access_api_log as access"

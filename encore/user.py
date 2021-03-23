@@ -56,8 +56,8 @@ class User(UserMixin):
             WhereExpression("job_users.user_id != %s", (self.rid,))
         )
         cols = User.__default_cols()
-        group_by = list(cols.keys())
-        cols["count"] = "count(*)"
+        group_by = [str(i+1) for i, x in enumerate(cols)]
+        cols["count"] = "count(job_users.job_id)"
         qcols = User.__default_qcols()
         sqlcmd = User.__build_sql_command(cols, qcols, where, query)
         sqlcmd.set_group_by(group_by)

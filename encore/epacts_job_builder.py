@@ -22,6 +22,8 @@ class EpactsModel(BaseModel):
                 opts.append("--min-mac 20")
             elif vf == "max-maf-05":
                 opts.append("--max-maf 0.05")
+            elif vf == "max-maf-01":
+                opts.append("--max-maf 0.01")
             else:
                 raise Exception("Unrecognized variant filter ({})".format(vf))
         if model.get("region", None):
@@ -218,7 +220,7 @@ class SkatOEpactsModel(EpactsModel):
     model_name = "SKAT-O Test"
     model_desc = "Adaptive burden test"
     depends = ["vcf|sav", "group_nonsyn"]
-    filters = [("max-maf-05", "MAF < 5%")]
+    filters = [("max-maf-05", "MAF < 5%"), ("max-maf-01", "MAF < 1%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "skato")
@@ -237,7 +239,7 @@ class MMSkatOEpactsModel(EpactsModel):
     model_name = "Mixed Model SKAT-O Test"
     model_desc = "Adaptive burden test that adjusts for potential relatedness using kinship matrix"
     depends = ["vcf|sav", "group_nonsyn", "kinship"]
-    filters = [("max-maf-05", "MAF < 5%")]
+    filters = [("max-maf-05", "MAF < 5%"), ("max-maf-01", "MAF < 1%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmskato")
@@ -257,7 +259,7 @@ class MMSkatEpactsModel(EpactsModel):
     model_name = "Mixed Model SKAT Test"
     model_desc = "Burden test that adjusts for potential relatedness using kinship matrix"
     depends = ["vcf|sav", "group_nonsyn", "kinship"]
-    filters = [("max-maf-05", "MAF < 5%")]
+    filters = [("max-maf-05", "MAF < 5%"), ("max-maf-01", "MAF < 1%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmskat")
@@ -276,7 +278,7 @@ class MMVTEpactsModel(EpactsModel):
     model_name = "Mixed Model Variable-Threshold Test"
     model_desc = "Variable-threshold burden test that adjusts for potential relatedness using kinship matrix"
     depends = ["vcf|sav", "group_nonsyn", "kinship"]
-    filters = [("max-maf-05", "MAF < 5%")]
+    filters = [("max-maf-05", "MAF < 5%"), ("max-maf-01", "MAF < 1%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmVT")
@@ -295,7 +297,7 @@ class MMCMCEpactsModel(EpactsModel):
     model_name = "Mixed Model Collapsing Burden Test"
     model_desc = "Collapsing burden test that adjusts for potential relatedness using kinship matrix"
     depends = ["vcf|sav", "group_nonsyn", "kinship"]
-    filters = [("max-maf-05", "MAF < 5%")]
+    filters = [("max-maf-05", "MAF < 5%"), ("max-maf-01", "MAF < 1%")]
 
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmCMC")

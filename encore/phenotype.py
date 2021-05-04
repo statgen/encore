@@ -47,6 +47,16 @@ class Phenotype:
             return False, "Unable to find sample ID column"
         return True, ""
 
+    def get_kinship_path(self, geno_id, must_exist=True):
+        kinship = self.meta.get("kinship", None)
+        if kinship:
+            kinship_path = kinship.get(geno_id, None)
+            if kinship_path:
+                kinship_path = self.relative_path(kinship_path)
+                if not must_exist or os.path.exists(kinship_path):
+                    return kinship_path
+        return None
+
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields if hasattr(self, key)} 
         obj["pheno_id"] = self.pheno_id

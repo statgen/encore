@@ -10,7 +10,7 @@ class EpactsModel(BaseModel):
         self.code = code
         self.cores_per_job = 56
 
-    def get_opts(self, model, geno):
+    def get_opts(self, model, geno, pheno):
         opts = []
         if model.get("response_invnorm", False):
             opts.append("--inv-norm")
@@ -31,7 +31,7 @@ class EpactsModel(BaseModel):
             opts.append("--region {}".format(region))
         return opts 
 
-    def get_analysis_commands(self, model_spec, geno, ped):
+    def get_analysis_commands(self, model_spec, geno, pheno, ped):
         pipeline = model_spec.get("pipeline_version", "epacts-3.3")
         binary = self.app_config.get("EPACTS_BINARY", None)
         if isinstance(binary, dict):
@@ -54,7 +54,7 @@ class EpactsModel(BaseModel):
             cmd += " --pheno {}".format(resp)
         for covar in ped.get("covars"):
             cmd += " --cov {}".format(covar)
-        cmd += " " + " ".join(self.get_opts(model_spec, geno)) 
+        cmd += " " + " ".join(self.get_opts(model_spec, geno, pheno))
         cmd += " 2> ./err.log 1> ./out.log"
         return [cmd, "EXIT_STATUS=$?", "echo $EXIT_STATUS > ./exit_status.txt"]
 
@@ -114,7 +114,7 @@ class EpactsModel(BaseModel):
         pheno = self.get_pheno(model_spec)
 
         ped = self.write_ped_file(self.relative_path("pheno.ped"), model_spec, geno, pheno)
-        cmds =  self.get_analysis_commands(model_spec, geno, ped)
+        cmds =  self.get_analysis_commands(model_spec, geno, pheno, ped)
         cmds += self.get_postprocessing_commands(geno)
 
         return {"commands": cmds}
@@ -192,8 +192,8 @@ class LMEpactsModel(EpactsModel):
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "single", "lm")
 
-    def get_opts(self, model, geno):
-        opts = super(self.__class__, self).get_opts(model, geno) 
+    def get_opts(self, model, geno, pheno):
+        opts = super(self.__class__, self).get_opts(model, geno, pheno)
         opts += ["--test q.linear",
             "--unit 500000"]
         return opts
@@ -208,8 +208,8 @@ class LMMEpactsModel(EpactsModel):
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "single", "lmm")
 
-    def get_opts(self, model, geno):
-        opts = super(self.__class__, self).get_opts(model, geno) 
+    def get_opts(self, model, geno, pheno):
+        opts = super(self.__class__, self).get_opts(model, geno, pheno)
         opts += ["--test q.emmax",
             "--kin {}".format(geno.get_kinship_path()), 
             "--unit 500000"]
@@ -225,8 +225,8 @@ class SkatOEpactsModel(EpactsModel):
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "skato")
 
-    def get_opts(self, model, geno):
-        opts = super(self.__class__, self).get_opts(model, geno) 
+    def get_opts(self, model, geno, pheno):
+        opts = super(self.__class__, self).get_opts(model, geno, pheno)
         group = model.get("group", "nonsyn")
         opts += ["--test skat",
             "--skat-o",
@@ -244,15 +244,39 @@ class MMSkatOEpactsModel(EpactsModel):
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmskato")
 
-    def get_opts(self, model, geno):
-        opts = super(self.__class__, self).get_opts(model, geno) 
+    def get_opts(self, model, geno, pheno):
+        opts = super(self.__class__, self).get_opts(model, geno, pheno)
+        if model.get("kinship_source", "genotype")=="phenotype":
+            kinship_path = pheno.get_kinship_path(model.get("genotype", ""))
+        else:
+            kinship_path = geno.get_kinship_path()
         group = model.get("group", "nonsyn")
         opts += ["--test mmskat",
             "--skat-o",
             "--groupf {}".format(geno.get_groups_path(group)),
-            "--kin {}".format(geno.get_kinship_path()),
+            "--kin {}".format(kinship_path),
             "--unit 350"]
         return opts
+
+    def validate_model_spec(self, model_spec):
+        super(self.__class__, self).validate_model_spec(model_spec)
+        kinship_source = model_spec.get("kinship_source", None)
+        geno_id = model_spec.get("genotype","")
+        pheno = self.get_pheno(model_spec)
+        has_custom_kinship = pheno.get_kinship_path(geno_id) is not None
+        if kinship_source is None and has_custom_kinship:
+            # use custom kinship if unspecified and available
+            kinship_source = "phenotype"
+            model_spec["kinship_source"] = "phenotype"
+        if kinship_source == "phenotype" and not has_custom_kinship:
+            raise Exception("Phenotype specific kinship requested but not available")
+        elif kinship_source != "genotype":
+            raise Exception(("Unrecognized kinship_source value: '{}' "
+                "(expecting 'genotype' or 'phenotype')").format(kinship_source))
+        else:
+            geno = self.get_geno(model_spec, must_exist=True)
+            if not geno.get_kinship_path():
+                raise Exception("Kinship matrix requested but not available")
 
 class MMSkatEpactsModel(EpactsModel):
     model_code = "mmskat"
@@ -264,8 +288,8 @@ class MMSkatEpactsModel(EpactsModel):
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmskat")
 
-    def get_opts(self, model, geno):
-        opts = super(self.__class__, self).get_opts(model, geno) 
+    def get_opts(self, model, geno, pheno):
+        opts = super(self.__class__, self).get_opts(model, geno, pheno)
         group = model.get("group", "nonsyn")
         opts += ["--test mmskat",
             "--groupf {}".format(geno.get_groups_path(group)),
@@ -283,8 +307,8 @@ class MMVTEpactsModel(EpactsModel):
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmVT")
 
-    def get_opts(self, model, geno):
-        opts = super(self.__class__, self).get_opts(model, geno) 
+    def get_opts(self, model, geno, pheno):
+        opts = super(self.__class__, self).get_opts(model, geno, pheno)
         group = model.get("group", "nonsyn")
         opts += ["--test emmaxVT",
             "--groupf {}".format(geno.get_groups_path(group)),
@@ -302,8 +326,8 @@ class MMCMCEpactsModel(EpactsModel):
     def __init__(self, working_directory, app_config):
         EpactsModel.__init__(self, working_directory, app_config, "group", "mmCMC")
 
-    def get_opts(self, model, geno):
-        opts = super(self.__class__, self).get_opts(model, geno) 
+    def get_opts(self, model, geno, pheno):
+        opts = super(self.__class__, self).get_opts(model, geno, pheno)
         group = model.get("group", "nonsyn")
         opts += ["--test emmaxCMC",
             "--groupf {}".format(geno.get_groups_path(group)),

@@ -36,7 +36,7 @@ class SaigeModel(BaseModel):
             opts.append("CHRS='{}'".format(geno.get_chromosomes()))
         return opts 
 
-    def get_analysis_commands(self, model_spec, geno, ped):
+    def get_analysis_commands(self, model_spec, geno, pheno, ped):
         pipeline = model_spec.get("pipeline_version", "saige-0.26")
         binary = self.app_config.get("SAIGE_BINARY", None)
         if isinstance(binary, dict):
@@ -56,7 +56,7 @@ class SaigeModel(BaseModel):
         covars = ped.get("covars")
         if len(covars)>0:
             cmd += " COVAR={}".format(",".join(covars))
-        cmd += " " + " ".join(self.get_opts(model_spec, geno)) 
+        cmd += " " + " ".join(self.get_opts(model_spec, geno))
         return [cmd]
 
     def get_postprocessing_commands(self, geno, result_file="./results.txt.gz"):
@@ -100,7 +100,7 @@ class SaigeModel(BaseModel):
 
         ped = self.write_ped_file(self.relative_path("pheno.ped"), model_spec, geno, pheno)
         cmds =  self.if_exit_success(
-            self.get_analysis_commands(model_spec, geno, ped), 
+            self.get_analysis_commands(model_spec, geno, pheno, ped),
             self.get_postprocessing_commands(geno))
         return {"commands": cmds}
 

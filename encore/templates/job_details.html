@@ -97,6 +97,12 @@
 		</tr>
 		{% endif %}
 		{% endif %}
+		{% if job.details.kinship_source %}
+		<tr>
+			<th>Kinship Source</th>
+			<td>{{ job.details.kinship_source_desc or job.details.kinship_source }}</td>
+		</tr>
+		{% endif %}
 		{% if job.details.variant_filter %}
 		<tr>
 			<th>Variant Filter</th>

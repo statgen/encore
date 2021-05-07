@@ -7,7 +7,7 @@ from .notice import Notice
 from .job import Job 
 from .user import User
 from .access_tracker import AccessTracker
-from .auth import check_view_job, check_edit_job, can_user_edit_job, access_pheno_page, check_edit_pheno, can_user_edit_pheno
+from .auth import check_view_job, check_edit_job, can_user_edit_job, check_view_pheno, check_edit_pheno, can_user_edit_pheno
 
 user_area = Blueprint("user", __name__,
     template_folder="templates")
@@ -90,7 +90,7 @@ def get_phenos():
     return render_template("pheno_list.html")
 
 @user_area.route("/phenos/<pheno_id>", methods=["GET"])
-@access_pheno_page
+@check_view_pheno
 def get_pheno(pheno_id, pheno=None):
     pheno_obj = pheno.as_object()
     pheno_obj["overlap"] = calculate_overlaps(pheno)

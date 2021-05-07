@@ -13,7 +13,7 @@ from flask_login import current_user
 # - check_edit_job (needs job_id and job=None parameters)
 #      will inject job parameter if None
 #      checks if current user can update job data
-# - access_pheno_page (needs pheno_id and pheno=None parameters)
+# - check_view_pheno (needs pheno_id and pheno=None parameters)
 #      will inject pheno parameter if None
 #      checks if current user has access to phenotype data
 # - check_edit_pheno (needs pheno_id and pheno=None)
@@ -155,7 +155,7 @@ def can_view_pheno_page(f):
             return "Phenotype not found", 404
     return inner
 
-def access_pheno_page(f):
+def check_view_pheno(f):
     return splat_args(inject_pheno(can_view_pheno_page(f)), f)
 
 def can_edit_pheno(f):

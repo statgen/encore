@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from werkzeug.urls import url_encode
 from .user import User
 from .job import Job 
-from .auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno, admin_required
+from .auth import check_view_job, check_edit_job, can_user_edit_job, check_edit_pheno, admin_required, check_view_pheno
 from .genotype import Genotype
 from .phenotype import Phenotype
 from .notice import Notice
@@ -113,6 +113,8 @@ def get_genotypes():
 @api.route("/genos/<geno_id>", methods=["GET"])
 def get_genotype(geno_id):
     g = Genotype.get(geno_id, current_app.config)
+    if g is None:
+        raise ApiException("GENOTYPE NOT FOUND", 404)
     return ApiResult(g.as_object())
 
 @api.route("/genos/<geno_id>/info", methods=["GET"])
@@ -567,9 +569,9 @@ def get_phenotypes():
     return ApiResult(phenos, request=request)
 
 @api.route("/phenos/<pheno_id>", methods=["GET"])
-def get_pheno(pheno_id):
-    p = Phenotype.get(pheno_id, current_app.config)
-    return ApiResult(p.as_object())
+@check_view_pheno
+def get_pheno(pheno_id, pheno=None):
+    return ApiResult(pheno.as_object())
 
 @api.route("/phenos/<pheno_id>", methods=["POST"])
 @check_edit_pheno

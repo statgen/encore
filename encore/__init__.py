@@ -5,6 +5,7 @@ from .api_blueprint import api, ApiResult, ApiException
 from .auth_blueprint import auth
 from .notifier import get_notifier
 from . import job_tracking
+import os
 import atexit
 import subprocess
 import markdown
@@ -42,7 +43,9 @@ def create_app(config=None):
     register_helpers(app)
     register_info(app)
 
-    launch_tracker(app)
+    # prevent double init when in debug mode
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        launch_tracker(app)
 
     return app
 
@@ -123,10 +126,7 @@ def register_info(app):
         pass
 
 def launch_tracker(app):
-    job_tracker = job_tracking.Tracker(5*60.0, \
-        job_tracking.DatabaseCredentials("localhost", app.config.get("MYSQL_USER"), 
-        app.config.get("MYSQL_PASSWORD"), app.config.get("MYSQL_DB")),
-        app)
+    job_tracker = job_tracking.Tracker(5*60.0, app)
     job_tracker.start()
     atexit.register(lambda:job_tracker.cancel())
 

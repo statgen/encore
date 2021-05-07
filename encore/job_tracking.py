@@ -6,25 +6,20 @@ import subprocess
 import os
 import datetime
 import pwd
+from flask import current_app
 from .notifier import get_notifier
+from .job import Job
+from . import sql_pool
 
-class Job(object):
+class JobRec(object):
     def __init__(self, rid, status):
         self.id = rid
         self.status = status
 
-class DatabaseCredentials(object):
-    def __init__(self, host, user, pw, db):
-        self.host = host
-        self.user = user
-        self.pw = pw
-        self.db = db
-
 class Tracker(object):
 
-    def __init__(self, interval, db_credentials, app):
+    def __init__(self, interval, app):
         self.interval = interval
-        self.credentials = db_credentials
         self.app = app
         self.timer = None
 
@@ -39,12 +34,18 @@ class Tracker(object):
         jobs = []
         for x in range(0, cur.rowcount):
             row = cur.fetchone()
-            jobs.append(Job(row["id"], row["status"]))
+            jobs.append(JobRec(row["id"], row["status"]))
         return jobs
 
-    def update_job_status(self, db, job, slurm_status, exit_code):
+    def update_job_status(self, db, job_id, slurm_status, exit_code, config):
         status = ""
         reason = ""
+        job = None
+        try:
+            job = Job.get(job_id, config)
+        except Exception as e:
+            print("Error Fetching Job in Tracker")
+            print(e)
         if slurm_status == "RUNNING":
             status = "started"
         elif slurm_status == "CANCELLED by 0":
@@ -68,21 +69,21 @@ class Tracker(object):
                 sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1), " +  \
                     "error_message=%s, " + \
                     "modified_date = NOW() WHERE id = uuid_to_bin(%s)"
-                cur.execute(sql, (status, reason, job.id))
+                cur.execute(sql, (status, reason, job_id))
             else:
                 sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1), " + \
                     "modified_date = NOW() WHERE id = uuid_to_bin(%s)"
-                cur.execute(sql, (status, job.id))
+                cur.execute(sql, (status, job_id))
             db.commit()
             notifier = get_notifier()
             if notifier:
                 try:
                     if status == "failed":
-                        notifier.send_failed_job(job.id)
+                        notifier.send_failed_job(job_id, job)
                 except:
                     pass
 
-    def update_job_statuses(self, db, jobs):
+    def update_job_statuses(self, db, jobs, config):
         p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", pwd.getpwuid(os.getuid())[0], \
             "--format", "jobid,state,exitcode,jobname,submit", "--noheader", "-P", \
             "-S", (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")], \
@@ -107,19 +108,22 @@ class Tracker(object):
         for slurm_job in slurm_jobs_found.values():
             for j in jobs:
                 if slurm_job[3][5:] == j.id:
-                    self.update_job_status(db, j, slurm_job[1], slurm_job[2])
+                    self.update_job_status(db, j.id, slurm_job[1], slurm_job[2], config)
                     jobs_updated += 1
                     break
         return jobs_updated
 
     def routine(self):
         with self.app.app_context():
-            db = MySQLdb.connect(host=self.credentials.host, user=self.credentials.user, passwd=self.credentials.pw, db=self.credentials.db)
-            jobs = self.query_pending_jobs(db)
-            if len(jobs) != 0:
-                return self.update_job_statuses(db, jobs)
-            else:
-                return 0
+            db = sql_pool.get_conn()
+            config = current_app.config
+            try:
+                jobs = self.query_pending_jobs(db)
+                if len(jobs) != 0:
+                    self.update_job_statuses(db, jobs, config)
+            except Exception as e:
+                print("Tracker Call Back Error")
+                print(e)
 
     def timer_callback(self):
         try:

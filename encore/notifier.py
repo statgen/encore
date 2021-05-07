@@ -29,14 +29,16 @@ class Notifier:
         subject = "Encore User Feedback ({})".format(user_fullname)
         self.send_mail(to_address, subject, message, {"reply-to": user_email})
 
-    def send_failed_job(self, job_id="11111111-1111"):
+    def send_failed_job(self, job_id="11111111-1111", job=None):
         to_address = self.help_email 
         subject = "Encore Failed Job ({})".format(job_id[:8])
         message = "The following job has failed:\n\n{}".format(job_id)
         try:
+            if job is none:
+                job = Job.get(job_id, current_app.config)
             message += "\n\n" + url_for("user.get_job", job_id=job_id)
-            job = Job.get(job_id, current_app.config)
             message += "\n\nName:{} ".format(job.name)
+            message += "\n\nReason:{} ".format(job.error_message or "-unknown-")
             owner = job.get_owner()
             message += "\n\nUser:{} ".format(owner.email)
         except:

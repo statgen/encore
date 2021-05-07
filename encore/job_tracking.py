@@ -60,6 +60,8 @@ class Tracker(object):
             reason = "Exceeded allocated time"
         elif slurm_status == "PREEMPTED" or slurm_status == "FAILED" or slurm_status == "NODE_FAIL":
             status = "failed"
+            if job:
+                reason = job.get_failure_reason() or ""
         elif slurm_status == "COMPLETED":
             status = "succeeded"
 

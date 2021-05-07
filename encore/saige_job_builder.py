@@ -133,6 +133,11 @@ class SaigeModel(BaseModel):
             for line in f:
                 if "matrix is singular" in line:
                     return "Matrix is singular or not positive definite"
+                elif "parameter estimate is 0" in line:
+                    return "The first variance component parameter estimate is 0"
+                elif "variance of the phenotype is much smaller" in line:
+                    return ("Variance of the phenotype is much smaller than 1. "
+                        "Please consider using inverse normalized response")
         return None
         
 class LinearSaigeModel(SaigeModel):

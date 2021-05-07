@@ -85,6 +85,12 @@ class Job:
     def get_param_hash(self):
         return Job.calc_param_hash(self.meta)
 
+    def get_failure_reason(self, config = None):
+        model = self.get_model(config)
+        if model:
+            return model.get_failure_reason()
+        return None
+
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields  + self.__extfields if hasattr(self, key)} 
         obj["job_id"] = self.job_id

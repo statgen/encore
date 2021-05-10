@@ -1,4 +1,3 @@
-import MySQLdb
 from threading import Timer
 from datetime import datetime
 import sys
@@ -9,7 +8,6 @@ import pwd
 from flask import current_app
 from .notifier import get_notifier
 from .job import Job
-from . import sql_pool
 
 class JobRec(object):
     def __init__(self, rid, status):
@@ -23,21 +21,16 @@ class Tracker(object):
         self.app = app
         self.timer = None
 
-    def query_pending_jobs(self, db):
+    def query_pending_jobs(self):
 
-        sql = ("SELECT bin_to_uuid(jobs.id) AS id, statuses.name AS status FROM jobs "
-               "LEFT JOIN statuses ON statuses.id = jobs.status_id "
-               "WHERE (statuses.name='queued' OR statuses.name='started' or statuses.name='canceling')")
+        joblist = Job.list_all_active()
 
-        cur = db.cursor(MySQLdb.cursors.DictCursor)
-        cur.execute(sql)
         jobs = []
-        for x in range(0, cur.rowcount):
-            row = cur.fetchone()
+        for row in joblist:
             jobs.append(JobRec(row["id"], row["status"]))
         return jobs
 
-    def update_job_status(self, db, job_id, slurm_status, exit_code, config):
+    def update_job_status(self, job_id, slurm_status, exit_code, old_status, config):
         status = ""
         reason = ""
         job = None
@@ -66,17 +59,7 @@ class Tracker(object):
             status = "succeeded"
 
         if status:
-            cur = db.cursor(MySQLdb.cursors.DictCursor)
-            if reason:
-                sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1), " +  \
-                    "error_message=%s, " + \
-                    "modified_date = NOW() WHERE id = uuid_to_bin(%s)"
-                cur.execute(sql, (status, reason, job_id))
-            else:
-                sql = "UPDATE jobs SET status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1), " + \
-                    "modified_date = NOW() WHERE id = uuid_to_bin(%s)"
-                cur.execute(sql, (status, job_id))
-            db.commit()
+            Job.update_status(job_id, status, reason, old_status)
             notifier = get_notifier()
             if notifier:
                 try:
@@ -85,7 +68,7 @@ class Tracker(object):
                 except:
                     pass
 
-    def update_job_statuses(self, db, jobs, config):
+    def update_job_statuses(self, jobs, config):
         p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", pwd.getpwuid(os.getuid())[0], \
             "--format", "jobid,state,exitcode,jobname,submit", "--noheader", "-P", \
             "-S", (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")], \
@@ -110,19 +93,18 @@ class Tracker(object):
         for slurm_job in slurm_jobs_found.values():
             for j in jobs:
                 if slurm_job[3][5:] == j.id:
-                    self.update_job_status(db, j.id, slurm_job[1], slurm_job[2], config)
+                    self.update_job_status(j.id, slurm_job[1], slurm_job[2], j.status, config)
                     jobs_updated += 1
                     break
         return jobs_updated
 
     def routine(self):
         with self.app.app_context():
-            db = sql_pool.get_conn()
             config = current_app.config
             try:
-                jobs = self.query_pending_jobs(db)
+                jobs = self.query_pending_jobs()
                 if len(jobs) != 0:
-                    self.update_job_statuses(db, jobs, config)
+                    self.update_job_statuses(jobs, config)
             except Exception as e:
                 print("Tracker Call Back Error")
                 print(e)

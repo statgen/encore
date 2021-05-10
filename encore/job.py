@@ -223,9 +223,12 @@ class Job:
         return results 
 
     @staticmethod
-    def list_pending(config=None):
+    def list_all_active(config=None):
         db = sql_pool.get_conn()
-        results = Job.__list_by_sql_where(db, "(statuses.name='queued' OR statuses.name='started')")
+        results = Job.__list_by_sql_where(db, ("("
+            "statuses.name='queued' OR "
+            "statuses.name='started' OR "
+            "statuses.name='canceling')"))
         return results
 
     @staticmethod
@@ -303,6 +306,34 @@ class Job:
             INSERT INTO job_users(job_id, user_id, created_by, role_id)
             VALUES (uuid_to_bin(%s), %s, %s, (SELECT id FROM job_user_roles WHERE role_name = 'owner'))
             """, (job_id, values["user_id"], values["user_id"]))
+        db.commit()
+
+
+    @staticmethod
+    def update_status(job_id, new_status, error_message=None, old_status=None):
+        update_fields = [
+            "status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1)",
+            "modified_date = NOW()"
+        ]
+        update_values = [new_status]
+        if error_message is not None:
+            if error_message != "":
+                update_fields.append("error_message = %s")
+                update_values.append(error_message)
+            else:
+                update_fields.append("error_message = NULL")
+        where_fields = ["id = uuid_to_bin(%s)"]
+        where_values = [job_id]
+        if old_status is not None:
+            where_fields.append("status_id = (SELECT id FROM statuses WHERE name=%s LIMIT 1)")
+            where_values.append(old_status)
+        sql = "UPDATE jobs"
+        sql += " SET " + ", ".join(update_fields)
+        sql += " WHERE " + " AND ".join(where_fields)
+        values = update_values + where_values
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute(sql, values)
         db.commit()
 
     @staticmethod

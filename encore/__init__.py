@@ -44,7 +44,7 @@ def create_app(config=None):
     register_info(app)
 
     # prevent double init when in debug mode
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    if not "FLASK_RUN_FROM_CLI" in os.environ or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         launch_tracker(app)
 
     return app

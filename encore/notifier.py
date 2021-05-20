@@ -34,7 +34,7 @@ class Notifier:
         subject = "Encore Failed Job ({})".format(job_id[:8])
         message = "The following job has failed:\n\n{}".format(job_id)
         try:
-            if job is none:
+            if job is None:
                 job = Job.get(job_id, current_app.config)
             message += "\n\n" + url_for("user.get_job", job_id=job_id)
             message += "\n\nName:{} ".format(job.name)

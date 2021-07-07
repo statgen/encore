@@ -44,6 +44,9 @@ class Tracker(object):
         elif slurm_status == "CANCELLED by 0":
             status = "failed"
             reason = "Insufficient resource allocation"
+        elif slurm_status == "OUT_OF_MEMORY":
+            status = "failed"
+            reason = "Out of memory"
         elif slurm_status.startswith("CANCELLED"):
             status = "canceled"
         elif slurm_status == "PENDING" or slurm_status == "QUEUED":

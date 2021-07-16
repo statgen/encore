@@ -49,6 +49,10 @@ def get_admin_geno_detail_geno(geno_id):
         geno_obj = None
     return render_template("admin_geno_details.html", geno=geno_obj)
 
+@admin_area.route("/notices/", methods=["GET"])
+def get_admin_notices_page():
+    return render_template("admin_notices.html")
+
 @admin_area.route("/counts/", methods=["GET"])
 def get_admin_counts_page():
     return render_template("admin_counts.html")

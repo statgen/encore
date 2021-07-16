@@ -34,6 +34,10 @@ function encoreApi(opts) {
         }
 
         var needsFetching = false;
+        if (settings.clearCache) {
+            needsFetching = true;
+            settings.clearCacase = false;
+        }
         if ( cache.lower < 0 || request.start < cache.lower ||
             (request.start + request.length) > cache.upper ) {
 
@@ -92,3 +96,9 @@ function encoreApi(opts) {
         }
     };
 }
+
+$.fn.dataTable.Api.register( 'clearCache()', function () {
+  return this.iterator( 'table', function ( settings ) {
+    settings.clearCache = true;
+  } );
+} );

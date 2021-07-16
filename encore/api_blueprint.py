@@ -935,8 +935,42 @@ def post_help():
 
 @api.route("/notices", methods=["GET"])
 def get_api_notices():
-    notices = Notice.list_current(current_app.config)
+    query = get_query_info(request)
+    notices = Notice.list_current(current_app.config, query)
     return ApiResult(notices)
+
+@api.route("/notices/<notice_id>", methods=["GET"])
+def get_api_notice(notice_id):
+    query = get_query_info(request)
+    notices = Notice.get(notice_id).as_object()
+    return ApiResult(notices)
+
+@api.route("/notices-all", methods=["GET"])
+@admin_required
+def get_api_notices_all():
+    query = get_query_info(request)
+    notices = Notice.list_all(current_app.config, query)
+    return ApiResult(notices)
+
+@api.route("/notices", methods=["POST"])
+@admin_required
+def add_notice():
+    try:
+        values = request.values.to_dict(flat=True)
+        Notice.create(values)
+        return ApiResult({"created": True})
+    except Exception as e:
+        raise ApiException("COULD NOT CREATE NOTICE", details=str(e))
+
+@api.route("/notices/<notice_id>", methods=["POST"])
+@admin_required
+def update_notice(notice_id):
+    try:
+        values = request.values.to_dict(flat=True)
+        Notice.update(notice_id, values)
+        return ApiResult({"updated": True})
+    except Exception as e:
+        raise ApiException("COULD NOT UPDATE NOTICE", details=str(e))
 
 class ApiResult(object):
     def __init__(self, value, status=200, header=None, request=None):

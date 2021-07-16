@@ -21,7 +21,7 @@ def before_request():
 @user_area.route("/")
 def index():
     phenos = Phenotype.list_all_for_user(current_user.rid)
-    notices = Notice.list_current()
+    notices = list(Notice.list_current())
     return render_template("home.html", phenos=phenos, notices=notices)
 
 @user_area.route("/jobs", methods=["GET"])

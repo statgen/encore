@@ -819,10 +819,27 @@ def add_user():
         print(e)
         raise ApiException("COULD NOT ADD USER", details=str(e))
 
+@api.route("/users/<user_id>", methods=["GET"])
+@admin_required
+def get_api_user(user_id):
+    user = User.from_id(user_id).as_object()
+    return ApiResult(user)
+
+@api.route("/users/<user_id>", methods=["POST"])
+@admin_required
+def update_user(user_id):
+    try:
+        values = request.values.to_dict(flat=True)
+        User.update(user_id, values)
+        return ApiResult({"updated": True})
+    except Exception as e:
+        print(e)
+        raise ApiException("COULD NOT UPDATE USER", details=str(e))
+
 @api.route("/genos", methods=["POST"])
 @admin_required
 def add_geno():
-    try: 
+    try:
         values = request.values.to_dict(flat=True)
         result = Genotype.create(values, config=current_app.config)
         result["geno"] = result["geno"].as_object()

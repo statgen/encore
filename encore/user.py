@@ -216,6 +216,21 @@ class User(UserMixin):
         result = {"user": new_user}
         return result
 
+    @staticmethod
+    def update(user_id, new_values):
+        updateable_fields = [x for x in User.__dbfields if x != "id"]
+        fields = list(new_values.keys())
+        values = [None if x=="" else x for x in new_values.values()]
+        bad_fields = [x for x in fields if x not in updateable_fields]
+        if len(bad_fields)>0:
+            raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
+        sql = "UPDATE users SET "+ \
+            ", ".join(("{}=%s".format(k) for k in fields)) + \
+            " WHERE id = %s"
+        db = sql_pool.get_conn()
+        cur = db.cursor()
+        cur.execute(sql, values + [int(user_id)])
+        db.commit()
 
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields if hasattr(self, key)} 

@@ -8,6 +8,136 @@
 	<script type="text/javascript" src="{{ url_for('static', filename='js/dt_api_interface.js') }}"></script>
 
 <script type="text/javascript">
+		var user_form;
+		function FormTemplate(template_id, dest_id) {
+			var modal = document.getElementById(dest_id);
+			var template = document.getElementById(template_id);
+			var clone = template.content.cloneNode(true);
+			var resolve = null;
+			var reject = null;
+			var inputs = {
+				"email": clone.querySelector("#email"),
+				"full_name": clone.querySelector("#full_name"),
+				"affiliation": clone.querySelector("#affiliation"),
+				"can_analyze": clone.querySelector("#can_analyze")
+			}
+			var texts = {
+				"title": clone.querySelector(".modal-title"),
+				"action": clone.querySelector(".form-action-go")
+			}
+			modal.appendChild(clone);
+			$(modal).find("form").on("keyup keypress", function(e) {
+				var keyCode = e.keyCode || e.which;
+				if (keyCode === 13) {
+					e.preventDefault();
+					return false;
+				}
+			});
+			$(modal).on("shown.bs.modal", function() {
+				$(modal).find("#email").focus();
+			});
+
+			$(modal).find(".form-action-go").on("click", (e) => {
+				if(resolve) {
+					resolve(this.get_values());
+				}
+			})
+			$(modal).on("hidden.bs.modal", () => {
+				if(reject) {
+					reject(this.get_values());
+				}
+			});
+
+			this.set_values = function(vals) {
+				inputs.email.value = vals.email || '';
+				inputs.full_name.value = vals.full_name || '';
+				inputs.affiliation.value = vals.affiliation || '';
+				inputs.can_analyze.checked = vals.can_analyze || false;
+			}
+			this.get_values = function() {
+				return {
+					"email": inputs.email.value,
+					"full_name": inputs.full_name.value,
+					"affiliation": inputs.affiliation.value,
+					"can_analyze": +(inputs.can_analyze.checked) //numeric
+				}
+			}
+			this.set_text = function(vals) {
+				texts.title.innerText = vals.title || "Notice"
+				texts.action.innerText = vals.action || "Go"
+			}
+			this.return_promise = function(cb) {
+				var promise =  new Promise((res, rej) => {
+					resolve = res
+					reject = rej
+				}).then((x) => {
+					if(cb) return cb(x);
+					return x;
+				})
+				.then((x) => {
+					$(modal).modal('hide');
+				})
+				.catch((x) => {
+					// dismissed or error
+				})
+				.finally(() => {
+					resolve = null;
+					reject = null;
+				})
+				return promise
+			}
+
+			this.show_add_form = function(vals, cb) {
+				this.set_text({"title": "New User", "action": "Add"});
+				this.set_values(vals);
+				$(modal).modal();
+				return this.return_promise(cb)
+			}
+			this.show_update_form = function(vals, cb) {
+				this.set_text({"title": "Update User", "action": "Update"});
+				this.set_values(vals || {});
+				$(modal).modal();
+				return this.return_promise(cb)
+			}
+		}
+
+		function show_edit_form(id, evt) {
+			if (evt) evt.preventDefault();
+			var get_url = "{{url_for("api.get_api_user", user_id="XXX")}}";
+			get_url = get_url.replace("XXX", id);
+			if (user_form) {
+				$.get(get_url).done(function(data) {
+					user_form.show_update_form(data, (data) => {
+						var update_url = "{{ url_for("api.update_user", user_id="XXX") }}";
+						update_url = update_url.replace("XXX", id);
+						return $.post(update_url, data).done( function() {
+							var table = $("#users-table").DataTable();
+							table.clearCache();
+							table.ajax.reload();
+						}).fail(function() {
+							alert("Update failed");
+						});
+					})
+				})
+			}
+
+		}
+		function show_add_form() {
+			if (notice_form) {
+				var data = {};
+				user_form.show_add_form(data, (data) => {
+					var add_url = "{{ url_for("api.add_user") }}";
+					return $.post(add_url, data).done( function() {
+						var table = $("#users-table").DataTable();
+						table.clearCache();
+						table.ajax.reload();
+					}).fail(function() {
+						alert("Insert failed");
+					});
+				})
+			}
+
+		}
 		function init_user_table() {
 			$("#users-table").DataTable({
 				serverSide: true,
@@ -19,7 +149,10 @@
 					{data: "full_name", title: "Name", render: $.fn.dataTable.render.text()},
 					{data: "affiliation", title: "Affiliation", render: $.fn.dataTable.render.text()},
 					{data: "creation_date", title: "Date Created"},
-					{data: "last_login_date", title: "Last Login"}
+					{data: "last_login_date", title: "Last Login"},
+					{title: "Edit", data: "id", render: function(data) {
+						return "<a href='#' onclick='show_edit_form(" + data + ", event)'>Edit</a>"
+					}, orderable: false, className: "dt-body-center"}
 				],
 				createdRow: function(row, data, index) {
 					if (!data.is_active) {
@@ -32,7 +165,7 @@
 		function init_addform() {
 			$("#addModal").find("form").on("keyup keypress", function(e) {
 				var keyCode = e.keyCode || e.which;
-				if (keyCode === 13) { 
+				if (keyCode === 13) {
 					e.preventDefault();
 					return false;
 				}
@@ -67,6 +200,7 @@
 			});
 		}
 		function init_page() {
+			user_form = new FormTemplate("user_form", "modalBox");
 			init_user_table();
 			init_addform();
 		}
@@ -92,7 +226,10 @@
             <table id="users-table"></table>
         </div>
 
-		<div class="modal fade" id="addModal" role="dialog">
+		<div class="modal fade" id="modalBox" role="dialog">
+		</div>
+
+		<template id="user_form">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
@@ -100,7 +237,7 @@
 						<h4 class="modal-title">Add User</h4>
 					</div>
 					<div class="modal-body">
-						<form class="form-horizonal"> 
+						<form class="form-horizonal">
 						<div class="form-group">
 							<label class="col-sm-2 control-label" for="email">E-mail</label>
 							<div class="col-sm-10"><input type="text" class="form-control" id="email"/></div>
@@ -122,10 +259,9 @@
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-						<button type="button" class="btn btn-success add-user-save" 
-							data-action="{{ url_for("api.add_user") }}">Add</button>
+						<button type="button" class="btn btn-success form-action-go">Go</button>
 					</div>
 				</div>
 			</div>
-		</div>
+		</template>
 {% endblock %}

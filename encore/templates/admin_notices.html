@@ -15,7 +15,7 @@
 			var template = document.getElementById(template_id);
 			var clone = template.content.cloneNode(true);
 			var resolve = null;
-			var reject = null;
+			var actionCallBack = null;
 			var inputs = {
 				"message": clone.querySelector("#message"),
 				"start_date": clone.querySelector("#start_date"),
@@ -23,7 +23,8 @@
 			}
 			var texts = {
 				"title": clone.querySelector(".modal-title"), 
-				"action": clone.querySelector(".form-action-go")
+				"action": clone.querySelector(".form-action-go"),
+				"error_message": clone.querySelector(".error-message")
 			}
 			modal.appendChild(clone);
 			$(modal).find("form").on("keyup keypress", function(e) {
@@ -33,19 +34,36 @@
 					return false;
 				}
 			});
-			$(modal).on("shown.bs.modal", function() {
+			$(modal).on("shown.bs.modal", () => {
+				this.remove_error();
 				$(modal).find("#message").focus();
 			});
 
-			$(modal).find(".form-action-go").on("click", (e) => {
+			$(modal).find(".form-action-go").on("click", (evt) => {
 				if(resolve) {
-					resolve(this.get_values());
+					if (actionCallBack) {
+						this.remove_error();
+						var result = actionCallBack( this.get_values() );
+						result
+							.then( (value) => {
+								resolve({done: true, value});
+								resolve = null;
+								$(modal).modal('hide');
+							})
+							.catch( (err) => {
+								this.show_error(err)
+							})
+					} else {
+						resolve({done: true, noaction: true});
+					}
 				}
 			})
 			$(modal).on("hidden.bs.modal", () => {
-				if(reject) {
-					reject(this.get_values());
+				if(resolve) {
+					resolve({canceled: true});
+					resolve = null;
 				}
+				this.remove_error();
 			});
 
 			this.set_values = function(vals) {
@@ -64,26 +82,19 @@
 				texts.action.innerText = vals.action || "Go"
 			}
 			this.return_promise = function(cb) {
-				var promise =  new Promise((res, rej) => {
+				actionCallBack = cb;
+				return new Promise((res, rej) => {
 					resolve = res
-					reject = rej
-				}).then((x) => {
-					if(cb) return cb(x);
-					return x;
-				})
-				.then((x) => {
-					$(modal).modal('hide');
-				})
-				.catch((x) => {
-					// dismissed or error
-				})
-				.finally(() => {
-					resolve = null;
-					reject = null;
-				})
-				return promise
+				});
 			}
 
+			this.remove_error = function() {
+				texts.error_message.style.display = "none";
+			}
+			this.show_error = function(err) {
+				texts.error_message.innerText = err.details || err;
+				texts.error_message.style.display = "block";
+			}
 
 			this.show_add_form = function(vals, cb) {
 				this.set_text({"title": "New Notice", "action": "Add"});
@@ -98,6 +109,19 @@
 				return this.return_promise(cb)
 			}
 		}
+		function postFormData(url, data) {
+			var body = new FormData()
+			for(var key of Object.keys(data)) {
+				body.append(key, data[key])
+			}
+			return fetch(url, {method: 'post', body: body}).then( (resp) => {
+				if (!resp.ok) {
+					return resp.json()
+						.then( (errresp) => ( Promise.reject(errresp) ))
+				}
+				return resp.json();
+			})
+		}
 		function show_edit_form(id, evt) {
 			if (evt) evt.preventDefault();
 			var get_url = "{{url_for("api.get_api_notice", notice_id="XXX")}}";
@@ -107,34 +131,29 @@
 					notice_form.show_update_form(data, (data) => {
 						var update_url = "{{ url_for("api.update_notice", notice_id="XXX") }}";
 						update_url = update_url.replace("XXX", id);
-						return $.post(update_url, data).done( function() {
+						return postFormData(update_url, data).then( () => {
 							var table = $("#notice-table").DataTable();
 							table.clearCache();
-							table.ajax.reload();
-						}).fail(function() {
-							alert("Update failed");
+							table.ajax.reload(null, false);
 						});
 					})
 				})
 			}
-
 		}
 		function show_add_form() {
 			if (notice_form) {
 				var data = {"start_date": format_datetime(new Date())};
 				notice_form.show_add_form(data, (data) => {
 					var add_url = "{{ url_for("api.add_notice") }}";
-					return $.post(add_url, data).done( function() {
+					return postFormData(add_url, data).then( () => {
 						var table = $("#notice-table").DataTable();
 						table.clearCache();
-						table.ajax.reload();
-					}).fail(function() {
-						alert("Insert failed");
+						table.ajax.reload(null, false);
 					});
 				})
 			}
-
 		}
+
 		function format_datetime(date) {
 			var year = date.getFullYear(),
 			month = date.getMonth() + 1, // months are zero indexed
@@ -167,16 +186,6 @@
 			$("#new_notice_button").click(function(evt) {
 				evt.preventDefault();
 				show_add_form();
-			});
-			$("button.add-notice-save").click(function(evt) {
-				evt.preventDefault();
-				var add_notice_url = $(this).data("action");
-				$.post(add_notice_url, data).done( function() {
-					$("#notice-table").DataTable().ajax.reload();
-					$("#addModal").modal("hide");
-				}).fail(function() {
-					alert("Insert failed");
-				});
 			});
 		}
 		function init_page() {
@@ -222,16 +231,17 @@
 						<h4 class="modal-title">Add Notice</h4>
 					</div>
 					<div class="modal-body">
+						<div class="alert alert-danger error-message" role="alert" style="display: none"> </div>
 						<form class="form-horizonal"> 
-						<div class="form-group">
+						<div class="form-group row">
 							<label class="col-sm-2 control-label" for="message">Message</label>
 							<div class="col-sm-10"><textarea type="text" class="form-control" id="message"></textarea></div>
 						</div>
-						<div class="form-group">
+						<div class="form-group row">
 							<label class="col-sm-2 control-label" for="start_date">Start</label>
 							<div class="col-sm-10"><input type="text" class="form-control" id="start_date"/></div>
 						</div>
-						<div class="form-group">
+						<div class="form-group row">
 							<label class="col-sm-2 control-label" for="end_date">End</label>
 							<div class="col-sm-10"><input type="text" class="form-control" id="end_date"/></div>
 						</div>

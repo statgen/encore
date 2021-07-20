@@ -148,6 +148,7 @@ def create_new_job():
     job_desc["genotype"] = genotype_id
     job_desc["phenotype"] = phenotype_id
     job_desc["name"] = form_data["job_name"]
+    job_desc["description"] = form_data.get("description", default=None)
     job_desc["response"] =  form_data["response"] 
     if form_data.get("response_invnorm", False):
         job_desc["response_invnorm"] = True
@@ -197,7 +198,8 @@ def create_new_job():
         job_desc_file = os.path.join(job_directory, "job.json")
         with open(job_desc_file, "w") as outfile:
             json.dump(job_desc, outfile)
-    except Exception:
+    except Exception as e:
+        print(e)
         raise ApiException("COULD NOT SAVE JOB DESCRIPTION")
     # file has been saved to disc
     try:
@@ -211,8 +213,9 @@ def create_new_job():
     try:
         job_desc["param_hash"] = param_hash
         Job.create(job_id, job_desc)
-    except:
+    except Exception as e:
         shutil.rmtree(job_directory)
+        print(e)
         raise ApiException("COULD NOT SAVE TO DATABASE")
     # everything worked
     return ApiResult({"id": job_id, "url_job": url_for("user.get_job", job_id=job_id)})
@@ -241,7 +244,8 @@ def retire_job(job_id, job=None):
 @check_edit_job
 def update_job(job_id, job=None):
     try:
-        Job.update(job_id, request.values)
+        values = request.values.to_dict(flat=True)
+        Job.update(job_id, values)
         return ApiResult({"updated": True})
     except Exception as e:
         raise ApiException("COULD NOT UPDATE JOB", details=str(e))
@@ -577,7 +581,8 @@ def get_pheno(pheno_id, pheno=None):
 @check_edit_pheno
 def update_pheno(pheno_id, pheno=None):
     try:
-        Phenotype.update(pheno_id, request.values)
+        values = request.values.to_dict(flat=True)
+        Phenotype.update(pheno_id, values)
         return ApiResult({"updated": True})
     except Exception as e:
         raise ApiException("COULD NOT UPDATE PHENO", details=str(e))

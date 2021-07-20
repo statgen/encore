@@ -67,6 +67,7 @@ class Tracker(object):
             if notifier:
                 try:
                     if status == "failed":
+                        job = Job.get(job_id, config)
                         notifier.send_failed_job(job_id, job)
                 except:
                     pass

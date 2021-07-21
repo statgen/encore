@@ -21,11 +21,6 @@
 					{data: "creation_date", title: "Date Created"},
 					{title: "Job", data: "id", render: function(data) {
 						return "<a href='/jobs/" + data + "'>View</a>" 
-					}, orderable: false},
-					{title: "Logs", data: null, render: function(data) {
-						return "<a href='/admin/log/" + data.id + "/out.log?tail=50'>output</a>" + 
-						" - " + 
-						"<a href='/admin/log/" + data.id + "/err.log?tail=50'>error</a>"	
 					}, orderable: false}
 				],
 				createdRow: function(row, data, index) {

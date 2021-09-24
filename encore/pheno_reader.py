@@ -57,10 +57,13 @@ def guess_atomic_column_class(rawtype, obs):
             levels.sort(key = lambda x: atof(x))
         return {"class": "binary", "type": rawtype, "levels": levels}
     if rawtype == "str":
-        if float(n_uniq_vals)/n_vals > .75:
-            return {"class": "descr", "type": "str"}
-        else:
+        n_less_than_five_cats = sum((x<5 for x in obs.values()))
+        n_more_than_five_obs = sum((x for x in obs.values() if x>5))
+        max_small_group = max(5, math.floor(.25*n_uniq_vals))
+        if float(n_more_than_five_obs)/n_vals > .80 and n_less_than_five_cats < max_small_group:
             return {"class": "categorical", "type":"str", "levels": list(obs.keys())}
+        else:
+            return {"class": "descr", "type": "str"}
     if rawtype == "float" or rawtype == "int":
         return {"class": "numeric", "type": rawtype}
     return {"class": rawtype, "type": rawtype}

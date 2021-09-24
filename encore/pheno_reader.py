@@ -2,6 +2,7 @@ import subprocess
 import math
 import re
 import csv
+import codecs
 from collections import defaultdict, Counter
 
 # These three functions
@@ -204,36 +205,43 @@ def guess_sample_id_col(metas, cols, sample_ids):
                 id_col_idx = i
     return id_col_idx
 
-def infer_meta(csvfile, dialect=None, sample_ids=None):
+def infer_meta(filepath, dialect=None, sample_ids=None):
     meta = {"layout": {}, "columns": []}
 
-    start_pos = 0
-    csvfile.seek(0)
-    first = csvfile.read(4)
-    if first.startswith("\xfe\xff") or first.startswith("\xff\xfe"):
-        start_pos = 2
-    elif first.startswith("\xef\xbb\xbf"):
-        start_pos = 3
+    with open(filepath, 'rb') as f:
+        first_bytes = f.read(4)
 
-    # store csv dialect
-    if not dialect:
-        csvfile.seek(start_pos)
-        dialect = sniff_file(csvfile)
-    for k in [k for k in dir(dialect) if not k.startswith("_")]:
-        meta["layout"]["csv_" + k] = getattr(dialect, k)
+    # assume utf-8 unless BOM found
+    encoding ='utf-8'
+    for enc, boms in \
+            ('utf-8-sig', (codecs.BOM_UTF8,)), \
+            ('utf-32', (codecs.BOM_UTF32_LE, codecs.BOM_UTF32_BE)), \
+            ('utf-16', (codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
+        if any(first_bytes.startswith(bom) for bom in boms):
+            encoding = enc
+            break
+    meta["encoding"] = encoding
 
-    # read comments 
-    csvfile.seek(start_pos)
-    comments = list(get_comments(csvfile))
+    with open(filepath, 'r', encoding=encoding) as csvfile:
+        # store csv dialect
+        if not dialect:
+            dialect = sniff_file(csvfile)
+        for k in [k for k in dir(dialect) if not k.startswith("_")]:
+            meta["layout"]["csv_" + k] = getattr(dialect, k)
 
-    # read and process csv rows 
-    csvfile.seek(start_pos)
-    cvr = csv.reader(strip_comments(csvfile), dialect)
-    firstrow = next(cvr)
-    cols = defaultdict(lambda : defaultdict(Counter))
-    for row in cvr:
-        for idx, val in enumerate(row):
-            cols[idx][guess_raw_type(val)][val] += 1
+        # read comments 
+        csvfile.seek(0)
+        comments = list(get_comments(csvfile))
+
+        # read and process csv rows 
+        csvfile.seek(0)
+        cvr = csv.reader(strip_comments(csvfile), dialect)
+        firstrow = next(cvr)
+        cols = defaultdict(lambda : defaultdict(Counter))
+        for row in cvr:
+            for idx, val in enumerate(row):
+                cols[idx][guess_raw_type(val)][val] += 1
+
     # find column headers
     if comments:
         lastcomment = next(csv.reader([comments[-1][1:]], dialect))
@@ -281,8 +289,7 @@ class PhenoReader:
             self.meta = self.infer_meta()
 
     def infer_meta(self, sample_ids=None):
-        with open(self.path, 'rU') as csvfile:
-            return infer_meta(csvfile, sample_ids=sample_ids)
+        return infer_meta(self.path, sample_ids=sample_ids)
 
     def get_dialect(self, opts=None):
         class dialect(csv.Dialect):
@@ -315,7 +322,7 @@ class PhenoReader:
             skip = self.meta['layout']['skip']
         else:
             skip = 0
-        with open(self.path, 'rU') as csvfile:
+        with open(self.path, 'r', encoding=self.meta.get("encoding", "utf-8")) as csvfile:
             if not dialect:
                 dialect = sniff_file(csvfile)
                 csvfile.seek(0)

@@ -318,14 +318,21 @@ class PhenoReader:
         if self.meta and self.meta["columns"]:
             return self.meta["columns"]
         else:
-            return [];
+            return []
 
-    def row_extractor(self):
+    def get_sample_column_index(self):
+        sample_col = next(iter([x for x in self.get_columns() if x["class"]=="sample_id"]), None)
+        if not sample_col:
+            return None
+        return self.get_column_indexes()[sample_col["name"]]
+
+    def row_extractor(self, samples=None):
         dialect = self.get_dialect()
         if "layout" in self.meta and "skip" in self.meta["layout"]:
             skip = self.meta['layout']['skip']
         else:
             skip = 0
+        sample_col_idx = self.get_sample_column_index()
         with open(self.path, 'r', encoding=self.meta.get("encoding", "utf-8")) as csvfile:
             if not dialect:
                 dialect = sniff_file(csvfile)
@@ -334,13 +341,14 @@ class PhenoReader:
                 [csvfile.readline() for i in range(skip)]
             cvr = csv.reader((row for row in csvfile if not row.startswith("#")), dialect)
             for row in cvr:
+                if samples and sample_col_idx is not None and row[sample_col_idx] not in samples:
+                    continue
                 yield row
 
     def get_samples(self):
-        sample_col = next(iter([x for x in self.get_columns() if x["class"]=="sample_id"]), None)
-        if not sample_col:
+        sample_col_idx = self.get_sample_column_index()
+        if not sample_col_idx:
             return
-        sample_col_idx = self.get_column_indexes()[sample_col["name"]]
         for row in self.row_extractor():
             yield row[sample_col_idx]
 

@@ -21,7 +21,7 @@ class ColumnFactory:
     @staticmethod
     def get_by_special_class(colclass, pr):
         coldef = next((x for x in pr.meta["columns"] if x["class"]==colclass), None)
-        if colclass in ["family_id","sample_id","father_id","mother_id","sex"]:
+        if colclass in ["family_id", "sample_id", "father_id", "mother_id", "sex"]:
             return PedRequiredColumn(coldef, colclass, pr)
         else:
             return None
@@ -171,13 +171,13 @@ def flatten(x):
     return list(chain.from_iterable((v if v is not None else [None] for v in x )))
 
 class PedWriter:
-    def __init__(self, phenoreader=None, resp=None, covar=None):
+    def __init__(self, phenoreader=None, resp=None, covar=None, samples=None):
         pedcols = ["family_id", "sample_id", "father_id", "mother_id", "sex"]
         self.pedcols = [ColumnFactory.get_by_special_class(x, phenoreader) for x in pedcols]
         self.respcols = [ColumnFactory.get_by_name(resp, phenoreader)]
         self.covarcols = [ColumnFactory.get_by_name(x, phenoreader) for x in covar]
         self.allcols = self.pedcols + self.respcols + self.covarcols
-        for row in phenoreader.row_extractor():
+        for row in phenoreader.row_extractor(samples=samples):
             for col in self.allcols:
                 col.append(row)
         self.expand_columns()

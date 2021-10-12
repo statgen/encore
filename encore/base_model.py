@@ -26,7 +26,8 @@ class BaseModel(object):
 
     def get_ped_writer(self, model_spec, geno, pheno):
         ped_writer = PedWriter(pheno.get_pheno_reader(), \
-            model_spec["response"], model_spec.get("covariates",[]))
+            model_spec["response"], model_spec.get("covariates",[]),
+            set(geno.get_samples()))
         if "genopheno" in model_spec and len(model_spec["genopheno"])>0:
             ped_writer.merge_covar(geno.get_pheno_reader(), \
                 model_spec["genopheno"])

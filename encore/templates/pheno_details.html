@@ -11,8 +11,9 @@
 		pheno_id = "{{ pheno.pheno_id }}"
 		pheno_can_edit = {{ pheno.can_edit|default(False)|tojson }}
 		pheno_is_active = {{ pheno.is_active|default(False)|tojson }}
-		pheno_error = "{{ pheno.error }}"
+		pheno_has_error = {{ pheno.has_errors|default(False)|tojson  }}
 		pheno_api_url = "{{url_for("api.get_pheno", pheno_id=pheno.pheno_id) }}"
+		pheno_sample_column_url = "{{url_for("api.update_pheno_sample_column", pheno_id=pheno.pheno_id) }}"
 		$(document).ready(function() {
 			$("#jobs-table").DataTable({
 				serverSide: true,
@@ -41,8 +42,9 @@
 			});
 			if (pheno_can_edit && pheno_is_active) {
 				init_editform(pheno_id, pheno_api_url);
-				init_new_job_button("button[name=new_job]", pheno_error);
+				init_new_job_button("button[name=new_job]", pheno_has_error);
 				init_pheno_delete_button();
+				init_sampleidform(pheno_id, pheno_api_url, pheno_sample_column_url);
 			}
 			$(".format-int").text(function(i, data) {
 				var pn = parseInt(data);
@@ -57,6 +59,7 @@
 		.pheno-actions button {display: block; padding: 1px 8px; margin: 3px auto; width: 8em;}
 		.col-right {text-align: right}
 		.error-info { padding: 20px; margin: 20px auto; }
+		.error-info p {margin-top: 0px; margin-bottom: 0px}
 		.no-value {color: #c4c4c4; font-style: italic }
 	</style>
 
@@ -81,8 +84,13 @@
         </div>
 
         <div class="section">
-			{% if pheno.error %}
-				<div class="bg-warning error-info">{{ pheno.error }}</div>
+			{% if pheno.errors %}
+				<div class="bg-warning error-info">
+				{% for err in pheno.errors %}
+					<p>{{ err.desc}}</p>
+					{% if err.type == "no_sample_id_col" %} <div id="set_sample_id_form"></div> {% endif %}
+				{% endfor %}
+				</div>
 			{% endif %}
 			<table id="pheno_details_table">
 				{% if pheno.meta.records %}
@@ -179,7 +187,7 @@
 					</div>
 					<div class="modal-body">
 						<div class="alert alert-danger error-message" role="alert" style="display: none"> </div>
-						<form class="form-horizonal">
+						<form class="form-horizontal">
 						<div class="form-group row">
 							<label class="col-sm-2 control-label" for="pheno_name">Name</label>
 							<div class="col-sm-10"><input type="text" class="form-control" data-bind="name" data-focus="me" id="pheno_name"/></div>
@@ -212,6 +220,34 @@
 					<div class="modal-footer">
 						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
 						<button type="button" class="btn btn-danger delete-pheno">Delete</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="setSampleIdModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Set Sample ID Column</h4>
+					</div>
+					<div class="modal-body">
+						<p>Choose column that contains your sample IDs</p>
+						<div class="alert alert-danger error-message" role="alert" style="display: none"> </div>
+						<form class="form-horizontal">
+						<div class="form-group row">
+							<label class="col-sm-2 control-label" for="sample_id_col">Column</label>
+							<div class="col-sm-10"><select class="form-control" data-bind="column" id="sample_id_col"/>
+								{% for col in pheno.meta.columns %} <option>{{ col.name }}</option>
+								{% endfor %}</select>
+							</div>
+						</div>
+						&nbsp;
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-success modal-action">Update</button>
 					</div>
 				</div>
 			</div>

@@ -15,8 +15,8 @@
 				if (pheno.existing)  {
 					$modal.find(".modal-message").text("This data has been previously uploaded as " +
 					pheno.name + " on " + pheno.creation_date + ".")
-				} else if (pheno.error) {
-					$modal.find(".modal-message").text(pheno.error)
+				} else if (pheno.errors) {
+					$modal.find(".modal-message").text(pheno.errors.map(function(x) {return(x.desc)}).join(","))
 				} else {
 					$modal.find(".modal-message").text("Phenotype successfully uploaded")
 				}

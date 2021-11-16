@@ -25,7 +25,7 @@ function EditableElement(ele, useSup) {
 function init_editform(pheno_id, pheno_api_url) {
     var titleBox = new EditableElement("#pheno_main_title", true);
     var descBox = new EditableElement(".pheno-desc");
-    var edit_form = new FormHelper("#editModalBox", "Job");
+    var edit_form = new FormHelper("#editModalBox", "Phenotype");
 
     $("a.edit-pheno-modal").click(function(evt) {
         evt.preventDefault();
@@ -50,7 +50,7 @@ function init_new_job_button(selector, pheno_error) {
             document.location = url;
         });
     } else {
-        $(selector).prop("title", pheno_error)
+        $(selector).prop("title", "See errors on page")
             .prop("disabled", true);
     }
 }
@@ -79,3 +79,24 @@ function init_pheno_delete_button(selector) {
     });
 }
 
+function init_sampleidform(pheno_id, pheno_api_url, pheno_sample_col_url) {
+    var edit_form = new FormHelper("#setSampleIdModal", "Phenotype");
+    var holder = $("#set_sample_id_form");
+    if (!holder) {return;}
+    var button = document.createElement("button");
+    button.innerText = "Choose Column";
+    button.classList.add("btn");
+    button.classList.add("btn-primary");
+    holder.append(button);
+    $(button).click(function(evt) {
+        evt.preventDefault();
+        $.get(pheno_api_url).done(function(current_data) {
+            var form_values = {column: ""};
+            edit_form.show_update_form(form_values, (new_values) => {
+                return postFormData(pheno_sample_col_url, new_values).then( () => {
+                    document.location.reload();
+                });
+            })
+        })
+    });
+}

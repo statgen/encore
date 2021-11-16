@@ -21,6 +21,13 @@ class Phenotype:
         self.creation_date = None
         self.root_path = "" 
         self.meta = meta
+
+    def set_meta(self, meta, config):
+        self.meta = meta
+        pheno_folder = os.path.join(config.get("PHENO_DATA_FOLDER", "./"), self.pheno_id)
+        meta_path = os.path.expanduser(os.path.join(pheno_folder, "meta.json"))
+        with open(meta_path, "w") as f:
+            json.dump(meta, f, indent=2)
        
     def get_raw_path(self):
         return self.relative_path("pheno.txt")
@@ -43,11 +50,19 @@ class Phenotype:
         covar = self.__get_column(covar_name)
         return covar.get("levels", [])
 
-    def check_usable(self):
+    def check_has_id_col(self):
         sample_id_col = [x for x in self.meta.get("columns", []) if x.get("class", "")=="sample_id"]
         if len(sample_id_col) != 1:
-            return False, "Unable to find sample ID column"
-        return True, ""
+            return False
+        return True
+
+    def check_usable(self):
+        errors = []
+        if not self.check_has_id_col():
+            errors.append({
+                "type": "no_sample_id_col",
+                "desc": "Unable to find sample ID column"})
+        return len(errors)==0, errors
 
     def get_kinship_path(self, geno_id, must_exist=True):
         kinship = self.meta.get("kinship", None)
@@ -59,11 +74,21 @@ class Phenotype:
                     return kinship_path
         return None
 
+    def set_sample_id_col(self, column, known_sample_ids = None, config=None):
+        pr = self.get_pheno_reader()
+        meta = pr.infer_meta(sample_ids = known_sample_ids, sample_id_column = column)
+        if "id_error" in meta:
+            raise Exception(meta["id_error"])
+        else:
+            self.set_meta(meta, config=config)
+
+
     def as_object(self):
         obj = {key: getattr(self, key) for key in self.__dbfields if hasattr(self, key)} 
         obj["pheno_id"] = self.pheno_id
         obj["meta"] = self.meta
-        obj["is_usable"], obj["usable_result"] = self.check_usable()
+        obj["has_sample_id_col"] = self.check_has_id_col()
+        obj["is_usable"], obj["errors"] = self.check_usable()
         return obj
 
     def __get_column(self, covar_name):

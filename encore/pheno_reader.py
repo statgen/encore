@@ -184,7 +184,7 @@ def check_if_ped(cols, obs):
         return False, None
     return True, None 
 
-def guess_sample_id_col(metas, cols, sample_ids):
+def guess_sample_id_col(metas, cols, known_sample_ids):
     # metas is array (col index) of dict (infered properties) for each column
     # cols is dict (col index) of dict (data type) of counter (values)
     best_match = 25 #min overlap
@@ -203,13 +203,35 @@ def guess_sample_id_col(metas, cols, sample_ids):
                 continue
             if has_dup:
                 continue
-            matches = sum(x in sample_ids for x in vals)
-            if matches > best_match:
-                best_match = matches
+            n_matches = sum(x in known_sample_ids for x in vals)
+            if n_matches > best_match:
+                best_match = n_matches
                 id_col_idx = i
     return id_col_idx
 
-def infer_meta(filepath, dialect=None, sample_ids=None):
+def verify_sample_id_col(sample_id_col, metas, cols, known_sample_ids):
+    # metas is array (col index) of dict (infered properties) for each column
+    # cols is dict (col index) of dict (data type) of counter (values)
+    error = ""
+    for i in range(len(cols)):
+        meta = metas[i]
+        colinfo = cols[i]
+        if meta["name"] == sample_id_col:
+            mtype = meta["type"]
+            has_dup = colinfo[mtype].most_common(1)[0][1]>1
+            if mtype == "str":
+                vals = (x for x in colinfo["str"])
+            else:
+                vals = (str(x) for x in colinfo[mtype])
+            if has_dup:
+                return None, "Duplicate IDs detected. IDs must be unique"
+            n_matches = sum(x in known_sample_ids for x in vals)
+            if known_sample_ids and n_matches == 0:
+                return None, "No values overlap known IDs in the genotype data"
+            return i, ""
+    return None, "No match for column name"
+
+def infer_meta(filepath, dialect=None, known_sample_ids=None, sample_id_column=None):
     meta = {"layout": {}, "columns": []}
 
     with open(filepath, 'rb') as f:
@@ -226,6 +248,7 @@ def infer_meta(filepath, dialect=None, sample_ids=None):
             break
     meta["encoding"] = encoding
 
+    records = 0
     with open(filepath, 'r', encoding=encoding) as csvfile:
         # store csv dialect
         if not dialect:
@@ -243,8 +266,11 @@ def infer_meta(filepath, dialect=None, sample_ids=None):
         firstrow = next(cvr)
         cols = defaultdict(lambda : defaultdict(Counter))
         for row in cvr:
+            if len(row):
+                records += 1
             for idx, val in enumerate(row):
                 cols[idx][guess_raw_type(val)][val] += 1
+    meta["records"] = records
 
     # find column headers
     if comments:
@@ -275,11 +301,19 @@ def infer_meta(filepath, dialect=None, sample_ids=None):
         for actas, col in zip(colclasses, meta["columns"][0:3]):
             if col["class"] != "fixed":
                 col["class"] =  actas
-    elif sample_ids:
-        #if not ped, try to find ID column
+    elif sample_id_column:
+        #if ID col specified, verify it's correct
+        sample_id_set = set(known_sample_ids)
+        id_col, id_error = verify_sample_id_col(sample_id_column, meta["columns"], cols, known_sample_ids=sample_id_set)
+        if id_col is not None:
+            meta["columns"][id_col]["class"] = "sample_id"
+        else:
+            meta["id_error"] = id_error
+    elif known_sample_ids:
+        #if not ped and ID col not specified, try to guess ID column
         id_col =  None
-        sample_id_set = set(sample_ids)
-        id_col = guess_sample_id_col(meta["columns"], cols, sample_id_set)
+        sample_id_set = set(known_sample_ids)
+        id_col = guess_sample_id_col(meta["columns"], cols, known_sample_ids=sample_id_set)
         if id_col is not None:
             meta["columns"][id_col]["class"] = "sample_id"
     return meta
@@ -292,8 +326,8 @@ class PhenoReader:
         else:
             self.meta = self.infer_meta()
 
-    def infer_meta(self, sample_ids=None):
-        return infer_meta(self.path, sample_ids=sample_ids)
+    def infer_meta(self, sample_ids=None, sample_id_column=None):
+        return infer_meta(self.path, known_sample_ids=sample_ids, sample_id_column=sample_id_column)
 
     def get_dialect(self, opts=None):
         class dialect(csv.Dialect):

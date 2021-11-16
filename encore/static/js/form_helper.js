@@ -6,7 +6,7 @@ function FormHelper(source_id, item_name) {
     var itemName = item_name || "Item";
     
     var inputs = {} 
-    $modal.find("input,textarea").each((idx, ele) => {
+    $modal.find("input,textarea,select").each((idx, ele) => {
         var $ele = $(ele);
         if($ele.data("bind")) {
             inputs[$ele.data("bind")] = $ele;

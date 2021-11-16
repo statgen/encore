@@ -587,6 +587,23 @@ def update_pheno(pheno_id, pheno=None):
     except Exception as e:
         raise ApiException("COULD NOT UPDATE PHENO", details=str(e))
 
+@api.route("/phenos/<pheno_id>/sample-column", methods=["POST"])
+@check_edit_pheno
+def update_pheno_sample_column(pheno_id, pheno=None):
+    try:
+        values = request.values.to_dict(flat=True)
+        latest_geno = next(iter(Genotype.list_all_for_user(current_user.rid)), None)
+        if latest_geno:
+            latest_geno = Genotype.get(latest_geno["id"], current_app.config)
+            known_sample_ids = latest_geno.get_samples()
+        else:
+            known_sample_ids = None
+        pheno.set_sample_id_col(values["column"], known_sample_ids = known_sample_ids,
+            config=current_app.config)
+        return ApiResult({"updated": True})
+    except Exception as e:
+        raise ApiException("COULD NOT UPDATE PHENO", details=str(e))
+
 @api.route("/phenos/<pheno_id>", methods=["DELETE"])
 @check_edit_pheno
 def retire_pheno(pheno_id, pheno=None):
@@ -675,7 +692,6 @@ def post_pheno():
     try:
         os.mkdir(pheno_directory)
         pheno_file_path = os.path.join(pheno_directory, "pheno.txt")
-        pheno_meta_path = os.path.join(pheno_directory, "meta.json")
         pheno_file.save(pheno_file_path)
         md5 =  hashfile(open(pheno_file_path, "rb")).hex()
     except Exception as e:
@@ -719,18 +735,14 @@ def post_pheno():
         meta = pheno_reader.infer_meta( sample_ids = latest_geno.get_samples() )
     else:
         meta = pheno_reader.infer_meta()
-    pheno.meta = meta
-    line_count = sum(1 for _ in pheno_reader.row_extractor()) 
-    meta["records"] = line_count
-    with open(pheno_meta_path, "w") as f:
-        json.dump(meta, f, indent=2)
+    pheno.set_meta(meta, current_app.config)
     result = {"id": pheno_id,  \
         "url_model": url_for("user.get_model_build", pheno=pheno_id), \
         "url_view": url_for("user.get_pheno", pheno_id=pheno_id)}
     # check that it's a "valid" phenotype
-    is_usable, usable_error = pheno.check_usable()
+    is_usable, usable_errors = pheno.check_usable()
     if not is_usable:
-        result["error"] = usable_error 
+        result["errors"] = usable_errors
         del result["url_model"]
     return ApiResult(result)
 

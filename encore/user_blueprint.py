@@ -96,9 +96,8 @@ def get_pheno(pheno_id, pheno=None):
     pheno_obj["overlap"] = calculate_overlaps(pheno)
     if can_user_edit_pheno(current_user, pheno):
         pheno_obj["can_edit"] = True
-    is_usable, usable_error = pheno.check_usable()
-    if not is_usable:
-        pheno_obj["error"] = usable_error
+    if "errors" in pheno_obj and len(pheno_obj["errors"]):
+        pheno_obj["has_errors"] = True
     return render_template("pheno_details.html", pheno=pheno_obj)
 
 @user_area.route("/pheno-upload", methods=["GET"])

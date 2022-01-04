@@ -23,6 +23,7 @@
 			{title: "Successful Jobs By Month", url: {base: "job", q: "by=month&filter=successful"}},
 			{title: "Successful Jobs By User/Month", url: {base: "job", q: "by=month,user&filter=successful"}},
 			{title: "Successful Jobs By Genotype", url: {base: "job", q: "by=geno&filter=successful"}},
+			{title: "Successful Jobs By Genotype/Month", url: {base: "job", q: "by=month,geno&filter=successful"}},
 			{title: "New Users By Month", url: {base: "user", q: "by=creation-month&filter=can-analyze"}},
 			{title: "New Users By Year", url: {base: "user", q: "by=creation-year&filter=can-analyze"}},
 			{title: "Job Builders By Month", url: {base: "user", q: "by=job-month"}},
@@ -38,15 +39,20 @@
 		];
 		var table;
 		function draw_table(data, columns) {
-			cols = columns.map(function(x) {return {title: x, data: x,
+			var cols = columns.map(function(x) {return {title: x, data: x,
 				render: $.fn.dataTable.render.text()}})
 			if (table) {
 				table.clear();
 				table.destroy();
 			}
+			var order = [[0, 'asc']];
+			if (cols[0].title=="month" || cols[0].title=="year") {
+				order = [[0, 'desc']];
+			}
 			table = $("#results-table").empty().DataTable({
 				data: data,
-				columns: cols
+				columns: cols,
+				order: order
 			})
 		}
 		function fetch_and_draw(url) {

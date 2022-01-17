@@ -381,7 +381,7 @@ class PhenoReader:
 
     def get_samples(self):
         sample_col_idx = self.get_sample_column_index()
-        if not sample_col_idx:
+        if sample_col_idx is None:
             return
         for row in self.row_extractor():
             yield row[sample_col_idx]

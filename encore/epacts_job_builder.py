@@ -181,6 +181,16 @@ class EpactsModel(BaseModel):
             model_spec["response_desc"] = "Pr({} = {})".format(resp_name, resp_event)
         elif resp_class != "numeric":
             raise Exception("Response must be binary or numeric, found: {}".format(resp_class))
+
+    def get_failure_reason(self):
+        log_file_path = self.relative_path("err.log")
+        if not os.path.isfile(log_file_path):
+            return None
+        with open(log_file_path, 'rt') as f:
+            for line in f:
+                if "system is exactly singular" in line:
+                    return "Covariate matrix is singular"
+        return None
         
 class LMEpactsModel(EpactsModel):
     model_code = "lm"

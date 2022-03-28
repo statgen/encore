@@ -244,6 +244,11 @@ class SkatOEpactsModel(EpactsModel):
             "--unit 350"]
         return opts
     
+    def validate_model_spec(self, model_spec):
+        super(self.__class__, self).validate_model_spec(model_spec)
+        if model_spec.get("region", "gwas") != "gwas":
+            raise Exception("EPACTS does not support single chromosome SKAT-O tests. Choose 'genome-wide'")
+
 class MMSkatOEpactsModel(EpactsModel):
     model_code = "mmskato"
     model_name = "Mixed Model SKAT-O Test"
@@ -288,6 +293,9 @@ class MMSkatOEpactsModel(EpactsModel):
             if not geno.get_kinship_path():
                 raise Exception("Kinship matrix requested but not available")
 
+        if model_spec.get("region", "gwas") != "gwas":
+            raise Exception("EPACTS does not support single chromosome SKAT-O tests. Choose 'genome-wide'")
+
 class MMSkatEpactsModel(EpactsModel):
     model_code = "mmskat"
     model_name = "Mixed Model SKAT Test"
@@ -306,6 +314,11 @@ class MMSkatEpactsModel(EpactsModel):
             "--kin {}".format(geno.get_kinship_path()),
             "--unit 300"]
         return opts
+
+    def validate_model_spec(self, model_spec):
+        super(self.__class__, self).validate_model_spec(model_spec)
+        if model_spec.get("region", "gwas") != "gwas":
+            raise Exception("EPACTS does not support single chromosome SKAT tests. Choose 'genome-wide'")
 
 class MMVTEpactsModel(EpactsModel):
     model_code = "mmVT"

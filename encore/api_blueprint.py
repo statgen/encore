@@ -167,8 +167,11 @@ def create_new_job():
     job_directory =  os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
 
     job = SlurmJob(job_id, job_directory, current_app.config) 
-    model = job.get_model(job_desc)
-
+    try:
+        model = job.get_model(job_desc)
+    except ValueError as e:
+        raise ApiException("INVALID MODEL REQUEST", details=str(e))
+    # valid model type
     try:
         model.validate_model_spec(job_desc)
     except Exception as e:

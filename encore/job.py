@@ -62,7 +62,7 @@ class Job:
                 files.append({"path": rel_path, "size": os.path.getsize(file_path), 
                     "name": display_name, "primary": primary})
         add_if_exists("output.epacts.gz", "Epacts Results", True)
-        add_if_exists("results.txt.gz", "SAIGE Results", True)
+        add_if_exists("results.txt.gz", "Results", True)
         add_if_exists("output.filtered.001.gz", "Filtered Results (p-val<0.001)")
         return files
 

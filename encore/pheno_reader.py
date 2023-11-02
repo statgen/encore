@@ -71,6 +71,7 @@ def guess_atomic_column_class(rawtype, obs):
 
 def guess_column_class(colinfo):
     # colinfo is dict (types) of counters (values)
+    #print(colinfo)
     has_empty = "_empty_" in colinfo and len(colinfo["_empty_"])==1
     col = {k: v for k,v in colinfo.items() if k != "_empty_"}
     n_vals = Counter({k: sum(v.values()) for k, v in col.items()})
@@ -128,10 +129,15 @@ def strip_comments(item, token="#"):
             yield line
 
 def get_comments(item, token="#"):
+    print("in csvfile")
+    print(item)
+    print("token",token)
     for line in item:
         s = line.strip()
-        if not s.startswith(token) and len(s)>0:
-            raise StopIteration
+        #print("s is",s)
+        # if not s.startswith(token) and len(s)>0:
+
+            #raise StopIteration
         yield s
 
 def sniff_file(csvfile):
@@ -187,6 +193,9 @@ def check_if_ped(cols, obs):
 def guess_sample_id_col(metas, cols, known_sample_ids):
     # metas is array (col index) of dict (infered properties) for each column
     # cols is dict (col index) of dict (data type) of counter (values)
+    print("metas", metas)
+    print("cols",cols)
+    print(known_sample_ids)
     best_match = 25 #min overlap
     id_col_idx = None
     for i in range(len(cols)):
@@ -232,6 +241,7 @@ def verify_sample_id_col(sample_id_col, metas, cols, known_sample_ids):
     return None, "No match for column name"
 
 def infer_meta(filepath, dialect=None, known_sample_ids=None, sample_id_column=None):
+
     meta = {"layout": {}, "columns": []}
 
     with open(filepath, 'rb') as f:

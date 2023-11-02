@@ -14,11 +14,20 @@ class SlurmJob:
         else:
             self.config = dict()
 
-    def get_batch_headers(self, model_plan):
-        mem_per_cpu = model_plan.get("mem_per_cpu", self.config.get("JOB_MEM_PER_CPU", 6500))
-        cores_per_job = model_plan.get("cores_per_job", self.config.get("JOB_CORES_PER_TASK", 56))
+    def get_batch_headers(self, model_plan,model_code):
+        epactscode= ["lm", "lmm", "skato","mmskato","mmskat"]
+        print(model_code in epactscode)
+
+        if(model_code.trim in epactscode):
+            mem_per_cpu = model_plan.get("mem_per_cpu", self.config.get("JOB_MEM_PER_CPU", 26000))
+            cores_per_job = model_plan.get("cores_per_job", self.config.get("JOB_CORES_PER_TASK", 28))
+        else:
+            mem_per_cpu = model_plan.get("mem_per_cpu", self.config.get("JOB_MEM_PER_CPU", 6500))
+            cores_per_job = model_plan.get("cores_per_job", self.config.get("JOB_CORES_PER_TASK", 56))
         
         sbatch_headers = ["#!/bin/bash"]
+
+
 
         if "SLURM_ACCOUNT" in self.config:
             sbatch_headers.append(
@@ -34,11 +43,19 @@ class SlurmJob:
             "#SBATCH --nodes=1",
             "export OPENBLAS_NUM_THREADS=1"))
 
+        if(model_code in epactscode):
+            sbatch_headers.append(
+                "export {}".format(self.config.get("R_LIBRARY")))
+
+
+        #export PATH="/net/encore1/R-4.0.2/bin:$PATH"
+
         return sbatch_headers
 
-    def write_batch_script(self, batch_script_path, model_plan):
+    def write_batch_script(self, batch_script_path, model_plan,model_code):
+        print("inside write batch scipt",batch_script_path)
         with open(batch_script_path, "w") as f:
-            f.write("\n".join(self.get_batch_headers(model_plan)))
+            f.write("\n".join(self.get_batch_headers(model_plan,model_code)))
             f.write("\n\n")
             f.write("\n".join(model_plan["commands"]))
             f.write("\n")
@@ -47,21 +64,27 @@ class SlurmJob:
         model = ModelFactory.get_for_model_spec(model_spec, self.job_directory, self.config)
         model_plan = model.prepare_job(model_spec)
 
+
+        model_code = model_spec.get("type", None)
+        if model_code is None:
+            raise ValueError("Type not found for model")
+
+
         sbatch = self.config.get("QUEUE_JOB_BINARY", "sbatch")
         batch_script_path = self.relative_path("batch_script.sh")
         batch_output_path = self.relative_path("batch_script_output.txt")
 
-        self.write_batch_script(batch_script_path, model_plan)
+        self.write_batch_script(batch_script_path, model_plan,model_code)
+        print("batch_script_path",subprocess.check_call)
         with open(batch_output_path, "w") as f:
             try:
-                subprocess.check_call([sbatch, batch_script_path], stdout=f)
+               print(subprocess.check_call([sbatch, batch_script_path], stdout=f))
             except subprocess.CalledProcessError as e:
-                # log to server log
-                print("SBATCH ERROR")
-                print(e)
-                raise Exception("Could not queue job") 
+               print("SBATCH ERROR")
+               print(e)
+               raise Exception("Could not queue job")
             except OSError:
-                raise Exception("Could not find sbatch")
+               raise Exception("Could not find sbatch")
         return True
 
     def get_model(self, model_spec = None):

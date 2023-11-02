@@ -41,8 +41,6 @@ class SaigeModel(BaseModel):
         binary = self.app_config.get("SAIGE_BINARY", None)
         if isinstance(binary, dict):
             binary = binary.get(pipeline, None)
-        if not binary:
-            raise Exception("Unable to find SAIGE binary (pipeline: {})".format(pipeline))
         cmd = "{}".format(binary) + \
             " -j{} ".format(self.cores_per_job) + \
             " THREADS={}".format(self.cores_per_job) + \
@@ -97,6 +95,9 @@ class SaigeModel(BaseModel):
     def prepare_job(self, model_spec):
         geno = self.get_geno(model_spec)
         pheno = self.get_pheno(model_spec)
+
+        print("prepare jobs")
+        print("write_ped_file",self.relative_path("pheno.ped"))
 
         ped = self.write_ped_file(self.relative_path("pheno.ped"), model_spec, geno, pheno)
         cmds =  self.if_exit_success(

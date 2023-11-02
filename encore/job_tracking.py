@@ -73,7 +73,7 @@ class Tracker(object):
                     pass
 
     def update_job_statuses(self, jobs, config):
-        p = subprocess.Popen(["/usr/cluster/bin/sacct", "-u", pwd.getpwuid(os.getuid())[0], \
+        p = subprocess.Popen(["sacct", "-u", pwd.getpwuid(os.getuid())[0], \
             "--format", "jobid,state,exitcode,jobname,submit", "--noheader", "-P", \
             "-S", (datetime.date.today() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")], \
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)

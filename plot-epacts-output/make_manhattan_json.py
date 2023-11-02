@@ -78,7 +78,7 @@ def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglo
     bins = {}
     unbinned_variant_heap = Heap()
     exports = [["ref","ref"], ["alt","alt"], ["MAF","maf"],
-        ["BETA","beta"],["SEBETA","sebeta"], ["label","label"], ["NS","N"]]
+               ["BETA","beta"],["SEBETA","sebeta"], ["label","label"], ["NS","N"]]
     chrom_order = {}
     chrom_n_bins = {}
 
@@ -97,8 +97,8 @@ def bin_variants(variants, bin_length, binning_pval_threshold, n_unbinned, neglo
                    "neglog10_pvals": set()}
             bins[(chrom_key, pos_bin)] = bin
         bin["neglog10_pvals"].add(rounded_neglog10(variant.pval, neglog10_pval_bin_size, neglog10_pval_bin_digits))
-        
-    variant_iterator = iter((v for v in variants if v)) 
+
+    variant_iterator = iter((v for v in variants if v))
     # put the most-significant variants into the heap and bin the rest
     for variant in variant_iterator:
         if variant.pval > binning_pval_threshold:
@@ -161,13 +161,17 @@ class AssocResultReader:
             line = line[1:]
         header = line.rstrip().split()
         aliases = {"BEG": "BEGIN",
-            "CHR": "CHROM",
-            "POS": "BEGIN",
-            "SNPID": "MARKER_ID",
-            "N": "NS",
-            "p.value": "PVALUE",
-            "Allele1": "ref",
-            "Allele2": "alt"}
+                   "CHR": "CHROM",
+                   "chrom": "CHROM",
+                   "pos": "BEGIN",
+                   "POS": "BEGIN",
+                   "SNPID": "MARKER_ID",
+                   "variant_id": "MARKER_ID",
+                   "N": "NS",
+                   "p.value": "PVALUE",
+                   "pvalue": "PVALUE",
+                   "Allele1": "ref",
+                   "Allele2": "alt"}
         for i, col in enumerate(header):
             if aliases.get(col):
                 header[i] = aliases.get(col)
@@ -175,6 +179,7 @@ class AssocResultReader:
 
     def row_parser(self, row):
         column_indices = self.filecols
+
         v = row.rstrip().split('\t')
         if v[column_indices["PVALUE"]] == 'NA':
             return None
@@ -204,7 +209,7 @@ class AssocResultReader:
                     other["label"] = name2
             elif marker_id == ".":
                 marker_id = chrom + ":" + str(pos) + "_" + \
-                    v[column_indices["ref"]] + "/" + v[column_indices["alt"]]
+                            v[column_indices["ref"]] + "/" + v[column_indices["alt"]]
         return AssocResult(chrom, pos, pval, marker_id, other)
 
     def __iter__(self):
@@ -254,7 +259,7 @@ def process_file(results, bin_length, bin_threshold, max_unbinned, neglog10_pval
         variants = f
         variants = prog_printer(variants)
         variant_bins, unbinned_variants = bin_variants(variants, bin_length, \
-            bin_threshold, max_unbinned, neglog10_pval_bin_size, neglog10_pval_bin_digits)
+                                                       bin_threshold, max_unbinned, neglog10_pval_bin_size, neglog10_pval_bin_digits)
 
     rv = {
         'variant_bins': variant_bins,
@@ -267,24 +272,24 @@ def process_file(results, bin_length, bin_threshold, max_unbinned, neglog10_pval
 if __name__ == "__main__":
     import argparse
     argp = argparse.ArgumentParser(description='Create JSON file for manhattan plot.', \
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    argp.add_argument('--max-unbinned','-M', help="Maximum number of unbinned variants to return", 
-        type=int, default=500)
-    argp.add_argument('--pval-round','-r', help="Number of digits to round binned p-values", 
-        type=int, default=2)
-    argp.add_argument('--pval-window','-p', help="Size of p-value bins", 
-        type=float, default = 0.05)
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    argp.add_argument('--max-unbinned','-M', help="Maximum number of unbinned variants to return",
+                      type=int, default=500)
+    argp.add_argument('--pval-round','-r', help="Number of digits to round binned p-values",
+                      type=int, default=2)
+    argp.add_argument('--pval-window','-p', help="Size of p-value bins",
+                      type=float, default = 0.05)
     argp.add_argument('--sig-pvalue','-P', help="P-value significance threshold for binning" + \
-        " (any p-value above this will automatically be binned)", type=float, default = 1)
+                                                " (any p-value above this will automatically be binned)", type=float, default = 1)
     argp.add_argument('--pos-window', '-w', help="Window size (in bases) to collapse peaks",
-        type=float, default = 3e6)
+                      type=float, default = 3e6)
     argp.add_argument('infile', help="Input file (use '-' for stdin)")
     argp.add_argument('outfile', nargs='?', help="Output file (stdout if not specified)")
     args = argp.parse_args()
 
     with AssocResultReader(args.infile) as inf, JSONOutFile(args.outfile) as outf:
         bins = process_file(inf, args.pos_window, args.sig_pvalue, args.max_unbinned, \
-            args.pval_window, args.pval_round)
+                            args.pval_window, args.pval_round)
         outf.write(bins)
 
     print('{} -> {}'.format(args.infile, args.outfile))

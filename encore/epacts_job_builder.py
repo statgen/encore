@@ -49,7 +49,7 @@ class EpactsModel(BaseModel):
             " --field GT" + \
             " --sepchr" + \
             " --ref {}".format(geno.get_build_ref_path())+ \
-            " --out ./output --run {}".format(self.cores_per_job) 
+            " --out ./output --run ${SLURM_CPUS_PER_TASK}"
         for resp in ped.get("response"):
             cmd += " --pheno {}".format(resp)
         for covar in ped.get("covars"):
@@ -205,7 +205,7 @@ class LMEpactsModel(EpactsModel):
     def get_opts(self, model, geno, pheno):
         opts = super(self.__class__, self).get_opts(model, geno, pheno)
         opts += ["--test q.linear",
-            "--unit 500000"]
+            "--unit 1000000"]
         return opts
 
 class LMMEpactsModel(EpactsModel):

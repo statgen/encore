@@ -178,9 +178,12 @@ class AssocResultReader:
         header = line.rstrip().split()
         aliases = {"BEG": "BEGIN",
             "CHR": "CHROM",
+            "chrom": "CHROM",
             "POS": "BEGIN",
+            "pos": "BEGIN",
             "SNPID": "MARKER_ID",
             "N": "NS",
+            "pvalue": "PVALUE",
             "p.value": "PVALUE"}
         for i, col in enumerate(header):
             if aliases.get(col):
@@ -201,6 +204,7 @@ class AssocResultReader:
             marker_id = v[column_indices["MARKER_ID"]]
             other = { k: v[i] for k,i in column_indices.items()};
             match = AssocResultReader._single_id_regex.match(marker_id)
+            print("match",match)
             if match:
                 chrom2, pos2, ref2, alt2, name2 = match.groups()
                 assert chrom == chrom2

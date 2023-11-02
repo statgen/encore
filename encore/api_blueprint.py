@@ -409,16 +409,25 @@ def get_job_zoom(job_id, job=None):
     output_filename = job.get_output_file_path()
     with gzip.open(output_filename, "rt") as f:
         header = f.readline().rstrip('\n').split('\t')
+        #chrom	pos	ref	alt	variant_id	maf	mac	pvalue	beta	se	tstat	r2
         if header[1] == "BEG":
             header[1] = "BEGIN"
         if header[1] == "POS":
             header[1] = "BEGIN"
+        if header[1] == "pos":
+            header[1] = "BEGIN"
         if header[0] == "#CHROM":
+            header[0] = "CHROM"
+        if header[0] == "#chrom":
             header[0] = "CHROM"
         if header[0] == "CHR":
             header[0] = "CHROM"
-        if len(header)>6 and header[6] == "AF_Allele2":
+        if header[0] == "CHR":
+            header[0] = "CHROM"
+        if len(header)>6 and header[5] == "maf":
             header[6] = "MAF"
+        if len(header)>7 and header[7] == "pvalue":
+            header[7] = "PVALUE"
         if len(header)>7 and header[7] == "N":
             header[7] = "NS"
         if len(header)>11 and header[11] == "p.value":

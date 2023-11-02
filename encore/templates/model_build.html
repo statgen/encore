@@ -1,531 +1,531 @@
 {% set backlink = "/" %}
 {% extends "layout.html" %}
 {% block header%}
-	<link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
-	<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/ejs.js') }}"></script>
-	<style>
-		form div {width:500px}
-		.chklabel {font-weight: normal;}
-		label .radio-title {display: block; font-weight: bold;}
-		label .radio-desc {display: block; padding: 5px 0}
-		.not-available {color: #cecece;}
-	</style>
-	<script type="text/javascript">
-		var phenoSelect;
-		var covars;
-		var genocovars;
-		var genoSelect;
-		var responseSelect;
-		var covariateSelect;
-		var genophenoSelect;
-		var filterSelect;
-		var regionSelect;
-		var userHasNamedJob = false;
-		var currentPheno;
-		var modelList;
+<link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ejs.js') }}"></script>
+<style>
+	form div {width:500px}
+	.chklabel {font-weight: normal;}
+	label .radio-title {display: block; font-weight: bold;}
+	label .radio-desc {display: block; padding: 5px 0}
+	.not-available {color: #cecece;}
+</style>
+<script type="text/javascript">
+	var phenoSelect;
+	var covars;
+	var genocovars;
+	var genoSelect;
+	var responseSelect;
+	var covariateSelect;
+	var genophenoSelect;
+	var filterSelect;
+	var regionSelect;
+	var userHasNamedJob = false;
+	var currentPheno;
+	var modelList;
 
-		function bumpFront(val, arr) {
-			var at = arr.indexOf(val);
-			if (at != -1) {
-				arr.splice(at, 1);
-			}
-			arr.unshift(val);
+	function bumpFront(val, arr) {
+		var at = arr.indexOf(val);
+		if (at != -1) {
+			arr.splice(at, 1);
+		}
+		arr.unshift(val);
+	}
+
+	function firstMatchOfAinB(arr1, arr2) {
+		for(var i=0; i<arr1.length; i++) {
+			var idx = arr2.indexOf(arr1[i]);
+			if(idx != -1) return arr1[i];
+		}
+		return null;
+	}
+
+	function findModel(model) {
+		return modelList.find(function(x) {return x.code && x.code==model;})
+	};
+
+	function validateForm(form) {
+		var errors = [];
+		var resp =  responseSelect.val();
+		var covar = covariateSelect.val() || [];
+		var modelInput = $("input[name=model]:checked", "#model-form")
+		if (resp == "") {
+			errors.push("Missing response");
+		}
+		if (covar.indexOf(resp)>-1) {
+			errors.push("Response cannot also be a covariate");
+		}
+		var logtran = $("input[name=response_invnorm]", "#model-form").prop("checked");
+		var modelObj = findModel(modelInput.val());
+		if (modelObj.response_class=="binary" && logtran) {
+			errors.push("Cannot perform normalization on response for binary outcomes");
 		}
 
-		function firstMatchOfAinB(arr1, arr2) {
-			for(var i=0; i<arr1.length; i++) {
-				var idx = arr2.indexOf(arr1[i]);
-				if(idx != -1) return arr1[i];
-			}
-			return null;
+		if (modelInput.attr("disabled")=="disabled") {
+			errors.push("Requested model not available for selected genotypes");
 		}
+		if (currentPheno && !currentPheno.is_usable) {
+			if (currentPheno.usable_result) {
+				errors.push("Phenotype not usable: " + currentPheno.usable_result);
+			} else {
+				errors.push("Phenotype not usable");
+			}
+		}
+		return errors;
+	}
 
-		function findModel(model) {
-			return modelList.find(function(x) {return x.code && x.code==model;})
+	function SubmitOnce(button) {
+		this.button = button;
+		this.origText = button.text();
+		this.enable = function() {
+			this.button.text(this.origText);
+			this.button.prop("disabled", false);
 		};
+		this.disable = function() {
+			this.button.text("Submitting...");
+			this.button.prop("disabled", true);
+		};
+	}
 
-		function validateForm(form) {
-			var errors = [];
-			var resp =  responseSelect.val();
-			var covar = covariateSelect.val() || [];
-			var modelInput = $("input[name=model]:checked", "#model-form")
-			if (resp == "") {
-				errors.push("Missing response");
-			}
-			if (covar.indexOf(resp)>-1) {
-				errors.push("Response cannot also be a covariate");
-			}
-			var logtran = $("input[name=response_invnorm]", "#model-form").prop("checked");
-			var modelObj = findModel(modelInput.val());
-			if (modelObj.response_class=="binary" && logtran) {
-				errors.push("Cannot perform normalization on response for binary outcomes");
-			}
+	function showDuplicateMessage(dup_jobs) {
+		var $box = $("#duplicateModal");
+		var list = $("<ul></ul>").append(dup_jobs.map(function(x) {
+			return $("<li></li>").
+			append($("<a></a>", {text: x.job_name, href: x.url_job})).
+			append(" (" + x.creation_date + ")")
+		}));
+		$box.find(".dup-list").empty().append(list);
+		$box.modal();
+	}
 
-			if (modelInput.attr("disabled")=="disabled") {
-				errors.push("Requested model not available for selected genotypes");
-			}
-			if (currentPheno && !currentPheno.is_usable) {
-				if (currentPheno.usable_result) {
-					errors.push("Phenotype not usable: " + currentPheno.usable_result);
-				} else {
-					errors.push("Phenotype not usable");
-				}
-			}
-			return errors;
+	function showModelErrors(modelErrors) {
+		if (modelErrors.length < 1) {return;}
+		var $box = $("#errorModal");
+		var list = $("<ul></ul>").append(modelErrors.map(function(x) {
+			return $("<li></li>").append(x)
+		}));
+		$box.find(".err-list").empty().append(list);
+		$box.modal();
+	}
+
+	function submitModel(e) {
+		e.preventDefault();
+		var form = $("#model-form");
+		var button = new SubmitOnce(form.find(".submit-button"));
+		button.disable()
+		var formErrors = validateForm(form);
+		if (formErrors.length) {
+			showModelErrors(formErrors)
+			button.enable();
+			return false;
 		}
-
-		function SubmitOnce(button) {
-			this.button = button;
-			this.origText = button.text();
-			this.enable = function() {
-				this.button.text(this.origText);
-				this.button.prop("disabled", false);
-			};
-			this.disable = function() {
-				this.button.text("Submitting...");
-				this.button.prop("disabled", true);
-			};
-		}
-
-		function showDuplicateMessage(dup_jobs) {
-			var $box = $("#duplicateModal");
-			var list = $("<ul></ul>").append(dup_jobs.map(function(x) {
-				return $("<li></li>").
-					append($("<a></a>", {text: x.job_name, href: x.url_job})).
-					append(" (" + x.creation_date + ")")
-			}));
-			$box.find(".dup-list").empty().append(list);
-			$box.modal();
-		}
-
-		function showModelErrors(modelErrors) {
-			if (modelErrors.length < 1) {return;}
-			var $box = $("#errorModal");
-			var list = $("<ul></ul>").append(modelErrors.map(function(x) {
-				return $("<li></li>").append(x)
-			}));
-			$box.find(".err-list").empty().append(list);
-			$box.modal();
-		}
-
-		function submitModel(e) {
-			e.preventDefault();
-			var form = $("#model-form");
-			var button = new SubmitOnce(form.find(".submit-button"));
-			button.disable()
-			var formErrors = validateForm(form);
-			if (formErrors.length) {
-				showModelErrors(formErrors)
-				button.enable();
-				return false;
-			}
-			form = form[0];
-			var fd = new FormData(form);
-			var xhr = new XMLHttpRequest();
-			xhr.addEventListener("load", function () {
-				var resp;
-				if (xhr.status >= 200 && xhr.status < 300) {
-					try {
-						resp = JSON.parse(xhr.responseText);
-						if (resp.url_job) {
-							window.location = resp.url_job;
-						}
-					} catch (ex) {
-						console.warn(ex);
-					}
-					window.location = "/";
-				} else if (xhr.status==303) {
+		form = form[0];
+		var fd = new FormData(form);
+		var xhr = new XMLHttpRequest();
+		xhr.addEventListener("load", function () {
+			var resp;
+			if (xhr.status >= 200 && xhr.status < 300) {
+				try {
 					resp = JSON.parse(xhr.responseText);
-					showDuplicateMessage(resp.duplicates)
+					if (resp.url_job) {
+						window.location = resp.url_job;
+					}
+				} catch (ex) {
+					console.warn(ex);
+				}
+				window.location = "/";
+			} else if (xhr.status==303) {
+				resp = JSON.parse(xhr.responseText);
+				showDuplicateMessage(resp.duplicates)
+			} else {
+				var message;
+				try {
+					resp = JSON.parse(xhr.responseText);
+					message = resp.error;
+					if (resp.details) {
+						message += ": " + resp.details;
+					}
+				} catch (ex) {
+					message = xhr.responseText || xhr.statusText;
+				}
+				showModelErrors([ message ]);
+			}
+			button.enable();
+		}.bind(this), false);
+		xhr.open("POST", form.action);
+		xhr.send(fd);
+	}
+
+	function nameChanged() {
+		userHasNamedJob = true;
+		var ele = $("#job_name", "#model-form");
+		if (ele.val()=="") {
+			userHasNamedJob = false;
+			ele.val(suggestName());
+		}
+	}
+
+	function formChanged() {
+		if (!userHasNamedJob) {
+			$("#job_name", "#model-form").val(suggestName());
+		}
+	}
+
+	function suggestName() {
+		var digitCollapser = function(x) {
+			var groups = {};
+			var results = [];
+			for(var i=0; i < x.length; i++) {
+				var sig = x[i].replace(/\d+/, "$");
+				var digit = x[i].match(/\d+/);
+				if (digit) {
+					digit = parseInt(digit);
+				}
+				if (!groups[sig]) {groups[sig] = [];}
+				groups[sig].push(digit);
+			}
+			var formatter = function(key, start, last) {
+				if (start != last) {
+					return [key.replace("$",start + "-" + last), last-start+1];
 				} else {
-					var message;
-					try {
-						resp = JSON.parse(xhr.responseText);
-						message = resp.error;
-						if (resp.details) {
-							message += ": " + resp.details;
-						}
-					} catch (ex) {
-						message = xhr.responseText || xhr.statusText;
-					}
-					showModelErrors([ message ]);
+					return [key.replace("$",start),1];
 				}
-				button.enable();
-			}.bind(this), false);
-			xhr.open("POST", form.action);
-			xhr.send(fd);
-		}
-
-		function nameChanged() {
-			userHasNamedJob = true;
-			var ele = $("#job_name", "#model-form");
-			if (ele.val()=="") {
-				userHasNamedJob = false;
-				ele.val(suggestName());
 			}
-		}
-
-		function formChanged() {
-			if (!userHasNamedJob) {
-				$("#job_name", "#model-form").val(suggestName());
-			}
-		}
-
-		function suggestName() {
-			var digitCollapser = function(x) {
-				var groups = {};
-				var results = [];
-				for(var i=0; i < x.length; i++) {
-					var sig = x[i].replace(/\d+/, "$");
-					var digit = x[i].match(/\d+/);
-					if (digit) {
-						digit = parseInt(digit);
-					}
-					if (!groups[sig]) {groups[sig] = [];}
-					groups[sig].push(digit);
-				}
-				var formatter = function(key, start, last) {
-					if (start != last) {
-						return [key.replace("$",start + "-" + last), last-start+1];
+			Object.keys(groups).forEach(function(key) {
+				var g = groups[key].sort(function(a,b) {return a-b;});
+				var start = null;
+				var last = null
+				for(var j=0; j<g.length; j++) {
+					if (start === null) {
+						start = g[j];
+						last = g[j];
 					} else {
-						return [key.replace("$",start),1];
-					}
-				}
-				Object.keys(groups).forEach(function(key) {
-					var g = groups[key].sort(function(a,b) {return a-b;});
-					var start = null;
-					var last = null
-					for(var j=0; j<g.length; j++) {
-						if (start === null) {
+						if (g[j] != last + 1) {
+							results.push(formatter(key,start,last));
 							start = g[j];
-							last = g[j];
-						} else {
-							if (g[j] != last + 1) {
-								results.push(formatter(key,start,last));
-								start = g[j];
-							}
-							last = g[j];
 						}
+						last = g[j];
 					}
-					results.push(formatter(key,start,last));
-				});
-				return results;
-			}
-			var response = responseSelect.find("option:selected").text();
-			if (!response) {
-				return "";
-			}
-			var model = $("input[name=model]:checked", "#model-form").val();
-			var logtran = $("input[name=response_invnorm]", "#model-form").prop("checked");
-			if (logtran) {
-				response = "invNorm(" + response + ")";
-			}
-			var name = model + ": " + response; 
-			var covar = covariateSelect.find("option:selected");
-			var covarnames = covar.map(function() {return [[$(this).text(),1]];}).get() 
-			var genocovar = genophenoSelect.find("option:selected");
-			if (genocovar.length) {
-				var othernames = digitCollapser(genocovar.map(function() {return $(this).text();}).get());
-				covarnames = covarnames.concat(othernames);
-			}
-			
-			var covarcount = covarnames.map(function(a) {return a[1];}).reduce(function(a,b) {return a+b;}, 0);
-			if (covarnames.length>4) {
-				name = name + " = Covar(" + covarcount + ")";
-			} else if (covarcount>0) {
-				name = name + " = " + covarnames.map(function(a) {return a[0];}).join(" + ");
-			}
-
-			var region = regionSelect.val();
-			if (region != "gwas") {
-				name = name + " [" + region + "]";
-			}
-			return name;
+				}
+				results.push(formatter(key,start,last));
+			});
+			return results;
+		}
+		var response = responseSelect.find("option:selected").text();
+		if (!response) {
+			return "";
+		}
+		var model = $("input[name=model]:checked", "#model-form").val();
+		var logtran = $("input[name=response_invnorm]", "#model-form").prop("checked");
+		if (logtran) {
+			response = "invNorm(" + response + ")";
+		}
+		var name = model + ": " + response;
+		var covar = covariateSelect.find("option:selected");
+		var covarnames = covar.map(function() {return [[$(this).text(),1]];}).get()
+		var genocovar = genophenoSelect.find("option:selected");
+		if (genocovar.length) {
+			var othernames = digitCollapser(genocovar.map(function() {return $(this).text();}).get());
+			covarnames = covarnames.concat(othernames);
 		}
 
-		function loadPheno(pheno_id) {
-			var url = "{{ url_for('api.get_pheno', pheno_id=':ID:') }}".replace(":ID:", pheno_id);
-			return $.getJSON(url).done(function(pheno) {
-				currentPheno = pheno;
-				covars = pheno.meta.columns;
-				var opts  = [];
-				var hideCols = ["family_id","sample_id","mother_id","father_id"];
-				if (covars) {
-					covars.forEach(function(col) {
-						if (hideCols.indexOf(col.class)<0 &&
+		var covarcount = covarnames.map(function(a) {return a[1];}).reduce(function(a,b) {return a+b;}, 0);
+		if (covarnames.length>4) {
+			name = name + " = Covar(" + covarcount + ")";
+		} else if (covarcount>0) {
+			name = name + " = " + covarnames.map(function(a) {return a[0];}).join(" + ");
+		}
+
+		var region = regionSelect.val();
+		if (region != "gwas") {
+			name = name + " [" + region + "]";
+		}
+		return name;
+	}
+
+	function loadPheno(pheno_id) {
+		var url = "{{ url_for('api.get_pheno', pheno_id=':ID:') }}".replace(":ID:", pheno_id);
+		return $.getJSON(url).done(function(pheno) {
+			currentPheno = pheno;
+			covars = pheno.meta.columns;
+			var opts  = [];
+			var hideCols = ["family_id","sample_id","mother_id","father_id"];
+			if (covars) {
+				covars.forEach(function(col) {
+					if (hideCols.indexOf(col.class)<0 &&
 							col.class != "fixed" && col.class != "id" && col.class!= "descr") {
-							opts.push({id: col.name, text: col.name});
-						}
-					});
-				}
-				responseSelect.html("").select2(
-					{"data": [""].concat(opts),
-					placeholder: "",
-					minimumResultsForSearch: 4});
-				covariateSelect.html("").select2({"data": opts});
-				formChanged();
-			});
-		}
-
-		function loadGeno(geno_id) {
-			var url = "{{ url_for('api.get_genotype', geno_id=':ID:') }}".replace(":ID:", geno_id);
-			return $.getJSON(url).done(function(geno) {
-				var opts  = [];
-				if (geno.phenos) {
-					pheno = geno.phenos[0]
-					genocovars = pheno.meta.columns;
-					var hideCols = ["family_id","sample_id","mother_id","father_id"];
-					genocovars.forEach(function(col) {
-						if (hideCols.indexOf(col.class)<0 &&
-							col.class != "fixed" && col.class != "descr") {
-							opts.push({id: col.name, text: col.name});	
-						}
-					});
-					genophenoSelect.html("").select2({"data": opts});
-					$("#genopheno_input").show();
-				} else {
-					genophenoSelect.html("").select2({"data": opts});
-					$("#genopheno_input").hide();
-				}
-				updateModels(geno.avail);
-				updateRegions();
-				formChanged();
-			});
-		}
-
-		function updateModels(avail) {
-			isAvailable = function(x) {return avail[x];}
-			areTrue = function(x) {return x==true;}
-
-			function canDo(reqs) {
-				if (!avail) {return true;}
-				if (!reqs) {return true;}
-				for( var i in reqs ) {
-					req = reqs[i]
-					if (req.indexOf("|") > -1) {
-						oneOf = req.split("|").map(isAvailable).some(areTrue);
-						if (!oneOf) {return false;}
-					} else {
-						if (!isAvailable(req)) {return false;}
+						opts.push({id: col.name, text: col.name});
 					}
-				}
-				return true;
+				});
 			}
-			modelList.forEach(function(model) {
-				var $input = $("#model-" + model.code, "#model-form");
-				if (canDo(model.depends)) {
-					$input.attr('disabled', false);
-					$input.closest("div").removeClass("not-available");
+			responseSelect.html("").select2(
+					{"data": [""].concat(opts),
+						placeholder: "",
+						minimumResultsForSearch: 4});
+			covariateSelect.html("").select2({"data": opts});
+			formChanged();
+		});
+	}
+
+	function loadGeno(geno_id) {
+		var url = "{{ url_for('api.get_genotype', geno_id=':ID:') }}".replace(":ID:", geno_id);
+		return $.getJSON(url).done(function(geno) {
+			var opts  = [];
+			if (geno.phenos) {
+				pheno = geno.phenos[0]
+				genocovars = pheno.meta.columns;
+				var hideCols = ["family_id","sample_id","mother_id","father_id"];
+				genocovars.forEach(function(col) {
+					if (hideCols.indexOf(col.class)<0 &&
+							col.class != "fixed" && col.class != "descr") {
+						opts.push({id: col.name, text: col.name});
+					}
+				});
+				genophenoSelect.html("").select2({"data": opts});
+				$("#genopheno_input").show();
+			} else {
+				genophenoSelect.html("").select2({"data": opts});
+				$("#genopheno_input").hide();
+			}
+			updateModels(geno.avail);
+			updateRegions();
+			formChanged();
+		});
+	}
+
+	function updateModels(avail) {
+		isAvailable = function(x) {return avail[x];}
+		areTrue = function(x) {return x==true;}
+
+		function canDo(reqs) {
+			if (!avail) {return true;}
+			if (!reqs) {return true;}
+			for( var i in reqs ) {
+				req = reqs[i]
+				if (req.indexOf("|") > -1) {
+					oneOf = req.split("|").map(isAvailable).some(areTrue);
+					if (!oneOf) {return false;}
 				} else {
-					$input.attr('disabled', true);
-					$input.closest("div").addClass("not-available");
+					if (!isAvailable(req)) {return false;}
 				}
-			})
-		}
-
-		function updateRegions() {
-			if (!regionSelect) {
-				let chrs = [{id: "gwas", text: "Genome-wide"}];
-				for(let i=1; i<23; i++) chrs.push({id: "chr" + i, text: "chr" + i});
-				chrs.push({id: "chrX", text: "chrX"})
-				regionSelect = $("#region").select2({"data": chrs}).on("change", formChanged);
 			}
+			return true;
 		}
+		modelList.forEach(function(model) {
+			var $input = $("#model-" + model.code, "#model-form");
+			if (canDo(model.depends)) {
+				$input.attr('disabled', false);
+				$input.closest("div").removeClass("not-available");
+			} else {
+				$input.attr('disabled', true);
+				$input.closest("div").addClass("not-available");
+			}
+		})
+	}
 
-		function getQuerystring () {
-			// from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
-			var match,
+	function updateRegions() {
+		if (!regionSelect) {
+			let chrs = [{id: "gwas", text: "Genome-wide"}];
+			for(let i=1; i<23; i++) chrs.push({id: "chr" + i, text: "chr" + i});
+			chrs.push({id: "chrX", text: "chrX"})
+			regionSelect = $("#region").select2({"data": chrs}).on("change", formChanged);
+		}
+	}
+
+	function getQuerystring () {
+		// from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+		var match,
 				pl     = /\+/g,  // Regex for replacing addition symbol with a space
 				search = /([^&=]+)=?([^&]*)/g,
 				decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
 				query  = window.location.search.substring(1);
 
-			var urlParams = {};
-			while (match = search.exec(query))
-				urlParams[decode(match[1])] = decode(match[2]);
-			return urlParams;
-		} 
+		var urlParams = {};
+		while (match = search.exec(query))
+			urlParams[decode(match[1])] = decode(match[2]);
+		return urlParams;
+	}
 
-		$(function() {
-			$("#covar_add_all").click(function(evt) {
-				evt.preventDefault();
-				var resp = responseSelect.val();
-				var opts = [];
-				covars.forEach(function(col) {
-					if (col.name != resp) {
-						opts.push(col.name);
-					}
-				});
-				covariateSelect.val(opts).trigger("change");
-			});
-			$("#covar_remove_all").click(function(evt) {
-				evt.preventDefault();
-				covariateSelect.val("").trigger("change");
-			});
-			$("#genopheno_add_all").click(function(evt) {
-				evt.preventDefault();
-				var opts = [];
-				genocovars.forEach(function(col) {
+	$(function() {
+		$("#covar_add_all").click(function(evt) {
+			evt.preventDefault();
+			var resp = responseSelect.val();
+			var opts = [];
+			covars.forEach(function(col) {
+				if (col.name != resp) {
 					opts.push(col.name);
-				});
-				genophenoSelect.val(opts).trigger("change");
-			});
-			$("#genopheno_remove_all").click(function(evt) {
-				evt.preventDefault();
-				genophenoSelect.val("").trigger("change");
-			});
-			var d1 = $.getJSON("{{url_for('api.get_genotypes')}}").then(function(resp) {
-				if (resp.header) {
-					resp = resp.data;
 				}
-				var genos = [];
-				resp.forEach(function(g) {
-					genos.push({id: g.id, text: g.name});
-				});
-				genoSelect = $("#genotype").select2({
-					data: genos,
-					minimumResultsForSearch: 4
-				}).on("change", function() {
-					loadGeno($(this).val());
-				});
-				return resp[0].id;
 			});
-			var d2 = $.getJSON("{{url_for('api.get_phenotypes')}}").then(function(resp) {
-				if (resp.header) {
-					resp = resp.data;
-				}
-				var phenos = [];
-				resp.forEach(function(p) {
-					phenos.push({id: p.id, text:p.name});
-				});
-				responseSelect = $("#response").select2({
-					data: [""],
-					placeholder: "",
-					minimumResultsForSearch: 5
-				}).on("change", formChanged);
-				covariateSelect = $("#covariates").select2({
-					data: [""] 
-				}).on("change", formChanged);
-				genophenoSelect = $("#genopheno").select2({
-					data: [""]
-				}).width("100%").on("change", formChanged);
-				phenoSelect = $("#phenotype").select2({
-					data: phenos,
-					minimumResultsForSearch: 5
-				}).on("change", function() {
-					loadPheno($(this).val());
-				});
-				return resp[0].id;
-			});
-			var d3 = $.getJSON("{{url_for('api.get_models')}}").then(function(resp) {
-				modelList = resp;
-				var modelSelect = $("#model-type");
-				var userChoices = [];
-				filterSelect = $("#filter-type").select2({
-					data: [""],
-					minimumResultsForSearch: 10
-				});
-				var template = document.getElementById("model-radio-group").innerText;
-				modelSelect.html(ejs.render(template, {"models" : resp }));
-				modelSelect.find("input[type='radio']").on("change", function() {
-					var newModel = this.value;
-					var model = findModel(newModel);
-					bumpFront(filterSelect.val(), userChoices);
-					if (model && model.filters && model.filters.length) {
-						$("#filter_input").show();
-						var opts = model.filters.map(function(x) {return {id: x[0], text: x[1]}});
-						filterSelect.html("").select2({
-							data: opts,
-							minimumResultsForSearch: 10
-						}).width("100%");
-						var setOpt = firstMatchOfAinB(userChoices, model.filters.map(function(x) {return x[0]}));
-						if (setOpt) {
-							filterSelect.val(setOpt).trigger("change");
-						}
-					} else {
-						$("#filter_input").hide();
-						filterSelect.html("").select2({data:[""]}).val("")
-					}
-				})
-			}); 
-			var qs = getQuerystring();
-			$.when(d1, d2, d3).done(function(g, p, m) {
-				var promise;
-				if (qs.like) {
-					var nm = function(x) {return x.name || x;}
-					promise = $.getJSON("/api/jobs/" + qs.like).then(function(x){
-						var opts = {p: p, g: g};
-						if (x.details) {
-							opts.p = x.details.phenotype;
-							opts.g = x.details.genotype;
-							opts.m = x.details.type;
-							opts.r = nm(x.details.response);
-							opts.inv = x.details.response_invnorm || false;
-							opts.c = x.details.covariates;
-							opts.gp = x.details.genopheno || [];
-							opts.f = x.details.variant_filter;
-							opts.rg = x.details.region || "gwas";
-						}
-						return $.when(opts);
-					}, function() {
-						return $.when({p: p, g: g});
-					});
-				} else {
-					promise = $.when({p: qs.pheno || p, g: qs.geno || g});
-				}
-				promise.then(function(opts) {
-					var lp = loadPheno(opts.p).then(function() {
-						phenoSelect.val(opts.p).trigger("change.select2");
-					});
-					var lg = loadGeno(opts.g).then(function() {
-						genoSelect.val(opts.g).trigger("change.select2");
-					});
-					return $.when(lp, lg).then(function() {
-						return $.when(opts);
-					});
-				}).then(function(opts) {
-					if (opts.g) {
-						genoSelect.val(opts.g);
-					}
-					if (opts.r) {
-						responseSelect.val(opts.r).trigger("change");
-					}
-					if (opts.inv) {
-						$("input[name=response_invnorm]", "#model-form").prop("checked", true);
-					}
-					if (opts.c) {
-						covariateSelect.val(opts.c).trigger("change");
-					}
-					if (opts.gp) {
-						genophenoSelect.val(opts.gp).trigger("change");
-					}
-					if (opts.m) {
-						$("input[type=radio]", "#model-form").
-							filter("[value='" + opts.m + "']").
-							prop("checked", true).trigger("change");
-					} else {
-						$("input[type=radio]", "#model-form").
-							first().prop("checked", true).trigger("change");
-					}
-					if (opts.f) {
-						filterSelect.val(opts.f).trigger("change");
-					}
-					if (opts.r) {
-						regionSelect.val(opts.rg).trigger("change");
-					}
-				}).then(function() {
-					$("#model-form").css("visibility","visible").hide().fadeIn();
-				});
-				$("input[type=radio]", "#model-form").on("change", formChanged).
-					first().prop("checked", true);
-				$("input[type=checkbox]", "#model-form").on("change", formChanged);
-				$("#job_name", "#model-form").on("change", nameChanged);
-				$("#model-form").on("submit", submitModel);
-			});
+			covariateSelect.val(opts).trigger("change");
 		});
-	</script>
-    <script id="model-radio-group" type="text/x-tmpl">
+		$("#covar_remove_all").click(function(evt) {
+			evt.preventDefault();
+			covariateSelect.val("").trigger("change");
+		});
+		$("#genopheno_add_all").click(function(evt) {
+			evt.preventDefault();
+			var opts = [];
+			genocovars.forEach(function(col) {
+				opts.push(col.name);
+			});
+			genophenoSelect.val(opts).trigger("change");
+		});
+		$("#genopheno_remove_all").click(function(evt) {
+			evt.preventDefault();
+			genophenoSelect.val("").trigger("change");
+		});
+		var d1 = $.getJSON("{{url_for('api.get_genotypes')}}").then(function(resp) {
+			if (resp.header) {
+				resp = resp.data;
+			}
+			var genos = [];
+			resp.forEach(function(g) {
+				genos.push({id: g.id, text: g.name});
+			});
+			genoSelect = $("#genotype").select2({
+				data: genos,
+				minimumResultsForSearch: 4
+			}).on("change", function() {
+				loadGeno($(this).val());
+			});
+			return resp[0].id;
+		});
+		var d2 = $.getJSON("{{url_for('api.get_phenotypes')}}").then(function(resp) {
+			if (resp.header) {
+				resp = resp.data;
+			}
+			var phenos = [];
+			resp.forEach(function(p) {
+				phenos.push({id: p.id, text:p.name});
+			});
+			responseSelect = $("#response").select2({
+				data: [""],
+				placeholder: "",
+				minimumResultsForSearch: 5
+			}).on("change", formChanged);
+			covariateSelect = $("#covariates").select2({
+				data: [""]
+			}).on("change", formChanged);
+			genophenoSelect = $("#genopheno").select2({
+				data: [""]
+			}).width("100%").on("change", formChanged);
+			phenoSelect = $("#phenotype").select2({
+				data: phenos,
+				minimumResultsForSearch: 5
+			}).on("change", function() {
+				loadPheno($(this).val());
+			});
+			return resp[0].id;
+		});
+		var d3 = $.getJSON("{{url_for('api.get_models')}}").then(function(resp) {
+			modelList = resp;
+			var modelSelect = $("#model-type");
+			var userChoices = [];
+			filterSelect = $("#filter-type").select2({
+				data: [""],
+				minimumResultsForSearch: 10
+			});
+			var template = document.getElementById("model-radio-group").innerText;
+			modelSelect.html(ejs.render(template, {"models" : resp }));
+			modelSelect.find("input[type='radio']").on("change", function() {
+				var newModel = this.value;
+				var model = findModel(newModel);
+				bumpFront(filterSelect.val(), userChoices);
+				if (model && model.filters && model.filters.length) {
+					$("#filter_input").show();
+					var opts = model.filters.map(function(x) {return {id: x[0], text: x[1]}});
+					filterSelect.html("").select2({
+						data: opts,
+						minimumResultsForSearch: 10
+					}).width("100%");
+					var setOpt = firstMatchOfAinB(userChoices, model.filters.map(function(x) {return x[0]}));
+					if (setOpt) {
+						filterSelect.val(setOpt).trigger("change");
+					}
+				} else {
+					$("#filter_input").hide();
+					filterSelect.html("").select2({data:[""]}).val("")
+				}
+			})
+		});
+		var qs = getQuerystring();
+		$.when(d1, d2, d3).done(function(g, p, m) {
+			var promise;
+			if (qs.like) {
+				var nm = function(x) {return x.name || x;}
+				promise = $.getJSON("/api/jobs/" + qs.like).then(function(x){
+					var opts = {p: p, g: g};
+					if (x.details) {
+						opts.p = x.details.phenotype;
+						opts.g = x.details.genotype;
+						opts.m = x.details.type;
+						opts.r = nm(x.details.response);
+						opts.inv = x.details.response_invnorm || false;
+						opts.c = x.details.covariates;
+						opts.gp = x.details.genopheno || [];
+						opts.f = x.details.variant_filter;
+						opts.rg = x.details.region || "gwas";
+					}
+					return $.when(opts);
+				}, function() {
+					return $.when({p: p, g: g});
+				});
+			} else {
+				promise = $.when({p: qs.pheno || p, g: qs.geno || g});
+			}
+			promise.then(function(opts) {
+				var lp = loadPheno(opts.p).then(function() {
+					phenoSelect.val(opts.p).trigger("change.select2");
+				});
+				var lg = loadGeno(opts.g).then(function() {
+					genoSelect.val(opts.g).trigger("change.select2");
+				});
+				return $.when(lp, lg).then(function() {
+					return $.when(opts);
+				});
+			}).then(function(opts) {
+				if (opts.g) {
+					genoSelect.val(opts.g);
+				}
+				if (opts.r) {
+					responseSelect.val(opts.r).trigger("change");
+				}
+				if (opts.inv) {
+					$("input[name=response_invnorm]", "#model-form").prop("checked", true);
+				}
+				if (opts.c) {
+					covariateSelect.val(opts.c).trigger("change");
+				}
+				if (opts.gp) {
+					genophenoSelect.val(opts.gp).trigger("change");
+				}
+				if (opts.m) {
+					$("input[type=radio]", "#model-form").
+					filter("[value='" + opts.m + "']").
+					prop("checked", true).trigger("change");
+				} else {
+					$("input[type=radio]", "#model-form").
+					first().prop("checked", true).trigger("change");
+				}
+				if (opts.f) {
+					filterSelect.val(opts.f).trigger("change");
+				}
+				if (opts.r) {
+					regionSelect.val(opts.rg).trigger("change");
+				}
+			}).then(function() {
+				$("#model-form").css("visibility","visible").hide().fadeIn();
+			});
+			$("input[type=radio]", "#model-form").on("change", formChanged).
+			first().prop("checked", true);
+			$("input[type=checkbox]", "#model-form").on("change", formChanged);
+			$("#job_name", "#model-form").on("change", nameChanged);
+			$("#model-form").on("submit", submitModel);
+		});
+	});
+</script>
+<script id="model-radio-group" type="text/x-tmpl">
 		<% models.forEach(function(m) { %>
 		<div class="radio">
 			<label for="model-<%= m.code %>">
@@ -537,108 +537,108 @@
 	</script>
 {% endblock %}
 {% block content %}
-	<h1>Build your model...</h1>
-        <div class="section">
-            <form class="form-horizontal vflex" method="post" action="/api/jobs" id="model-form" style="visibility:hidden">
-				<div class="form-group">
-					<label for="genotype" class="control-label col-xs-2">Genotypes</label>
-					<div class="col-xs-10">
-						<select id="genotype" name="genotype" class="form-control"></select>
-					</div>
-				</div>
-				<div class="form-group">
-					<label for="phenotype" class="control-label col-xs-2">Phenotypes</label>
-					<div class="col-xs-10">
-						<select id="phenotype" name="phenotype" class="form-control"></select>
-					</div>
-				</div>
-				<div class="form-group">
-					<label for="response" class="control-label col-xs-2">Response</label>
-					<div class="col-xs-10">
-						<select id="response" name="response" class="form-control"></select>
-					</div>
-				</div>
-				<div class="form-group">
-					<div class="col-xs-offset-2 col-xs-10">
-						<label class="chklabel"><input id="response_invnorm" name="response_invnorm" type="checkbox"/> Inverse Normalize Response</label>
-					</div>
-				</div>
-				<div class="form-group">
-					<label for="covariates" class="control-label col-xs-2">Covariates</label>
-					<div class="col-xs-10">
-						<select id="covariates" name="covariates" class="form-control" multiple="multiple"></select>
-						<br/><a href="#" id="covar_add_all">Add All</a> - <a href="#" id="covar_remove_all">Remove All</a>
-					</div>
-				</div>
-				<div class="form-group" id="genopheno_input">
-					<label for="covariates" class="control-label col-xs-2">Pop Adjust</label>
-					<div class="col-xs-10">
-						<select id="genopheno" name="genopheno" class="form-control" multiple="multiple"></select>
-						<br/><a href="#" id="genopheno_add_all">Add All</a> - <a href="#" id="genopheno_remove_all">Remove All</a>
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-xs-2">Model</label>
-					<div class="col-xs-10" id="model-type"></div>
-				</div>
-				<div class="form-group" id="filter_input">
-					<label for="response" class="control-label col-xs-2">Filter</label>
-					<div class="col-xs-10">
-						<select id="filter-type" name="variant_filter" class="form-control"></select>
-					</div>
-				</div>
-				<div class="form-group" id="region_input">
-					<label for="region" class="control-label col-xs-2">Region</label>
-					<div class="col-xs-10">
-						<select id="region" name="region" class="form-control"></select>
-					</div>
-				</div>
-				<div class="form-group">
-					<label for="response" class="control-label col-xs-2">Name</label>
-					<div class="col-xs-10">
-						<input id="job_name" name="job_name" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<div class="col-xs-offset-2 col-xs-10">
-						<button class="btn-success submit-button">Submit</button>
-					</div>
-				</div>
-            </form>
-        </div>
-		<div class="modal fade" id="errorModal" role="dialog">
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
-						<h4 class="modal-title">Model Error</h4>
-					</div>
-					<div class="modal-body">
-						<p>The following problems were found with your model:</p>
-						<div class="err-list"></div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					</div>
-				</div>
+<h1>Build your model...</h1>
+<div class="section">
+	<form class="form-horizontal vflex" method="post" action="/api/jobs" id="model-form" style="visibility:hidden">
+		<div class="form-group">
+			<label for="genotype" class="control-label col-xs-2">Genotypes</label>
+			<div class="col-xs-10">
+				<select id="genotype" name="genotype" class="form-control"></select>
 			</div>
 		</div>
-		<div class="modal fade" id="duplicateModal" role="dialog">
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
-						<h4 class="modal-title">Duplicate Job</h4>
-					</div>
-					<div class="modal-body">
-						<p>You have previously submitted a job with these same
-						parameters. The results will not be different.</p>
-						<div class="dup-list"></div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					</div>
-				</div>
+		<div class="form-group">
+			<label for="phenotype" class="control-label col-xs-2">Phenotypes</label>
+			<div class="col-xs-10">
+				<select id="phenotype" name="phenotype" class="form-control"></select>
 			</div>
 		</div>
+		<div class="form-group">
+			<label for="response" class="control-label col-xs-2">Response</label>
+			<div class="col-xs-10">
+				<select id="response" name="response" class="form-control"></select>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-xs-offset-2 col-xs-10">
+				<label class="chklabel"><input id="response_invnorm" name="response_invnorm" type="checkbox"/> Inverse Normalize Response</label>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="covariates" class="control-label col-xs-2">Covariates</label>
+			<div class="col-xs-10">
+				<select id="covariates" name="covariates" class="form-control" multiple="multiple"></select>
+				<br/><a href="#" id="covar_add_all">Add All</a> - <a href="#" id="covar_remove_all">Remove All</a>
+			</div>
+		</div>
+		<div class="form-group" id="genopheno_input">
+			<label for="covariates" class="control-label col-xs-2">Pop Adjust</label>
+			<div class="col-xs-10">
+				<select id="genopheno" name="genopheno" class="form-control" multiple="multiple"></select>
+				<br/><a href="#" id="genopheno_add_all">Add All</a> - <a href="#" id="genopheno_remove_all">Remove All</a>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-xs-2">Model</label>
+			<div class="col-xs-10" id="model-type"></div>
+		</div>
+		<div class="form-group" id="filter_input">
+			<label for="response" class="control-label col-xs-2">Filter</label>
+			<div class="col-xs-10">
+				<select id="filter-type" name="variant_filter" class="form-control"></select>
+			</div>
+		</div>
+		<div class="form-group" id="region_input">
+			<label for="region" class="control-label col-xs-2">Region</label>
+			<div class="col-xs-10">
+				<select id="region" name="region" class="form-control"></select>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="response" class="control-label col-xs-2">Name</label>
+			<div class="col-xs-10">
+				<input id="job_name" name="job_name" class="form-control" />
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-xs-offset-2 col-xs-10">
+				<button class="btn-success submit-button">Submit</button>
+			</div>
+		</div>
+	</form>
+</div>
+<div class="modal fade" id="errorModal" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 class="modal-title">Model Error</h4>
+			</div>
+			<div class="modal-body">
+				<p>The following problems were found with your model:</p>
+				<div class="err-list"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="modal fade" id="duplicateModal" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 class="modal-title">Duplicate Job</h4>
+			</div>
+			<div class="modal-body">
+				<p>You have previously submitted a job with these same
+					parameters. The results will not be different.</p>
+				<div class="dup-list"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
 {% endblock %}

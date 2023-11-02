@@ -10,6 +10,10 @@
 			<p>Currently this site is set up to analyze data for the
 			<a href="https://www.nhlbi.nih.gov/research/resources/nhlbi-precision-medicine-initiative/topmed">TOPMed</a>
 			sequencing project.</p>
+			<p>As users of TOPMed data, we’d like to call your attention the following funding call
+				for integrative omics analysis of the TOPMed Data.</p>
+			<p>
+				<a href="https://grants.nih.gov/grants/guide/notice-files/NOT-HL-23-067.html"> Integrative Omics Analysis of NHLBI TOPMed Data</a></p>
 		</div>
 		<div class="col-xs-6 text-center">
 			<p>To proceed, please sign in with a Google ID.</p>
@@ -17,7 +21,9 @@
 				<button name="authorize" type="submit" style="margin-top: 2em">Sign In With Google</button>
 				<div style="color: #FF0000">&nbsp;{{ error_message }}&nbsp;</div>
 			</form>
-			<p>If you do not already have a Google ID, you can create one at
+
+
+				<p>If you do not already have a Google ID, you can create one at
 			<a href="https://accounts.google.com/SignUp">accounts.google.com</a>
 			using any e-mail address.</p>
 			{% if config["HELP_EMAIL"] %}

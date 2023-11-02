@@ -1,47 +1,78 @@
-#!/usr/bin/env python3
+SERVER_NAME = "encore.sph.umich.edu"
 
-import os
-DEFAULT_CONFIG = {
-    'SERVER_NAME': 'encore.sph.umich.edu',
-    'JOB_DATA_FOLDER': './',
-#   SLURM_ACCOUNT': 'encore',
-    'JOB_MEM_PER_CPU': 6500,
-    'JOB_CPUS_PER_TASK': 56,
-    'JOB_TIME': '14-0',
-    'QUEUE_PARTITION': 'encore',
-    'PHENO_DATA_FOLDER': './',
-    'GENO_DATA_FOLDER': './',
-    'EPACTS_BINARY': 'epacts',
-    'QUEUE_JOB_BINARY': 'sbatch',
-    'CANCEL_JOB_BINARY': 'scancel',
-    'MANHATTAN_BINARY': 'make_manhattan_json.py',
-    'QQPLOT_BINARY': 'make_qq_json.py',
-    'TOPHITS_BINARY': 'make_tophits_json.py',
-    'NEAREST_GENE_BED': 'data/nearest-gene.bed',
-    'VCF_FILE': '',
-    'MYSQL_HOST': 'localhost',
-    'MYSQL_DB': 'my_db',
-    'MYSQL_USER': 'my_user',
-    'MYSQL_PASSWORD': 'my_pwd',
-    'SECRET_KEY': os.urandom(24),
-    'JWT_SECRET_KEY': None,
-    'GOOGLE_LOGIN_CLIENT_ID': None,
-    'GOOGLE_LOGIN_CLIENT_SECRET': None,
-    'LD_SERVER': 'https://portaldev.sph.umich.edu/ld/',
-    'HELP_EMAIL': '',
-    'BUILD_REF': {
-        'GRCh37': {
-            'fasta': '/data/ref/hs37d5.fa',
-            'nearest_gene_bed': '/data/ref/nearest-gene.GRCh37.bed'
-        },
-        'GRCh38': {
-            'fasta': '/data/ref/hs38DH.fa',
-            'nearest_gene_bed': '/data/ref/nearest-gene.GRCh38.bed'
-        }
+
+#ANALYSIS_BINARY = "/net/fantasia/home/hmkang/bin/epactsRelease/bin/epacts"
+#ANALYSIS_BINARY = "/net/fantasia/home/hmkang/tools/epacts.3.3.0/bin/epacts"
+ROOT_APP_FOLDER = "/net/encore1"
+
+EPACTS_BINARY = {
+    "epacts-3.3": ROOT_APP_FOLDER + "/epacts/epactsdev/bin/epacts",
+    "epacts-3.4": ROOT_APP_FOLDER + "/epacts/epacts-3.4rc/bin/epacts",
+    "epacts-3.4.1": ROOT_APP_FOLDER + "/epacts/epacts-3.4rc2/bin/epacts"
+}
+EPACTS_VERSION = "epacts-3.4.1"
+
+SAIGE_BINARY = {
+    "saige-0.39": "make -f{}/saige/saige.v39.Makefile".format(ROOT_APP_FOLDER),
+    "saige-0.35.8.8": "make -f{}/saige/saige.v35.8.8.Makefile".format(ROOT_APP_FOLDER),
+    "saige-0.29.4.4": "make -f{}/saige/saige.v29.4.4.Makefile".format(ROOT_APP_FOLDER),
+    "saige-0.29.4.2": "make -f{}/saige/saige.v29.4.2.Makefile".format(ROOT_APP_FOLDER),
+    "saige-0.29.1": "make -f{}/saige/saige.v29.1.Makefile".format(ROOT_APP_FOLDER),
+    "saige-0.29": "make -f{}/saige/saige.v29.Makefile".format(ROOT_APP_FOLDER),
+    "saige-0.26": "make -f{}/saige/saige.Makefile".format(ROOT_APP_FOLDER)
+}
+SAIGE_VERSION = "saige-0.39"
+
+QUEUE_JOB_BINARY = "/usr/cluster/bin/sbatch"
+CANCEL_JOB_BINARY = "/usr/cluster/bin/scancel"
+TABIX_BINARY = "/usr/cluster/bin/tabix"
+SAV_BINARY = "/net/encore1/savvy-1.2.0/bin/sav"
+BGZIP_BINARY = "/usr/cluster/bin/bgzip"
+
+PLOT_TOOL_DIR = "/net/encore1/encore-app/plot-epacts-output/"
+MANHATTAN_BINARY = PLOT_TOOL_DIR + "make_manhattan_json.py"
+QQPLOT_BINARY = PLOT_TOOL_DIR + "make_qq_json.py"
+TOPHITS_BINARY = PLOT_TOOL_DIR + "make_top_hits_json.py"
+
+REFDATA_DIR = "/net/encore1/encore-app/anno/"
+
+LD_SERVER = "http://topmedld.csgstat.sph.umich.edu:4546/"
+
+ADMIN_USERS = ["mflick@umich.edu", "lefaivej@umich.edu", "goncalo@umich.edu", "kevinwli@umich.edu", "snehal@umich.edu"]
+ROOT_DATA_FOLDER = "/net/encore1/encoredata"
+JOB_DATA_FOLDER = ROOT_DATA_FOLDER + "/jobs"
+PHENO_DATA_FOLDER = ROOT_DATA_FOLDER + "/pheno"
+GENO_DATA_FOLDER = ROOT_DATA_FOLDER + "/geno"
+
+BUILD_REF = {
+    "GRCh37": {
+        "fasta": "/data/local/ref/gotcloud.ref/hs37d5.fa",
+        "nearest_gene_bed": REFDATA_DIR + "nearest_gene.GRCh37.bed"
+    },
+    "GRCh38": {
+        "fasta": "/data/local/ref/gotcloud.ref/hg38/hs38DH.fa",
+        "nearest_gene_bed": REFDATA_DIR + "nearest_gene.GRCh38.bed"
+
     }
 }
 
-for key in DEFAULT_CONFIG.keys():
-    if os.getenv(key):
-        DEFAULT_CONFIG[key] = os.environ[key]
-    globals()[key] = DEFAULT_CONFIG[key]
+AVAIL_MODELS = ["lm", "lmm", "skato", "mmskato", "saige-bin", "saige-qt"]
+
+SECRET_KEY = "!}yxhS*@osk6dvU,l:SJj0O-"
+JWT_SECRET_KEY = "VmpLbA4ZnvdM^Z5R5FHkQ_Hb"
+
+MYSQL_DB = "encore"
+MYSQL_HOST = "localhost"
+MYSQL_USER = "encore_user"
+MYSQL_PASSWORD = "N{cpQ?Z)bssh"
+
+GOOGLE_LOGIN_CLIENT_ID = "243918979039-pv0lo0v26rklg3fjnnr1nh4f2sg3frik.apps.googleusercontent.com"
+GOOGLE_LOGIN_CLIENT_SECRET = "1PXAwCD53gXQCtxwMuOQ2xdv"
+
+GIT_BINARY = "/usr/bin/git"
+
+PROPAGATE_EXCEPTIONS = True
+
+HELP_EMAIL = "encore-support@umich.edu"
+
+USE_X_SENDFILE = True

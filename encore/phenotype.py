@@ -33,6 +33,8 @@ class Phenotype:
         return self.relative_path("pheno.txt")
 
     def get_pheno_reader(self):
+        print("from phenotype self.meta,",self.meta)
+        print(self.get_raw_path())
         return PhenoReader(self.get_raw_path(), self.meta)
 
     def relative_path(self, *args):

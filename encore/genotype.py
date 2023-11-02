@@ -15,6 +15,7 @@ class Genotype:
         if meta is None:
             self.meta = {}
         else:
+
             self.meta = meta
         self.name = None
         self.build = None

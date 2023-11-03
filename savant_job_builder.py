@@ -13,42 +13,39 @@ class savantModel(BaseModel):
         BaseModel.__init__(self, working_directory, app_config)
         self.cores_per_job = 56
 
-
     def returnContigs(self,region):
-
+        contigVal={}
         contigDict = {
-            "CHR1":248956422,
-            "CHR2":242193529,
-            "CHR3":198295559,
-            "CHR4":190214555,
-            "CHR5":181538259,
-            "CHR6":170805979,
-            "CHR7":159345973,
-            "CHR8":145138636,
-            "CHR9":138394717,
-            "CHR10":133797422,
-            "CHR11":135086622,
-            "CHR12":133275309,
-            "CHR13":114364328,
-            "CHR14":107043718,
-            "CHR15":101991189,
-            "CHR16":90338345,
-            "CHR17":83257441,
-            "CHR18":80373285,
-            "CHR19":58617616,
-            "CHR20":64444167,
-            "CHR21":46709983,
-            "CHR22":50818468,
-            "CHRX":156040895,
-            "CHRY":57227415,
-            "CHRM":16569
+            "chr1":248956422,
+            "chr2":242193529,
+            "chr3":198295559,
+            "chr4":190214555,
+            "chr5":181538259,
+            "chr6":170805979,
+            "chr7":159345973,
+            "chr8":145138636,
+            "chr9":138394717,
+            "chr10":133797422,
+            "chr11":135086622,
+            "chr12":133275309,
+            "chr13":114364328,
+            "chr14":107043718,
+            "chr15":101991189,
+            "chr16":90338345,
+            "chr17":83257441,
+            "chr18":80373285,
+            "chr19":58617616,
+            "chr20":64444167,
+            "chr21":46709983,
+            "chr22":50818468,
+            "chrX":156040895
         }
 
         if(region == "all"):
-           contigVal= contigDict
+            contigVal= contigDict
         else:
             regval = contigDict.get(region)
-            contigDict[region]=regval
+            contigVal[region]=regval
 
 
         return contigVal
@@ -64,121 +61,83 @@ class savantModel(BaseModel):
                 opts['min_maf']= 0.001
             elif vf == "min-maf-001":
                 #opts.append("STEP2OPT='--minMAF 0.001 --IsOutputAFinCaseCtrl=FALSE'")
-                opts['min-maf']= 0.001
+                opts['min_maf']= 0.001
             elif vf == "min-mac-20":
-                opts['min-mac']= 20
+                opts['min_mac']= 20
 
             else:
                 raise Exception("Unrecognized variant filter ({})".format(vf))
-        if model.get("region", None):
-            region = model.get("region").upper()
+
+        region_value = model.get("region", None)
+
+        if region_value is None:
+            contigval = self.returnContigs("all")
+            opts['contigs']=contigval
+        else:
+            region = model.get("region")
+            print("region",region)
             if region.startswith("CHR"):
                 region = region[3:]
+            #opts.append("region=".format(region))
             contigval = self.returnContigs(region)
             opts['contigs']=contigval
-            opts['region_size']=1000000
-        elif geno.get_chromosomes():
-            opts.append("CHRS='{}'".format(geno.get_chromosomes()))
-        print("opts from the getopt")
-        print(opts)
-        #def  write_confif_file(self):
-        # input_vcf_expression: /net/wonderland/home/lefaivej/savant/1000g-test/ALL.chr{chrom}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.sav
-        # pheno_file: pheno_with_sex.tsv
-        # model: savant-lm
-        # response: Trait_1
-        # min_mac: 3
-        # inv_norm: true
-        # covariates:
-        #  - Sex
-        # region_size: 1000000
-        # contigs:
-        #   "20": 64444167
+            opts['region_size']=5000000
+        opts['region_size']=100000
+        # elif geno.get_chromosomes():
+        #     opts.append("CHRS='{}'".format(geno.get_chromosomes()))
         return opts
 
-#get_opts
-#singularity exec -B /net/wonderland:/net/wonderland:ro /net/wonderland/home/lefaivej/savant/snakemake/encore-analyses.sif snakemake --snakefile  /net/dumbo/home/snehal/SavantTestRun/Snakefile-encore -j ${SLURM_CPUS_PER_TASK}
     def get_analysis_commands(self, model_spec, geno, pheno, ped):
-        pipeline = self.app_config.get("SAVANT_SIF_FILE", None)
-        binary = self.app_config.get("SAVANT_BINARY", None)
-        if isinstance(binary, dict):
-            binary = binary.get(pipeline, None)
-            print("from the if",binary)
-        print("binary", binary)
-        print("pipeline", pipeline)
+        pipeline = self.app_config["SAVANT_SIF_FILE"][0]
+        if "SAVANT_BINARY" in self.app_config:
+            binary = self.app_config["SAVANT_BINARY"]
+        if isinstance(binary, tuple):
+            binary = binary[0]
         if not binary:
             raise Exception("Unable to find Savant sif file file  (pipeline: {})".format(pipeline))
-        cmd = "singularity exec -B /net/wonderland:/net/wonderland:ro {} ".format(pipeline) + \
+        cmd = "singularity exec -B /net/encore1/savant:/net/encore1/savant:ro -B /net/encore1/encoredata:/net/encore1/encoredata:ro {} ".format(pipeline) + \
               " snakemake --snakefile {}".format(binary)+ \
               " -j ${SLURM_CPUS_PER_TASK}"
-        print("cmd",cmd)
 
-        optlist=self.get_opts(model_spec, geno)
+        optlist = self.get_opts(model_spec, geno)
+        optlist["input_vcf_expression"]= geno.get_sav_path(1).replace("chr1", "{chrom}")
+        optlist["pheno_file"]= ped.get("path")
 
-        print
-        optlist["input_vcf_expression"]=geno.get_sav_path(1).replace("chr1", "chr{chrom}")
-        optlist["pheno_file"]=ped.get("path")
         for resp in ped.get("response"):
-            optlist["RESPONSE"]=resp
+            optlist['response']=resp
         covars = ped.get("covars")
         if len(covars)>0:
-             optlist["covars"]=covars
-        optlist["model"]=model_spec['type']
-        #     #cmd += " RESPONSE={}".format(resp)
-
-
-        #input_vcf_expression: /net/wonderland/home/lefaivej/savant/1000g-test/ALL.chr{chrom}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.sav
-
-        # optlist.append("input_vcf_expression: {}".format(geno.get_sav_path(1)).replace("chr1", "chr{chrom}"))
-        # optlist.append("pheno_file: {}".format(ped.get("path")))
-        # for resp in ped.get("response"):
-        #     #cmd += " RESPONSE={}".format(resp)
-        #     optlist.append("RESPONSE:{}".format(resp))
-        # covars = ped.get("covars")
-        # if len(covars)>0:
-        #     #cmd += " COVAR={}".format(",".join(covars))
-        #     optlist.append("covars:{}".format("\n -".join(covars)))
-        # print("******spec*******")
-        # print(model_spec['type'])
-        # optlist.append("model:{}".format(model_spec['type']))
-
-
-
-        #cmd += " " + " ".join(self.get_opts(model_spec, geno))
-        print(optlist)
+            optlist['covariates']=covars
         confilepath = self.relative_path("config.yml")
-        print(self.relative_path("config.yml"))
+        #print(self.relative_path("config.yml"))
 
-        dict_file = {
-            "input_vcf_expression": geno.get_sav_path(1).replace("chr1", "chr{chrom}"),
-            "pheno_file": ped.get("path"),
-            "model": "savant-lm",
-            "response": resp,
-            "min_mac": "3",
-            "inv_norm": "true",
-            "covariates":['sex'],
-            "region_size": "1000000",
-            "contigs":{ "20": "64444167"},
-
-        }
+        # dict_file = {
+        #     "input_vcf_expression": geno.get_sav_path(1).replace("chr1", "chr{chrom}"),
+        #     "pheno_file": ped.get("path"),
+        #     "model": "savant-lm",
+        #     "response": resp,
+        #     "min_mac": "3",
+        #     "inv_norm": "true",
+        #     "covariates":['sex'],
+        #     "region_size": "1000000",
+        #     "contigs":{ "20": "64444167"},
+        #
+        # }
 
         with open(confilepath, 'w') as file:
             documents = yaml.dump(optlist, file)
-
-
-        # with open(confilepath, 'w+') as fp:
-        #     for item in optlist:
-        #        fp.write("%s\n" % item)
-        #     print('Done')
-
         return [cmd]
 
     def get_postprocessing_commands(self, geno, result_file="./results.txt.gz"):
         cmds = []
-        cmds.append("tabix -s1 -b2 -e2 results.txt.gz")
+        print(self.app_config.get("TABIX_BINARY", "tabix"))
         cmds.append("zcat -f {} | ".format(result_file) + \
-                    'awk -F"\\t" \'BEGIN {OFS="\\t"} NR==1 {for (i=1; i<=NF; ++i) {if($i=="p.value") pcol=i; if($i=="N") ncol=i}; if (pcol<1 || ncol<1) exit 1; print} ' + \
-                    '($ncol > 0 && $pcol < 0.001) {print}\' | ' + \
+                    'awk -F"\\t" \'BEGIN {OFS="\\t"} NR==1 {for (i=1; i<=NF; ++i) {if($i=="pvalue") pcol=i}; if (pcol<1) exit 1; print} ' + \
+                    '($pcol < 0.001) {print}\' | ' + \
                     "{} -c > output.filtered.001.gz".format(self.app_config.get("BGZIP_BINARY", "bgzip")))
+        if self.app_config.get("TABIX_BINARY"):
+            cmd  = " {} -s1 -b2 -e2  results.txt.gz".format(self.app_config.get("TABIX_BINARY", "tabix"))
+            cmds.append(cmd)
         if self.app_config.get("MANHATTAN_BINARY"):
             cmd  = "{} {} ./manhattan.json".format(self.app_config.get("MANHATTAN_BINARY", ""), result_file)
             cmds.append(cmd)
@@ -198,7 +157,6 @@ class savantModel(BaseModel):
 
         try:
             ped_writer = self.get_ped_writer(model_spec, geno, pheno)
-            print("ped_file_path",ped_file_path)
             with open(ped_file_path, "w") as pedfile:
                 ped_writer.write_to_file(pedfile, comment_header=False)
             return {
@@ -213,19 +171,21 @@ class savantModel(BaseModel):
         geno = self.get_geno(model_spec)
         pheno = self.get_pheno(model_spec)
 
-        ped = self.write_ped_file(self.relative_path("pheno.ped"), model_spec, geno, pheno)
+        #print("prepare jobs")
+        #print("write_ped_file",self.relative_path("pheno.ped"))
 
+        ped = self.write_ped_file(self.relative_path("pheno.ped"), model_spec, geno, pheno)
         cmds =  self.if_exit_success(
             self.get_analysis_commands(model_spec, geno, pheno, ped),
-            self.get_postprocessing_commands(geno)
-        )
-
+            self.get_postprocessing_commands(geno))
         return {"commands": cmds}
 
     def get_progress(self):
-        output_file_glob = self.relative_path("step2.bin.*.txt")
-
-        fre = r'step2\.bin\.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.txt$'
+        output_file_glob = self.relative_path("tmp/out.savant-lm*.tsv.tmp")
+        print(output_file_glob)
+        #fre = r'step2\.bin\.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.txt$'
+        fre= r'out\.savant-lm\.(?P<chr>\w+)\_(?P<start>\d+)\_(?P<stop>\d+)\.tsv.tmp$'
+        print("inside get progress")
         resp = get_chr_chunk_progress(output_file_glob, fre)
         return resp
 
@@ -258,23 +218,24 @@ class savantModel(BaseModel):
                     return ("Variance of the phenotype is much smaller than 1. "
                             "Please consider using inverse normalized response")
         return None
-#singularity exec -B /net/wonderland:/net/wonderland:ro /net/wonderland/home/lefaivej/savant/snakemake/encore-analyses.sif snakemake --snakefile  /net/dumbo/home/snehal/SavantTestRun/Snakefile-encore -j ${SLURM_CPUS_PER_TASK}
+
 class LinearSavantModel(savantModel):
-    model_code = "Savant-LM"
+    model_code = "savant-lm"
     model_name = "SAVANT Single variant association analysis"
     model_desc = "Fast Simple Linear Model"
-    depends = ["sav", "snps"]
+    depends = ["sav"]
 
     def __init__(self, working_directory, config):
         savantModel.__init__(self, working_directory, config)
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno)
-        opts += ["RESPONSETYPE=quantitative"]
+        #opts += ["RESPONSETYPE=quantitative"]
+        opts["model"]=self.model_code
         return opts
 
 class BinarySavantModel(savantModel):
-    model_code = "Savant-bin"
+    model_code = "savant-bin"
     model_name = "Savant Logistic Mixed Model"
     model_desc = "Fast Binary regression model"
     depends = ["sav", "snps"]
@@ -285,7 +246,8 @@ class BinarySavantModel(savantModel):
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno)
-        opts += ["--logit"]
+        opts["logit"]="true"
+        opts["model"]=self.model_code
         return opts
 
     def validate_model_spec(self, model_spec):
@@ -317,3 +279,5 @@ class BinarySavantModel(savantModel):
         resp["event"] = resp_event
         model_spec["response"] = resp
         model_spec["response_desc"] = "Pr({} = {})".format(resp_name, resp_event)
+
+

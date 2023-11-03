@@ -15,11 +15,12 @@ class savantModel(BaseModel):
 
     def returnContigs(self,region):
         contigVal={}
+
         contigDict = {
             "chr1":248956422,
-            "chr2":242193529,
+            "ch2":242193529,
             "chr3":198295559,
-            "chr4":190214555,
+            "ch4":190214555,
             "chr5":181538259,
             "chr6":170805979,
             "chr7":159345973,
@@ -38,7 +39,9 @@ class savantModel(BaseModel):
             "chr20":64444167,
             "chr21":46709983,
             "chr22":50818468,
-            "chrX":156040895
+            "chrx":156040895,
+            "chry":57227415,
+            "chrm":16569
         }
 
         if(region == "all"):
@@ -69,33 +72,37 @@ class savantModel(BaseModel):
                 raise Exception("Unrecognized variant filter ({})".format(vf))
 
         region_value = model.get("region", None)
+        print("region_value",region_value)
 
         if region_value is None:
             contigval = self.returnContigs("all")
             opts['contigs']=contigval
         else:
-            region = model.get("region")
-            print("region",region)
+            region = model.get("region").upper()
             if region.startswith("CHR"):
                 region = region[3:]
             #opts.append("region=".format(region))
             contigval = self.returnContigs(region)
             opts['contigs']=contigval
             opts['region_size']=5000000
-        opts['region_size']=100000
+
         # elif geno.get_chromosomes():
         #     opts.append("CHRS='{}'".format(geno.get_chromosomes()))
+        print(opts)
         return opts
 
     def get_analysis_commands(self, model_spec, geno, pheno, ped):
-        pipeline = self.app_config["SAVANT_SIF_FILE"][0]
+        pipeline = self.app_config["SAVANT_SIF_FILE"]
         if "SAVANT_BINARY" in self.app_config:
             binary = self.app_config["SAVANT_BINARY"]
-        if isinstance(binary, tuple):
-            binary = binary[0]
+        if isinstance(binary, dict):
+            binary = binary.get(pipeline, None)
+            print("from the if",binary)
+        print("binary", binary)
+        print("pipeline", pipeline)
         if not binary:
             raise Exception("Unable to find Savant sif file file  (pipeline: {})".format(pipeline))
-        cmd = "singularity exec -B /net/encore1/savant:/net/encore1/savant:ro -B /net/encore1/encoredata:/net/encore1/encoredata:ro {} ".format(pipeline) + \
+        cmd = "singularity exec -B /net/wonderland:/net/wonderland:ro {} ".format(pipeline) + \
               " snakemake --snakefile {}".format(binary)+ \
               " -j ${SLURM_CPUS_PER_TASK}"
 
@@ -107,9 +114,16 @@ class savantModel(BaseModel):
             optlist['response']=resp
         covars = ped.get("covars")
         if len(covars)>0:
-            optlist['covariates']=covars
+            optlist['covariate']=covars
+
+
+
+
+
+
+        print("cmd from the analysis", cmd)
         confilepath = self.relative_path("config.yml")
-        #print(self.relative_path("config.yml"))
+        print(self.relative_path("config.yml"))
 
         # dict_file = {
         #     "input_vcf_expression": geno.get_sav_path(1).replace("chr1", "chr{chrom}"),
@@ -130,13 +144,15 @@ class savantModel(BaseModel):
 
     def get_postprocessing_commands(self, geno, result_file="./results.txt.gz"):
         cmds = []
-        print(self.app_config.get("TABIX_BINARY", "tabix"))
         cmds.append("zcat -f {} | ".format(result_file) + \
+
+            #For Savant column name is different:
+            # zcat -f ./results.txt.gz | awk -F"\t" 'BEGIN {OFS="\t"} NR==1 {for (i=1; i<=NF; ++i) {if($i=="pvalue") pcol=i}; if (pcol<1) exit 1} $pcol < 0.001 {print $pcol}' | | /usr/cluster/bin/bgzip -c > output.filtered.001.gz
                     'awk -F"\\t" \'BEGIN {OFS="\\t"} NR==1 {for (i=1; i<=NF; ++i) {if($i=="pvalue") pcol=i}; if (pcol<1) exit 1; print} ' + \
                     '($pcol < 0.001) {print}\' | ' + \
                     "{} -c > output.filtered.001.gz".format(self.app_config.get("BGZIP_BINARY", "bgzip")))
         if self.app_config.get("TABIX_BINARY"):
-            cmd  = " {} -s1 -b2 -e2  results.txt.gz".format(self.app_config.get("TABIX_BINARY", "tabix"))
+            cmd  = " {} -s1 -b2 -e2  result.txt.gz\n".format(self.app_config.get("TABIX_BINARY", "tabix"))
             cmds.append(cmd)
         if self.app_config.get("MANHATTAN_BINARY"):
             cmd  = "{} {} ./manhattan.json".format(self.app_config.get("MANHATTAN_BINARY", ""), result_file)
@@ -171,21 +187,20 @@ class savantModel(BaseModel):
         geno = self.get_geno(model_spec)
         pheno = self.get_pheno(model_spec)
 
-        #print("prepare jobs")
-        #print("write_ped_file",self.relative_path("pheno.ped"))
+        print("prepare jobs")
+        print("write_ped_file",self.relative_path("pheno.ped"))
 
         ped = self.write_ped_file(self.relative_path("pheno.ped"), model_spec, geno, pheno)
         cmds =  self.if_exit_success(
             self.get_analysis_commands(model_spec, geno, pheno, ped),
             self.get_postprocessing_commands(geno))
+        print("cmds from prepare jobs",cmds)
         return {"commands": cmds}
 
     def get_progress(self):
         output_file_glob = self.relative_path("tmp/out.savant-lm*.tsv.tmp")
-        print(output_file_glob)
-        #fre = r'step2\.bin\.(?P<chr>\w+)\.(?P<start>\d+)\.(?P<stop>\d+)\.txt$'
+        #fre = r'out\.savant-lm\.chr2_32400001_32500000.tsv.tmp'
         fre= r'out\.savant-lm\.(?P<chr>\w+)\_(?P<start>\d+)\_(?P<stop>\d+)\.tsv.tmp$'
-        print("inside get progress")
         resp = get_chr_chunk_progress(output_file_glob, fre)
         return resp
 
@@ -230,7 +245,6 @@ class LinearSavantModel(savantModel):
 
     def get_opts(self, model, geno):
         opts = super(self.__class__, self).get_opts(model, geno)
-        #opts += ["RESPONSETYPE=quantitative"]
         opts["model"]=self.model_code
         return opts
 
@@ -279,5 +293,4 @@ class BinarySavantModel(savantModel):
         resp["event"] = resp_event
         model_spec["response"] = resp
         model_spec["response_desc"] = "Pr({} = {})".format(resp_name, resp_event)
-
 

@@ -1,0 +1,82 @@
+import os
+import math
+
+
+configfile: "config.yml"
+
+
+def get_regions_for_contig(c_length, region_size):
+    ret = []
+    num_regions = int(math.ceil(c_length / region_size))
+    for i in range(0, num_regions):
+        start = i * region_size
+        end = start + region_size
+        ret.append(str(start + 1) + "_" + str(min(end, c_length)))
+    return ret
+
+
+def get_region_strings(contigs):
+    ret = []
+    region_size = config["region_size"]
+    for c, c_length in contigs.items():
+        for r in get_regions_for_contig(c_length, region_size):
+            ret.append(c + "_" + r)
+    return ret
+
+
+def get_concatenated_results_input(wc):
+    if config["model"] == "savant-lm" or config["model"] == "savant-bin":
+        return ["tmp/out.savant-lm." + r + ".tsv" for r in get_region_strings(config["contigs"])]
+    else:
+        raise Exception("Invalid model")
+  
+
+
+rule concatenated_results:
+    input:
+        get_concatenated_results_input
+    output:
+        "results.txt.gz"
+    shell:
+        """
+        set -uo pipefail
+
+        (head -n1 {input[0]}; for f in {input}; do tail -n+2 $f; done) | bgzip > {output}.tmp
+        mv {output}.tmp {output}
+        """
+
+
+rule savant_result_chunk:
+    input:
+        vcf = config["input_vcf_expression"],
+        pheno = config["pheno_file"]
+    output:
+        temp("tmp/out.savant-lm.{chrom}_{beg}_{end}.tsv")
+    params:
+        cov_str = ",".join(config.get("covariates", [])),
+        response = config["response"],
+        region = lambda wc: wc.chrom + ":" + wc.beg + "-" + wc.end,
+        mac_arg = "--min-mac " + str(config["min_mac"]) if "min_mac" in config else "",
+        maf_arg = "--min-maf " + str(config["min_maf"]) if "min_maf" in config else "",
+        invnorm_arg = "--inv-norm" if config.get("inv_norm", False) else "",
+        logit_arg = "--logit" if config.get("logit", False) else ""
+    shell:
+        """
+        set -eu
+	 if [ -n "{params.cov_str}" ]; then
+            echo "My variable is not empty: {params.cov_str}"
+	    savant single {input.vcf} {input.pheno} \
+              --pheno {params.response} \
+              --cov {params.cov_str} \
+              --region {params.region} \
+              --output {output} {params.mac_arg} {params.maf_arg} {params.invnorm_arg} {params.logit_arg}
+        else
+            savant single {input.vcf} {input.pheno} \
+              --pheno {params.response} \
+              --region {params.region} \
+              --output {output} {params.mac_arg} {params.maf_arg} {params.invnorm_arg} {params.logit_arg}
+
+        fi
+        mv {output}.tmp {output}
+        """
+

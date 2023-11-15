@@ -31,17 +31,21 @@ def get_concatenated_results_input(wc):
         raise Exception("Invalid model")
   
 
+def get_oks_input(wc):
+    return [f + ".ok" for f in get_concatenated_results_input(wc)]
+
 
 rule concatenated_results:
     input:
-        get_concatenated_results_input
+        data = get_concatenated_results_input,
+        oks = get_oks_input
     output:
         "results.txt.gz"
     shell:
         """
         set -uo pipefail
 
-        (head -n1 {input[0]}; for f in {input}; do tail -n+2 $f; done) | bgzip > {output}.tmp
+        (head -n1 {input.data[0]}; for f in {input.data}; do tail -n+2 $f; done) | bgzip > {output}.tmp
         mv {output}.tmp {output}
         """
 
@@ -51,7 +55,7 @@ rule savant_result_chunk:
         vcf = config["input_vcf_expression"],
         pheno = config["pheno_file"]
     output:
-        temp("tmp/out.savant-lm.{chrom}_{beg}_{end}.tsv")
+        temp("tmp/out.savant-lm.{chrom}_{beg}_{end}.tsv"), temp("tmp/out.savant-lm.{chrom}_{beg}_{end}.tsv.ok")
     params:
         cov_str = ",".join(config.get("covariates", [])),
         response = config["response"],
@@ -69,14 +73,14 @@ rule savant_result_chunk:
               --pheno {params.response} \
               --cov {params.cov_str} \
               --region {params.region} \
-              --output {output} {params.mac_arg} {params.maf_arg} {params.invnorm_arg} {params.logit_arg}
+              --output {output[0]} {params.mac_arg} {params.maf_arg} {params.invnorm_arg} {params.logit_arg}
         else
             savant single {input.vcf} {input.pheno} \
               --pheno {params.response} \
               --region {params.region} \
-              --output {output} {params.mac_arg} {params.maf_arg} {params.invnorm_arg} {params.logit_arg}
+              --output {output[0]} {params.mac_arg} {params.maf_arg} {params.invnorm_arg} {params.logit_arg}
 
         fi
-        mv {output}.tmp {output}
+        touch {output[1]}
         """
 

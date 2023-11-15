@@ -57,7 +57,7 @@ rule savant_result_chunk:
     output:
         temp("tmp/out.savant-lm.{chrom}_{beg}_{end}.tsv"), temp("tmp/out.savant-lm.{chrom}_{beg}_{end}.tsv.ok")
     params:
-        cov_str = ",".join(config.get("covariates", [])),
+        cov_str = "--cov " + ",".join(config.get("covariates", [])) if "covariates" in config else "",
         response = config["response"],
         region = lambda wc: wc.chrom + ":" + wc.beg + "-" + wc.end,
         mac_arg = "--min-mac " + str(config["min_mac"]) if "min_mac" in config else "",
@@ -67,20 +67,11 @@ rule savant_result_chunk:
     shell:
         """
         set -eu
-	 if [ -n "{params.cov_str}" ]; then
-            echo "My variable is not empty: {params.cov_str}"
-	    savant single {input.vcf} {input.pheno} \
-              --pheno {params.response} \
-              --cov {params.cov_str} \
-              --region {params.region} \
-              --output {output[0]} {params.mac_arg} {params.maf_arg} {params.invnorm_arg} {params.logit_arg}
-        else
-            savant single {input.vcf} {input.pheno} \
-              --pheno {params.response} \
-              --region {params.region} \
-              --output {output[0]} {params.mac_arg} {params.maf_arg} {params.invnorm_arg} {params.logit_arg}
+        savant single {input.vcf} {input.pheno} \
+          --pheno {params.response} \
+          --region {params.region} \
+          --output {output[0]} {params.mac_arg} {params.maf_arg} {params.invnorm_arg} {params.logit_arg} {params.cov_str}
 
-        fi
         touch {output[1]}
         """
 

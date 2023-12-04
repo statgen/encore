@@ -18,7 +18,7 @@ numpy==1.15.4
 pathlib2==2.3.3
 pluggy==0.8.0
 py==1.10.0
-PyJWT==1.7.1
+PyJWT==2.4.0
 pytabix==0.0.2
 pytest==4.0.2
 rauth==0.7.3

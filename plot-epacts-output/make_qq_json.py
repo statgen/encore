@@ -177,11 +177,15 @@ class AssocResultReader:
             line = line[1:]
         header = line.rstrip().split()
         aliases = {"BEG": "BEGIN",
-            "CHR": "CHROM",
-            "POS": "BEGIN",
-            "SNPID": "MARKER_ID",
-            "N": "NS",
-            "p.value": "PVALUE"}
+           "CHR": "CHROM",
+           "chrom": "CHROM",
+           "POS": "BEGIN",
+           "pos": "BEGIN",
+           "variant_id":"MARKER_ID",
+           "SNPID": "MARKER_ID",
+           "N": "NS",
+           "pvalue": "PVALUE",
+           "p.value": "PVALUE"}
         for i, col in enumerate(header):
             if aliases.get(col):
                 header[i] = aliases.get(col)

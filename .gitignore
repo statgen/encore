@@ -7,3 +7,5 @@ flask_config.py
 *.pyc
 bin/
 build/
+encore.conf
+encore.wsgi

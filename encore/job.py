@@ -53,7 +53,7 @@ class Job:
 
     def get_model(self, config=None):
         return ModelFactory.get(self.meta.get("type", None), self.root_path, config)
-
+#Epacts create output.epacts.gz file and Saige and Savant create results.txt.gz output file.
     def get_output_files(self):
         files = []
         def add_if_exists(rel_path, display_name, primary=False):
@@ -62,7 +62,7 @@ class Job:
                 files.append({"path": rel_path, "size": os.path.getsize(file_path), 
                     "name": display_name, "primary": primary})
         add_if_exists("output.epacts.gz", "Epacts Results", True)
-        add_if_exists("results.txt.gz", "SAIGE Results", True)
+        add_if_exists("results.txt.gz", "Results", True)
         add_if_exists("output.filtered.001.gz", "Filtered Results (p-val<0.001)")
         return files
 

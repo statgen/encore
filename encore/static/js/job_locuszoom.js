@@ -40,11 +40,18 @@ $(document).ready(function() {
 
             let refVar = this.getRefvar(state, chain, fields);
             chain.header.ldrefvar = refVar;
+            varmodchr = '';
+            if (refVar.includes("_rs")) {
+                varmodchr= refVar.substring(0, myString.indexOf("_rs"));
+            } else {
+                varmodchr=refVar;
+            }
+
 
             return  [
                 this.url, 'genome_builds/', build, '/references/', source, '/populations/', population, '/variants',
                 '?correlation=', method,
-                '&variant=', encodeURIComponent(refVar),
+                '&variant=', encodeURIComponent(varmodchr),
                 '&chrom=', encodeURIComponent(state.chr),
                 '&start=', encodeURIComponent(state.start),
                 '&stop=', encodeURIComponent(state.end),

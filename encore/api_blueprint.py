@@ -413,13 +413,23 @@ def get_job_zoom(job_id, job=None):
             header[1] = "BEGIN"
         if header[1] == "POS":
             header[1] = "BEGIN"
+        if header[1] == "pos":
+            header[1] = "BEGIN"
         if header[0] == "#CHROM":
+            header[0] = "CHROM"
+        if header[0] == "#chrom":
             header[0] = "CHROM"
         if header[0] == "CHR":
             header[0] = "CHROM"
         if len(header)>6 and header[6] == "AF_Allele2":
             header[6] = "MAF"
+        if len(header)>6 and header[5] == "maf":
+            header[6] = "MAF"
         if len(header)>7 and header[7] == "N":
+            header[7] = "NS"
+        if len(header)>7 and header[7] == "pvalue":
+            header[7] = "PVALUE"
+        if len(header)>8 and header[8] == "N":
             header[7] = "NS"
         if len(header)>11 and header[11] == "p.value":
             header[11] = "PVALUE"
@@ -470,6 +480,8 @@ def get_job_zoom(job_id, job=None):
                 var1 = "{}:{}".format(r[headerpos["CHROM"]], r[headerpos["BEGIN"]])
                 if "Allele1" in headerpos and "Allele2" in headerpos:
                     var1 = "{}_{}/{}".format(var1, r[headerpos["Allele1"]], r[headerpos["Allele2"]])
+                if "ref" in headerpos and "alt" in headerpos:
+                    var1 = "{}_{}/{}".format(var1, r[headerpos["ref"]], r[headerpos["alt"]])
                 json_response_data["MARKER_ID"].append(var1)
             json_response_data["PVALUE"].append(r[headerpos["PVALUE"]])
             if "NS" in headerpos:

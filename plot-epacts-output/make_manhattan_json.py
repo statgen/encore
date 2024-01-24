@@ -161,13 +161,19 @@ class AssocResultReader:
             line = line[1:]
         header = line.rstrip().split()
         aliases = {"BEG": "BEGIN",
-            "CHR": "CHROM",
-            "POS": "BEGIN",
-            "SNPID": "MARKER_ID",
-            "N": "NS",
-            "p.value": "PVALUE",
-            "Allele1": "ref",
-            "Allele2": "alt"}
+                   "CHR": "CHROM",
+                   "chrom": "CHROM",
+                   "pos": "BEGIN",
+                   "POS": "BEGIN",
+                   "SNPID": "MARKER_ID",
+                   "variant_id": "MARKER_ID",
+                   "N": "NS",
+                   "p.value": "PVALUE",
+                   "pvalue": "PVALUE",
+                   "Allele1": "ref",
+                   "Allele2": "alt",
+                   "ref": "ref",
+                   "alt": "alt"}
         for i, col in enumerate(header):
             if aliases.get(col):
                 header[i] = aliases.get(col)
@@ -204,7 +210,10 @@ class AssocResultReader:
                     other["label"] = name2
             elif marker_id == ".":
                 marker_id = chrom + ":" + str(pos) + "_" + \
-                    v[column_indices["ref"]] + "/" + v[column_indices["alt"]]
+                            v[column_indices["ref"]] + "/" + v[column_indices["alt"]]
+            elif "rs" in marker_id:
+                marker_id = chrom + ":" + str(pos) + "_" + \
+                            v[column_indices["ref"]] + "/" + v[column_indices["alt"]]
         return AssocResult(chrom, pos, pval, marker_id, other)
 
     def __iter__(self):

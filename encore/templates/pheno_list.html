@@ -1,4 +1,7 @@
 {% extends "layout.html" %}
+{% block title %}
+<title>Encore | List of Phenotype</title>
+{% endblock %}
 {% block header %}
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
@@ -17,7 +20,7 @@
 					{data: "name", title: "Name"},
 					{data: "creation_date", title: "Date Created"},
 					{title: "View", data: "id", render: function(data) {
-						return "<a href='/phenos/" + data + "'>View</a>" 
+						return "<a href='/phenos/" + data + "'>View phenotypes details</a>"
 					}, orderable: false, className: "dt-body-center"}
 				]
 			})

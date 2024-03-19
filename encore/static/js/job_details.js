@@ -295,7 +295,11 @@ function getDataCols(cols, job_id) {
 function init_tophits(job_id, selector, data_url) {
     selector = selector || "#tophits";
     data_url = data_url|| "/api/jobs/" + job_id + "/tables/top";
+
+
+
     $.getJSON(data_url).done(function(data) {
+
         var header = data.header || {};
         data = data.data || data;
         var cols;
@@ -323,6 +327,13 @@ function init_tophits(job_id, selector, data_url) {
             }
         }
         var datacols = getDataCols(cols, job_id);
+
+        console.log("from tophits:");
+
+        console.log(data);
+        console.log(datacols);
+
+
         var pvalcol = datacols.findIndex(function(x) {return x.data=="pval";});
         $(selector).DataTable( {
             data: data,
@@ -338,7 +349,146 @@ function init_tophits(job_id, selector, data_url) {
         //  jumpToLocusZoom(data.chrom, data.peak);
         //})
     }).fail(function() {
-        $("ul.tabs li[rel='tab3'").remove();
+        $("ul.tabs li[rel='tab3']").remove();
+    });
+}
+//condeqtl
+function init_condeqtl(job_id, selector, data_url) {
+    selector = selector || "#condeqtl";
+    data_url = data_url|| "/api/jobs/" + job_id + "/tables/condeqtl";
+    $.getJSON(data_url).done(function(data) {
+        var header = data.header || {};
+        var jsonData = data.data || data;
+
+        console.log(header.cols);
+        console.log("jsondata");
+        console.log(jsonData);
+
+
+
+        // Get column count
+
+
+        // Get column names
+        var cols = header.cols || Object.keys(jsonData[0]);
+
+
+//phenotype_id,num_var,true_df,pval_true_df, pval_beta,variant_id,af,tss_distance,risk,tissue
+        $("#condeqtl").DataTable({
+            data: jsonData,
+            columns: [
+                { "data": "pheno_id", "name": "State", "title": "pheno_id"},
+                { "data": "variant_id", "name": "Confirmed", "title": "variant_id" },
+                { "data": "num_var", "name": "pip", "title": "num_var" },
+                { "data": "true_df", "name": "maxpip", "title": "true_df" },
+                { "data": "pval_true_df", "name": "af", "title": "pval true_df"},
+                { "data": "pval_beta", "name": "maxaf", "title": "pval_beta" },
+                { "data": "af", "name": "tissue", "title": "af" },
+                { "data": "tss_distance", "name": "csid", "title": "tss_distance" },
+                { "data": "risk", "name": "tissue", "title": "risk" },
+                { "data": "tissue", "name": "tissue", "title": "tissue" }
+
+            ],
+        });
+    }).fail(function() {
+        console.log("Failed to fetch data.");
+    });
+}
+
+function init_susieeqtl(job_id, selector, data_url) {
+    selector = selector || "#susieeqtl";
+    data_url = data_url|| "/api/jobs/" + job_id + "/tables/susieeqtl";
+    $.getJSON(data_url).done(function(data) {
+        var header = data.header || {};
+        var jsonData = data.data || data;
+
+        console.log(header.cols);
+        console.log("jsondata");
+        console.log(jsonData);
+
+
+
+        // Get column count
+
+
+        // Get column names
+        var cols = header.cols || Object.keys(jsonData[0]);
+        var jsonData2 = [
+            {
+                "pheno_id": "ENSG00000138738",
+                "variant_id": "chr4_120840849_C_T",
+                "pip": 0.007244401,
+                "af": 0.21195653,
+                "cs_id": 1,
+                "tissue": "T_cell"
+            },
+            {
+                "pheno_id": "ENSG00000138738",
+                "variant_id": "chr4_120840849_C_T",
+                "pip": 0.010017618,
+                "af": 0.20738637,
+                "cs_id": 1,
+                "tissue": "Monocyte"
+            },
+            {
+                "pheno_id": "ENSG00000163932",
+                "variant_id": "chr3_53170499_T_G",
+                "pip": 0.009433249,
+                "af": 0.66764706,
+                "cs_id": 1,
+                "tissue": "Lung"
+            },
+            {
+                "pheno_id": "ENSG00000138738",
+                "variant_id": "chr4_120840849_C_T",
+                "pip": 0.011677331,
+                "af": 0.26507354,
+                "cs_id": 2,
+                "tissue": "Lung"
+            },
+            {
+                "pheno_id": "ENSG00000183621",
+                "variant_id": "chr10_30890348_T_G",
+                "pip": 0.011031218,
+                "af": 0.09963235,
+                "cs_id": 3,
+                "tissue": "Lung"
+            },
+            {
+                "pheno_id": "ENSG00000125846",
+                "variant_id": "chr20_18151514_CAG_C",
+                "pip": 0.01422297,
+                "af": 0.03320158,
+                "cs_id": 1,
+                "tissue": "PBMC"
+            },
+            {
+                "pheno_id": "ENSG00000128524",
+                "variant_id": "chr7_128866336_C_T",
+                "pip": 0.017632952,
+                "af": 0.046349593,
+                "cs_id": 3,
+                "tissue": "Whole_blood"
+            }
+        ];
+
+
+        $("#susieeqtl").DataTable({
+            data: jsonData,
+            columns: [
+                { "data": "pheno_id", "name": "State", "title": "pheno_id"},
+                { "data": "variant_id", "name": "Confirmed", "title": "variant_id" },
+                { "data": "avgpip", "name": "pip", "title": "pip" },
+                { "data": "maxpip", "name": "maxpip", "title": "maxpip" },
+                { "data": "af", "name": "af", "title": "af"},
+                { "data": "maxaf", "name": "maxaf", "title": "max_af" },
+                { "data": "cs_id", "name": "csid", "title": "cis_id" },
+                { "data": "tissue", "name": "tissue", "title": "tissue" }
+
+            ],
+        });
+    }).fail(function() {
+        console.log("Failed to fetch data.");
     });
 }
 

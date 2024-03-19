@@ -16,6 +16,9 @@ body
 	padding-top:6px !important; padding-bottom:0 !important;
 	height: 32px;
 }
+.navbar-default .navbar-nav>li>a {
+    color: #333333;
+}
 .navbar-sections {min-height:32px !important;}
 .nav-tabs > li > a {padding: 5px 10px; background: #f8f8f8; border-color: #e7e7e7}
 #footer {
@@ -147,6 +150,12 @@ button:active
 button[disabled]
 {
     opacity: 0.6;
+}
+
+.btn-success {
+    color: #fff;
+    background-color: #2C6F38;
+    border-color: #4cae4c;
 }
 
 .hflex

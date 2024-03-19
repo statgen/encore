@@ -1,5 +1,8 @@
 {% set backlink = "/" %}
 {% extends "layout.html" %}
+{% block title %}
+<title>Encore | Upload Phenotype</title>
+{% endblock %}
 {% block header%}
     <script type="text/javascript" src="{{ url_for('static', filename='js/file_upload.js') }}"></script>
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/file_upload.css') }}">
@@ -37,6 +40,9 @@
 			};
 		})
 	</script>
+
+
+
 {% endblock %}
 {% block content %}
 	<h1>Upload phenotype file...</h1>

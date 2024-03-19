@@ -9,3 +9,5 @@ bin/
 build/
 encore.conf
 encore.wsgi
+venv_3.6/
+

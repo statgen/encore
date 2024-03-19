@@ -387,6 +387,19 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
         print(e)
         return "File Not Found", 404
 
+@api.route("/jobs/<job_id>/tables/susieeqtl", methods=["GET"])
+@check_view_job
+def get_job_susieeqtl(job_id, job=None):
+    print("got inside susieeqtl")
+    return get_job_output(job, "susieeqtl.json", False)
+
+
+@api.route("/jobs/<job_id>/tables/condeqtl", methods=["GET"])
+@check_view_job
+def get_job_condeqtl(job_id, job=None):
+    print("got inside condeqtl")
+    return get_job_output(job, "condeqtl.json", False)
+
 @api.route("/jobs/<job_id>/tables/top", methods=["GET"])
 @check_view_job
 def get_job_tophits(job_id, job=None):

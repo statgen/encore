@@ -1,4 +1,7 @@
 {% extends "layout.html" %}
+{% block title %}
+<title>Encore | Job Details</title>
+{% endblock %}
 {% block header %}
 
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/job_details.css') }}">
@@ -38,6 +41,8 @@
 				init_manhattan(job_id);
 				init_qqplot(job_id);
 				init_tophits(job_id);
+				init_susieeqtl(job_id);
+				init_condeqtl(job_id);
 			}
 			if (job_can_edit && job_is_active) {
 				init_editform(job_id, job_api_url);
@@ -194,6 +199,8 @@
                 <li rel="tab3">Top Hits</li>
                 <li rel="tab4">Lookups</li>
                 <li rel="tab5">Details</li>
+				<li rel="tab6">Susie-Eqtls</li>
+				<li rel="tab7">Conditional-Eqtls</li>
             </ul>
             <div class="tab-container">
 
@@ -211,6 +218,14 @@
 				</div>
 				<div id="tab5" class="tab-content">
 					{{ detailtable(job) }}
+				</div>
+				<div id="tab6" class="tab-content">
+					<p>testing susie data</p>
+					<table id="susieeqtl" class="display"></table>
+				</div>
+				<div id="tab7" class="tab-content">
+					<p>testing conditional eQtl data</p>
+					<table id="condeqtl" class="display"></table>
 				</div>
             </div>
         </div>

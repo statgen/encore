@@ -79,6 +79,13 @@ class SaigeModel(BaseModel):
             if geno.get_build_nearest_gene_path():
                 cmd += " --gene {}".format(geno.get_build_nearest_gene_path())
             cmds.append(cmd)
+        if self.app_config.get("EQTL_BINARY"):
+            #python make_eqtl_json.py  --json_file ./tophits.json --db_file
+            cmd =  "{} --json_file ./tophits.json --db_file {} --output_file ./susieeqtl.json".format(self.app_config.get("EQTL_BINARY"), self.app_config.get("EQTL_DB_FILEPATH"))
+            cmds.append(cmd)
+        if self.app_config.get("COND_EQTL_BINARY"):
+            cmd =  "{} --json_file ./tophits.json --db_file {} --output_file ./condeqtl.json".format(self.app_config.get("COND_EQTL_BINARY"), self.app_config.get("EQTL_DB_FILEPATH"))
+        cmds.append(cmd)
         return cmds 
 
     def write_ped_file(self, ped_file_path, model_spec, geno=None, pheno=None):

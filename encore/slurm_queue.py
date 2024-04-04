@@ -3,6 +3,8 @@ import os
 import subprocess
 import pwd
 from .model_factory import ModelFactory
+from .job import Job
+from flask import current_app
 
 class SlurmJob:
 
@@ -13,6 +15,25 @@ class SlurmJob:
             self.config = config 
         else:
             self.config = dict()
+
+    def get_userpriority(self,job_id):
+        print("inside get_userpriprity")
+        print(job_id)
+
+        job_userid= current_user.rid
+        print("user_id", job_userid)
+        params = {
+
+            "status_id": [2,3]
+        }
+
+        jobs = Job.list_all_for_user_with_status(job_userid,params)
+        print(jobs.total_count)
+        totaljobs = jobs.total_count
+        return totaljobs
+
+
+
 
     def get_batch_headers(self, model_plan,model_code):
 # Epacts needs more memory ,so we reduced the no of cores and increased the memory
@@ -30,9 +51,12 @@ class SlurmJob:
         
         sbatch_headers = ["#!/bin/bash"]
 
+        user_prior =self.get_userpriority(self, self.job_id)
+
         if "SLURM_ACCOUNT" in self.config:
             sbatch_headers.append(
-                "#SBATCH --account={}".format(self.config.get("SLURM_ACCOUNT")))
+                "#SBATCH --account={}".format(self.config.get("SLURM_ACCOUNT"))
+            )
 
         sbatch_headers.extend((
             "#SBATCH --partition={}".format(self.config.get("QUEUE_PARTITION", "encore")),
@@ -42,6 +66,7 @@ class SlurmJob:
             "#SBATCH --cpus-per-task={}".format(cores_per_job),
             "#SBATCH --time={}".format(self.config.get("JOB_TIME", "14-0")),
             "#SBATCH --nodes=1",
+            "nice -n {}".format(user_prior),
             "export OPENBLAS_NUM_THREADS=1"))
 #Epacts code need this R library path otherwise Ep
         if(model_code in epactscode):

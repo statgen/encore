@@ -378,10 +378,9 @@ function init_condeqtl(job_id, selector, data_url) {
             data: jsonData,
             columns: [
                 { "data": "pheno_id", "name": "State", "title": "pheno_id"},
+                { "data": "chr", "name": "Confirmed", "title": "chr" },
                 { "data": "variant_id", "name": "Confirmed", "title": "variant_id" },
                 { "data": "num_var", "name": "pip", "title": "num_var" },
-                { "data": "true_df", "name": "maxpip", "title": "true_df" },
-                { "data": "pval_true_df", "name": "af", "title": "pval true_df"},
                 { "data": "pval_beta", "name": "maxaf", "title": "pval_beta" },
                 { "data": "af", "name": "tissue", "title": "af" },
                 { "data": "tss_distance", "name": "csid", "title": "tss_distance" },
@@ -389,6 +388,7 @@ function init_condeqtl(job_id, selector, data_url) {
                 { "data": "tissue", "name": "tissue", "title": "tissue" }
 
             ],
+            order: [[6, "asc"]]
         });
     }).fail(function() {
         console.log("Failed to fetch data.");
@@ -413,64 +413,7 @@ function init_susieeqtl(job_id, selector, data_url) {
 
         // Get column names
         var cols = header.cols || Object.keys(jsonData[0]);
-        var jsonData2 = [
-            {
-                "pheno_id": "ENSG00000138738",
-                "variant_id": "chr4_120840849_C_T",
-                "pip": 0.007244401,
-                "af": 0.21195653,
-                "cs_id": 1,
-                "tissue": "T_cell"
-            },
-            {
-                "pheno_id": "ENSG00000138738",
-                "variant_id": "chr4_120840849_C_T",
-                "pip": 0.010017618,
-                "af": 0.20738637,
-                "cs_id": 1,
-                "tissue": "Monocyte"
-            },
-            {
-                "pheno_id": "ENSG00000163932",
-                "variant_id": "chr3_53170499_T_G",
-                "pip": 0.009433249,
-                "af": 0.66764706,
-                "cs_id": 1,
-                "tissue": "Lung"
-            },
-            {
-                "pheno_id": "ENSG00000138738",
-                "variant_id": "chr4_120840849_C_T",
-                "pip": 0.011677331,
-                "af": 0.26507354,
-                "cs_id": 2,
-                "tissue": "Lung"
-            },
-            {
-                "pheno_id": "ENSG00000183621",
-                "variant_id": "chr10_30890348_T_G",
-                "pip": 0.011031218,
-                "af": 0.09963235,
-                "cs_id": 3,
-                "tissue": "Lung"
-            },
-            {
-                "pheno_id": "ENSG00000125846",
-                "variant_id": "chr20_18151514_CAG_C",
-                "pip": 0.01422297,
-                "af": 0.03320158,
-                "cs_id": 1,
-                "tissue": "PBMC"
-            },
-            {
-                "pheno_id": "ENSG00000128524",
-                "variant_id": "chr7_128866336_C_T",
-                "pip": 0.017632952,
-                "af": 0.046349593,
-                "cs_id": 3,
-                "tissue": "Whole_blood"
-            }
-        ];
+
 
 
         $("#susieeqtl").DataTable({
@@ -486,6 +429,7 @@ function init_susieeqtl(job_id, selector, data_url) {
                 { "data": "tissue", "name": "tissue", "title": "tissue" }
 
             ],
+            order: [[2, "asc"]]
         });
     }).fail(function() {
         console.log("Failed to fetch data.");

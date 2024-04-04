@@ -39,13 +39,14 @@ def extract_variant_ids(json_data):
 
 def convert_to_json(rows):
     # Define the JSON structure
-    json_data = {"header": {"cols": ["pheno_id","variant_id","maxpip","avgpip","maxaf","af","cs_id","tissue"]}, "data": []}
+    json_data = {"header": {"cols": ["pheno_id","variant_id","chr","maxpip","avgpip","maxaf","af","cs_id","tissue"]}, "data": []}
 
     # Convert each row into a dictionary and append to the "data" list
     for row in rows:
         print (row)
         data_row = {
             "variant_id": row[0],
+            "chr": row[0].split('_')[0],
             "pheno_id": row[1],
             "maxpip": row[2],
             "avgpip": row[3],

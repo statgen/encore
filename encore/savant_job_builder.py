@@ -95,6 +95,7 @@ class savantModel(BaseModel):
             binary = binary[0]
         if not binary:
             raise Exception("Unable to find Savant sif file file  (pipeline: {})".format(pipeline))
+        #for dev singularity exec -B /net/wonderland:/net/wonderland:ro,/net/dumbo:/net/dumbo:ro
         cmd = "singularity exec -B /net/encore1/savant:/net/encore1/savant:ro -B /net/encore1/encoredata:/net/encore1/encoredata {} ".format(pipeline) + \
               " snakemake --snakefile {}".format(binary)+ \
               " -j ${SLURM_CPUS_PER_TASK}"
@@ -141,7 +142,7 @@ class savantModel(BaseModel):
             cmd =  "{} --json_file ./tophits.json --db_file {} --output_file ./susieeqtl.json".format(self.app_config.get("EQTL_BINARY"), self.app_config.get("EQTL_DB_FILEPATH"))
             cmds.append(cmd)
         if self.app_config.get("COND_EQTL_BINARY"):
-            cmd =  "{} --json_file ./tophits.json --db_file {} --output_file ./condieqtl.json".format(self.app_config.get("COND_EQTL_BINARY"), self.app_config.get("EQTL_DB_FILEPATH"))
+            cmd =  "{} --json_file ./tophits.json --db_file {} --output_file ./condeqtl.json".format(self.app_config.get("COND_EQTL_BINARY"), self.app_config.get("EQTL_DB_FILEPATH"))
         cmds.append(cmd)
         return cmds
 

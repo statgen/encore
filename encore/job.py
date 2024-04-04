@@ -170,6 +170,17 @@ class Job:
         results = Job.__list_by_sql_where_query(db, where=where, query=query)
         return results
 
+    @staticmethod
+    def list_all_for_user_with_status(user_id, config=None, query=None):
+        db = sql_pool.get_conn()
+        params = query.params
+        params["is_active"] = True
+        params["user_id"] = user_id
+        where, joins = Job.__params_to_where(params)
+        results = Job.__list_by_sql_where_query(db, where=where)
+        print("results from jobs",results)
+        return results
+
 
     @staticmethod
     def list_all_for_user_shared_with(user_id, shared_user_id, config=None, query=None):
@@ -283,6 +294,9 @@ class Job:
                 where.add(WhereExpression("jobs.pheno_id = uuid_to_bin(%s)", (v,)))
             elif k == "geno_id":
                 where.add(WhereExpression("jobs.geno_id = uuid_to_bin(%s)", (v, )))
+            elif k == "status_id":
+            # Handle the status_id parameter
+                where.add(WhereExpression("jobs.status_id IN %s", (tuple(v),)))
             elif k == "shared_with":
                 where.add(WhereExpression("jobs.id IN (SELECT job_id from job_users where user_id=%s and role_id!=1)", (v,)))
             elif k == "is_active":

@@ -7,6 +7,7 @@ from .notice import Notice
 from .job import Job 
 from .user import User
 from .access_tracker import AccessTracker
+import sqlite3
 from .auth import check_view_job, check_edit_job, can_user_edit_job, check_view_pheno, check_edit_pheno, can_user_edit_pheno
 
 user_area = Blueprint("user", __name__,
@@ -77,8 +78,47 @@ def get_job_variant_page(job_id, job=None):
     chrom = request.args.get("chrom", None)
     pos = int(request.args.get("pos", None))
     variant_id = request.args.get("variant_id", None)
+    db_file=current_app.config.get("EQTL_DB_FILEPATH", "./")
+    print("db_file",db_file)
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    sql_query = "SELECT phenotype_id, variant_id, pip, af, cs_id, tissue" \
+                " FROM susieeqtl WHERE variant_id = ?"
+
+# Execute the query with the id parameter
+    cursor.execute(sql_query, (variant_id,))
+    # Execute the query with the variant IDs as parameters
+    #cursor.execute(query, variant_ids)
+    rows = cursor.fetchall()
+
+    conn.close()
+    print("******************************************")
+    print(rows)
+    print("******************************************")
+    #(739910, 'ENSG00000197905', 'chr12_3003552_G_A', 0.06782625, 0.06911765, 2, 'Lung')]
+    json_data = {"header": {"cols": ["pheno_id", "variant_id", "pip", "af", "cs_id", "tissue"]}, "data": []}
+
+    # Convert each row into a dictionary and append to the "data" list
+    for row in rows:
+
+        data_row = {
+            "variant_id": row[1],
+            "chr": row[1].split('_')[0],
+            "pheno_id": row[0],
+            "pip": row[2],
+            "af": row[3],
+            "cs_id": row[4],
+            "tissue": row[5]
+        }
+        json_data["data"].append(data_row)
+
+
+
+
+
+
     return render_template("job_variant.html", job=job.as_object(), 
-        variant_id=variant_id, chrom=chrom, pos=pos)
+        variant_id=variant_id, chrom=chrom, pos=pos,json_data=json_data )
 
 @user_area.route("/jobs/<job_id>/share", methods=["GET"])
 @check_edit_job

@@ -173,9 +173,11 @@ class Job:
     @staticmethod
     def list_all_for_user_with_status(user_id, config=None, query=None):
         db = sql_pool.get_conn()
-        params = query.params
+        params = {}
+        params["status_id"] = query
         params["is_active"] = True
         params["user_id"] = user_id
+
         where, joins = Job.__params_to_where(params)
         results = Job.__list_by_sql_where_query(db, where=where)
         print("results from jobs",results)

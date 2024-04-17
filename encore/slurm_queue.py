@@ -5,6 +5,7 @@ import pwd
 from .model_factory import ModelFactory
 from .job import Job
 from flask import current_app
+from flask_login import current_user, login_required
 
 class SlurmJob:
 
@@ -17,18 +18,10 @@ class SlurmJob:
             self.config = dict()
 
     def get_userpriority(self,job_id):
-
-        print(job_id)
-
         job_userid= current_user.rid
-        print("user_id", job_userid)
-        params = {
-
-            "status_id": [2,3]
-        }
-
-        jobs = Job.list_all_for_user_with_status(job_userid,params)
-        print(jobs.total_count)
+        status_id = [2,3]
+        jobs = Job.list_all_for_user_with_status(job_userid,query=status_id)
+        #user priority is given based on how many jobs user has in the queue and running. more the nice values, lesspriority is given"
         totaljobs = jobs.total_count
         return totaljobs
 
@@ -51,7 +44,7 @@ class SlurmJob:
         
         sbatch_headers = ["#!/bin/bash"]
 
-        user_prior =self.get_userpriority(self, self.job_id)
+        user_prior =self.get_userpriority(self.job_id)
 
         if "SLURM_ACCOUNT" in self.config:
             sbatch_headers.append(

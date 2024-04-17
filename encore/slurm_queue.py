@@ -17,7 +17,7 @@ class SlurmJob:
             self.config = dict()
 
     def get_userpriority(self,job_id):
-        print("inside get_userpriprity")
+
         print(job_id)
 
         job_userid= current_user.rid

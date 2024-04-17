@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 
-
-
 import json
 import sqlite3
-
-
-
 
 def read_json_file(json_file):
     with open(json_file, 'r') as f:
@@ -25,7 +20,6 @@ def extract_variant_ids(json_data):
 
 def convert_to_json(rows):
     # Define the JSON structure
-    #'(205055, 'ENSG00000243417', 7912, 1.02885, 1078.06, 5732.29, '1.26305e-05', 'chr4_152691391_A_G', 139027, 389, 397, 0.0300666, '3.5149e-06', -0.135487, 0.0291859, '0.0108989', '0.0117985', '11', 'Whole_blood')
     json_data = {"header": {"cols": ["pheno_id","num_var","true_df","pval_true_df","pval_beta","chr","variant_id","af","tss_distance","risk","tissue"]}, "data": []}
 
     # Convert each row into a dictionary and append to the "data" list

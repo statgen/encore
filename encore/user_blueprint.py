@@ -92,10 +92,6 @@ def get_job_variant_page(job_id, job=None):
     rows = cursor.fetchall()
 
     conn.close()
-    print("******************************************")
-    print(rows)
-    print("******************************************")
-    #(739910, 'ENSG00000197905', 'chr12_3003552_G_A', 0.06782625, 0.06911765, 2, 'Lung')]
     json_data = {"header": {"cols": ["pheno_id", "variant_id", "pip", "af", "cs_id", "tissue"]}, "data": []}
 
     # Convert each row into a dictionary and append to the "data" list

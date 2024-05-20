@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+import math
 
 def read_json_file(json_file):
     with open(json_file, 'r') as f:
@@ -10,13 +11,58 @@ def read_json_file(json_file):
 
 def extract_variant_ids(json_data):
     variant_ids = []
+
     for entry in json_data['data']:
+        p_value= entry['other']['PVALUE']
+        if float(p_value) >= 5e-8:
+            combined_string = f"{entry['chrom']}_{entry['pos']}_{entry['other']['ref']}_{entry['other']['alt']}"
+            variant_ids.append(combined_string)
+            # Define the base URL
+            base_url = "http://topmedld.csgstat.sph.umich.edu:4546/genome_builds/GRCh38/references/10b92110-3ddc-453d-b3e4-52448b20f384/populations/ALL/variants?correlation=rsquare"
+            url_params = {
+                'variant': urllib.parse.quote(combined_string),  # Encode special characters in the variant string
+                'chrom': entry['chrom'],
+                'start': entry['pos'],
+                'stop': entry['pos'] + 1  # Assuming stop is pos + 1, adjust as needed
+            }
 
-        combined_string = f"{entry['chrom']}_{entry['pos']}_{entry['other']['ref']}_{entry['other']['alt']}"
-        variant_ids.append(combined_string)
+# Define variables for the URL parameters
 
-    #print(",".join(variant_ids) )
+
+# Loop through the variables and create the URLs
+for variant, chrom, start, stop in zip(variants, chromosomes, starts, stops):
+    url = base_url.format(variant, chrom, start, stop)
+    print(url)
+
+
+
+    #print("The p-value is above 5e-8",p_value)
+        else:
+            print("pvalue is not above",p_value)
+
+
+
+
+    print(",".join(variant_ids) )
     return variant_ids
+
+
+def fetch_json(variables):
+    json_data = {}
+    for var in variables:
+        curl_command = f'curl -s "https://example.com/api?var={var}"'
+        try:
+            result = subprocess.run(curl_command, shell=True, capture_output=True, text=True)
+            json_response = json.loads(result.stdout)
+            json_data[var] = json_response
+        except Exception as e:
+            print(f"Error fetching JSON for variable '{var}': {e}")
+
+    return json_data
+
+# Example usage
+
+
 
 def convert_to_json(rows):
     # Define the JSON structure
@@ -93,18 +139,34 @@ if __name__ == "__main__":
 
     # Extract variant IDs from JSON
     variant_ids = extract_variant_ids(json_data)
+    print(len(variant_ids))
+
+    variables_list = ['variable1', 'variable2', 'variable3']
+    # output_json = fetch_json(variant_ids)
+    # print(json.dumps(output_json, indent=4))
+
+
+#get the json
+
+    #after extracting the variant from top hits data filtert them . Remove the ones which are below 5X10 -8
+    #get the list of variant and send it to LS derver. Combine that Variants in the list and check those in eQtls database.
+
 
     # Check variants existence in MySQL database
 
-    rows = check_variants_exist(variant_ids,args.db_file)
-    # exported_cols = ["pheno_id","variant_id","pip","af","cs_id","tissue"]
-    # meta = {"cols": exported_cols}
+    # rows = check_variants_exist(variant_ids,args.db_file)
+    # json_data = convert_to_json(rows)
+    # with open(args.output_file, 'w') as f:
+    #     json.dump(json_data, f, indent=0)
     #
-    json_data = convert_to_json(rows)
     #
-    print(json_data)
+    # # exported_cols = ["pheno_id","variant_id","pip","af","cs_id","tissue"]
+    # # meta = {"cols": exported_cols}
+    # #
     #
-    with open(args.output_file, 'w') as f:
-        json.dump(json_data, f, indent=0)
+    # #
+    # print(json_data)
+    #
+
 
 #python plot-epacts-output/make_eqtl_json.py --json_file /Users/snehalpatil/Documents/AbecasisLab/encorejobs/34a90c56-dcba-4e05-bd12-698141a1362b/tophits2.json --db_file /Users/snehalpatil/Documents/AbecasisLab/GithubEncoreFinal/SingularityBranch/encore/plot-epacts-output/eqtl.db --output_file /Users/snehalpatil/Documents/AbecasisLab/encorejobs/34a90c56-dcba-4e05-bd12-698141a1362b/condieqtl.json

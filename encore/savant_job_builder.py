@@ -82,7 +82,7 @@ class savantModel(BaseModel):
             contigval = self.returnContigs(region)
             opts['contigs']=contigval
             opts['region_size']=5000000
-        opts['region_size']=100000
+        opts['region_size']=10000000
         # elif geno.get_chromosomes():
         #     opts.append("CHRS='{}'".format(geno.get_chromosomes()))
         return opts

@@ -254,6 +254,14 @@ function getDataCols(cols, job_id) {
                     let variant = "";
                     if (row.other && row.other.MARKER_ID) {
                         variant = row.other.MARKER_ID;
+                        if(variant.includes("rs"))
+                        {
+                            console.log("include loop");
+                            let ref = row.other && (row.other.ref || row.other.Allele1);
+                            let alt = row.other && (row.other.alt || row.other.Allele2);
+                            variant = (ref && alt) ? row.chrom + ":" + row.other.BEGIN + "_" + ref + "/" + alt : "";
+
+                        }
                     } else if (row.variant) {
                         variant = row.variant;
                     }

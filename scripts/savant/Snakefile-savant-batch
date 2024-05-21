@@ -30,12 +30,11 @@ def get_concatenated_results_input(wc):
 
 def get_oks_input(wc):
     return ["tmp/out.savant-lm." + r + ".ok" for r in get_region_strings(config["contigs"])]
-    #return [f + ".ok" for f in get_concatenated_results_input(wc)]
 
 
 rule all_concatenated_results:
     input:
-        ["results_{pheno}.tsv.gz".format(pheno=p) for p in config["responses"]]
+        [("batch_results/{pheno}/manhattan.json".format(pheno=p), "batch_results/{pheno}/qq.json".format(pheno=p), "batch_results/{pheno}/tophits.json".format(pheno=p)) for p in config["responses"]]
 
 
 rule concatenated_results:
@@ -43,14 +42,52 @@ rule concatenated_results:
         data = get_concatenated_results_input,
         oks = get_oks_input
     output:
-        "results_{pheno}.tsv.gz"
+        "batch_results/{pheno}/results.tsv.gz"
     shell:
         """
         set -uo pipefail
 
         skip=0
         for f in {input.data}; do gzip -cd $f | awk 'NR>'$skip; skip=1; done | bgzip > {output}.tmp
+        tabix -s1 -b2 -e2 {output}.tmp
         mv {output}.tmp {output}
+        mv {output}.tmp.tbi {output}.tbi
+        """
+
+
+rule manhattan_json:
+    input:
+        rules.concatenated_results.output
+    output:
+        "batch_results/{pheno}/manhattan.json"
+    shell:
+        """
+        set -eu
+        {config[post_processing_script_dir]}/make_manhattan_json.py {input} {output}
+        """
+
+
+rule qq_json:
+    input:
+        rules.concatenated_results.output
+    output:
+        "batch_results/{pheno}/qq.json"
+    shell:
+        """
+        set -eu
+        {config[post_processing_script_dir]}/make_qq_json.py {input} {output}
+        """
+
+
+rule tophits_json:
+    input:
+        rules.concatenated_results.output
+    output:
+        "batch_results/{pheno}/tophits.json"
+    shell:
+        """
+        set -eu
+        {config[post_processing_script_dir]}/make_top_hits_json.py {input} {output} --gene {config[gene_annotation_bed]}
         """
 
 

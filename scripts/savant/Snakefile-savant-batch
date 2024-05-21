@@ -91,6 +91,18 @@ rule tophits_json:
         """
 
 
+rule filtered_results:
+    input:
+        rules.concatenated_results.output
+    output:
+        "batch_results/{pheno}/output.filtered.001.tsv.gz"
+    shell:
+        """
+        set -eu
+        zcat -f {input} | awk -F"\t" 'BEGIN {{OFS="\t"}} NR==1 {{for (i=1; i<=NF; ++i) {{if($i=="pvalue") pcol=i}}; if (pcol<1) exit 1; print}} ($pcol < 0.001) {{print}}' | bgzip > {output}
+        """
+
+
 rule split_variables:
     input: 
         config["pheno_file"]

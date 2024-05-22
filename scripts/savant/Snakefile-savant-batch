@@ -34,7 +34,7 @@ def get_oks_input(wc):
 
 rule all_concatenated_results:
     input:
-        [("batch_results/{pheno}/manhattan.json".format(pheno=p), "batch_results/{pheno}/qq.json".format(pheno=p), "batch_results/{pheno}/tophits.json".format(pheno=p)) for p in config["responses"]]
+        [("batch_results/{pheno}/manhattan.json".format(pheno=p), "batch_results/{pheno}/qq.json".format(pheno=p), "batch_results/{pheno}/tophits.json".format(pheno=p), "batch_results/{pheno}/output.filtered.001.tsv.gz".format(pheno=p)) for p in config["responses"]]
 
 
 rule concatenated_results:

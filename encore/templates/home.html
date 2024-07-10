@@ -49,6 +49,9 @@
 					{% if phenos %}
 					<li><a href="{{ url_for("user.get_model_build") }}">Create New Job from Existing Phenotypes</a></li>
 					{% endif %}
+					{% if phenos %}
+					<li><a href="{{ url_for("user.get_model_build_batch") }}">Create New Batch Job from Existing Phenotypes</a></li>
+					{% endif %}
 				</ul>
 				{% else %}
 				<p>Browse available jobs below</p>

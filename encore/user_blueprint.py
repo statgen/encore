@@ -181,6 +181,15 @@ def get_model_build():
     else:
         return render_template("not_authorized_to_analyze.html")
 
+
+@user_area.route("/model-build_batch", methods=["GET"])
+def get_model_build_batch():
+    if current_user.can_analyze:
+        return render_template("model_build_batch.html")
+    else:
+        return render_template("not_authorized_to_analyze.html")
+
+
 def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None, send_as=None):
     try:
         output_file = job.relative_path(filename)

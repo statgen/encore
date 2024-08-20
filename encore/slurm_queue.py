@@ -21,7 +21,7 @@ class SlurmJob:
         job_userid= current_user.rid
         status_id = [2,3]
         jobs = Job.list_all_for_user_with_status(job_userid,query=status_id)
-        #user priority is given based on how many jobs user has in the queue and running. more the nice values, lesspriority is given"./ru
+        #user priority is given based on how many jobs user has in the queue and running. more the nice values, lesspriority is given"
         totaljobs = jobs.total_count
         return totaljobs
 

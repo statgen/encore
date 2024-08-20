@@ -42,9 +42,17 @@ class Job:
             phenos = model.get_response_values(model_spec, geno, pheno)
         return phenos
 
-    def relative_path(self, *args):
-        return os.path.expanduser(os.path.join(self.root_path, *args))
+    def relative_path(self, filename, response=None):
+        if response:
+            print("in the job relative path path")
+            print(response)
+            path = os.path.join(self.root_path,"batch_results", response, filename)
+            print(path)
+        else:
+            path = os.path.join(self.root_path, filename)
 
+        # Expand user directory and return the full path
+        return os.path.expanduser(path)
     def get_genotype_id(self):
         return self.meta.get("genotype", None) 
 

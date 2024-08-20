@@ -118,39 +118,49 @@ function init_job_cancel_button(job_id, selector) {
     });
 }
 
-function init_manhattan(job_id, selector) {
+function init_manhattan(job_id, selector,response) {
     selector = selector || "#tab1";
     const data_sources = [];
-    data_sources.push($.getJSON("/api/jobs/" + job_id + "/plots/manhattan"));
+    console.log("from init manhattan",response );
+    responseString = response[0]
+    //data_sources.push($.getJSON("/api/jobs/" + job_id + "/plots/manhattan?response="+${encodeURIComponent(responseString)};));
+    url = '/api/jobs/'+job_id+'/plots/manhattan?response='+encodeURIComponent(responseString);
+    console.log('url',url)
+
+    data_sources.push($.getJSON(url));
+
     data_sources.push($.getJSON(chrom_api_url));
     Promise.all(data_sources).then((values) => {
         const chrom_extents = {};
-        const variants = values[0]
-        if (values.length==2) {
-            const ranges = values[1];
-            if (Array.isArray(ranges) && ranges.length > 0) {
-                ranges.forEach( x => chrom_extents[x.chrom] = [x.start, x.stop]);
-            }
-            // Fix for when manhattan script stripped "chr" from chromosome name
-            const refHasChr = Object.keys(chrom_extents).every(x => x.startsWith("chr"));
-            if (variants.unbinned_variants && variants.unbinned_variants.length>0) {
-               const manHasChr = variants.unbinned_variants[0].chrom.startsWith("chr");
-               if (refHasChr && !manHasChr) {
-                   variants.unbinned_variants.forEach((x, i, a) => {
-                        a[i].chrom = "chr" + a[i].chrom;
-                   })
-                   variants.variant_bins.forEach((x, i, a) => {
-                        a[i].chrom = "chr" + a[i].chrom;
-                   });
-               };
+    const variants = values[0]
+    if (values.length==2) {
+        const ranges = values[1];
+        if (Array.isArray(ranges) && ranges.length > 0) {
+            ranges.forEach( x => chrom_extents[x.chrom] = [x.start, x.stop]);
+        }
+        // Fix for when manhattan script stripped "chr" from chromosome name
+        const refHasChr = Object.keys(chrom_extents).every(x => x.startsWith("chr"));
+        if (variants.unbinned_variants && variants.unbinned_variants.length>0) {
+            const manHasChr = variants.unbinned_variants[0].chrom.startsWith("chr");
+            if (refHasChr && !manHasChr) {
+                variants.unbinned_variants.forEach((x, i, a) => {
+                    a[i].chrom = "chr" + a[i].chrom;
+            })
+                variants.variant_bins.forEach((x, i, a) => {
+                    a[i].chrom = "chr" + a[i].chrom;
+            });
             };
         };
-        create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, chrom_extents,
+    };
+    create_gwas_plot(selector, variants.variant_bins, variants.unbinned_variants, chrom_extents,
         function(chrom, pos) {
             jumpToLocusZoom(job_id, chrom, pos);
         });
-    });
+});
 }
+
+
+
 
 function init_qqplot(job_id, selector, data_url) {
     selector = selector || "#tab2";

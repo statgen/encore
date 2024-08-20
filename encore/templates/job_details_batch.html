@@ -21,12 +21,10 @@
 	<script type="text/javascript">
 		job_id = "{{ job.job_id }}"
 		job_status = "{{ job.status }}"
-		respflag = "{{respflag }}"
-		multibatch = "{{ job.details["multibatch"] }}"
-
-		const response = {{ job.details["response_desc"] or job.details["response"] | tojson }};
-
-
+		response = '{{ job.details["response_desc"] or job.details["response"] | tojson }}'
+		multibatch = "{{ job.details["multibatch"]}}"
+		console.log(multibatch);
+		console.log(response.length);
 		job_can_edit = {{ job.can_edit|default(False)|tojson }}
 		job_is_active = {{ job.is_active|default(False)|tojson }}
 		genome_build = "{{ job.details.genome_build or job.details.genotype.build }}"
@@ -38,24 +36,48 @@
 		});
 		function init_page() {
 			console.log( "from the init page");
-			console.log(response);
 
-			console.log(typeof response);
 			init_job_tabs(job_id);
 			init_job_resubmit_button(job_id);
 			init_job_cancel_button(job_id);
 			init_job_delete_button(job_id);
 			init_job_share_button(job_id);
 			if (job_status=="succeeded") {
+				if (multibatch == "N" ){
+					const url = new URL(window.location.href);
+					console.log("url",url)
+
+// Use URLSearchParams to parse the query string
+					const urlParams = new URLSearchParams(url.search);
+
+// Check if the 'response' parameter is present
+					if (urlParams.has('response')) {
+						console.log('Response parameter is present:', urlParams.get('response'));
+					} else {
+						console.log('Response parameter is not present');
+					}
+
+					console.log("in success loop");
+					init_job_lookup(job_id);
+					init_manhattan(job_id);
+					init_qqplot(job_id);
+					init_tophits(job_id);
+					init_susieeqtl(job_id);
+					init_condeqtl(job_id);
 
 
-						init_job_lookup(job_id,"#lookup_form",response);
-						init_manhattan(job_id,"#tab1",response);
-						init_qqplot(job_id,"#tab2",response);
-						init_tophits(job_id,"#tophits",response);
-						init_susieeqtl(job_id,"#susieeqtl",response);
-						init_condeqtl(job_id,"#condeqtl",response);
+				}
+				else
+				{
+					console.log("in else loop");
 
+
+
+
+
+
+
+				}
 
 			}
 			if (job_can_edit && job_is_active) {
@@ -94,7 +116,21 @@
 		{% if job.details.response %}
 		<tr>
 			<th>Response</th>
+			{% set responses = job.details["response_desc"] or job.details["response"] %}
+			{% if responses and responses|length > 1 %}
+
+				{% for response in responses %}
+				<tr><th></th>
+				<td>{{ response }} | <a href='/jobs/{{job.job_id }}/response?response={{ response }}'>View Job</a> </td>
+				</tr>
+				{% endfor %}
+
+			{% else %}
 			<td>{{ job.details["response_desc"] or job.details["response"] }}</td>
+			{% endif %}
+
+
+
 		</tr>
 		{% endif %}
 		{% if job.details.covariates %}
@@ -205,48 +241,62 @@
 
         {% if job.status == "succeeded"  and job.is_active>0 %}
 
-        <div class="section">
+		{% if job.details["multibatch"] == "Y" %}
+			<p> response s the list</p>
+			{{ job.details["response_desc"] or job.details["response"] }}
+			{{ detailtable(job) }}
 
-            <ul class="tabs">
-                <li class="active" rel="tab1">Manhattan</li>
-                <li rel="tab2">QQPlot</li>
-                <li rel="tab3">Top Hits</li>
-                <li rel="tab4">Lookups</li>
-                <li rel="tab5">Details</li>
-				<li rel="tab6">Susie-Eqtls</li>
-				<li rel="tab7">Conditional-Eqtls</li>
-            </ul>
-            <div class="tab-container">
+		{% else %}
+			<div class="section">
 
-                <div id="tab1" class="tab-content"> </div>
-                <div id="tab2" class="tab-content"> </div>
-				<div id="tab3" class="tab-content">
-					<table id="tophits" class="display"></table>
-				</div>
-                <div id="tab4" class="tab-content">
-					<form id="lookup_form"><label for="lookup">Lookup Result:</label> 
-					<input id="lookup" size="30" type="text"/> 
-					<button>Find</button>
-					 (beta test: enter "chr:position", rs-name or gene name)
-					</form>
-				</div>
-				<div id="tab5" class="tab-content">
-					{{ detailtable(job) }}
-				</div>
-				<div id="tab6" class="tab-content">
-					<p>testing susie data</p>
-					<table id="susieeqtl" class="display"></table>
-				</div>
-				<div id="tab7" class="tab-content">
-					<p>testing conditional eQtl data</p>
-					<table id="condeqtl" class="display"></table>
-				</div>
-            </div>
-        </div>
+	<ul class="tabs">
+		<li class="active" rel="tab1">Manhattan</li>
+		<li rel="tab2">QQPlot</li>
+		<li rel="tab3">Top Hits</li>
+		<li rel="tab4">Lookups</li>
+		<li rel="tab5">Details</li>
+		<li rel="tab6">Susie-Eqtls</li>
+		<li rel="tab7">Conditional-Eqtls</li>
+	</ul>
+	<div class="tab-container">
+
+		<div id="tab1" class="tab-content"> </div>
+		<div id="tab2" class="tab-content"> </div>
+		<div id="tab3" class="tab-content">
+			<table id="tophits" class="display"></table>
+		</div>
+		<div id="tab4" class="tab-content">
+			<form id="lookup_form"><label for="lookup">Lookup Result:</label>
+				<input id="lookup" size="30" type="text"/>
+				<button>Find</button>
+				(beta test: enter "chr:position", rs-name or gene name)
+			</form>
+		</div>
+		<div id="tab5" class="tab-content">
+			{{ detailtable(job) }}
+		</div>
+		<div id="tab6" class="tab-content">
+			<p>testing susie data</p>
+			<table id="susieeqtl" class="display"></table>
+		</div>
+		<div id="tab7" class="tab-content">
+			<p>testing conditional eQtl data</p>
+			<table id="condeqtl" class="display"></table>
+		</div>
+	</div>
+</div>
+
+		{% endif %}
+
+
+
+
+
+
+
 		{% if job.output_files %}
 			Download:  {% for file in job.output_files %}
-<p> {{ job}}</p>
-				<form style="display: inline" action="{{ url_for("user.get_job_output_file", job_id= job.job_id, file_name=file.path,response= job.details["response"]) }}">
+				<form style="display: inline" action="{{ url_for("user.get_job_output_file", job_id= job.job_id, file_name=file.path) }}">
 				<button>{{file.name}} [{{file.size | filesizeformat}}]</button>
 				</form>
 			{% endfor %}

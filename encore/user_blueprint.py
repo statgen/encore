@@ -32,6 +32,7 @@ def get_jobs():
 @user_area.route("/jobs/<job_id>", methods=["GET"])
 @check_view_job
 def get_job(job_id, job=None):
+    print("from get job", job.as_object())
     pheno = Phenotype.get(job.get_phenotype_id(), current_app.config)
     geno = Genotype.get(job.get_genotype_id(), current_app.config)
     job_obj = job.as_object()
@@ -44,8 +45,79 @@ def get_job(job_id, job=None):
         job_obj["can_edit"] = True
     else:
         job_obj["can_edit"] = False
+
+    details = job_obj.get('details')
+
+    # Access response within details
+    response = details.get('response') if details else None
+    multibatch = details.get('multibatch') if details else "N"
+
+    # Print results
+
+    print("multibatch:", multibatch)
+
+    if response:
+        response_length = len(response)
+        if (multibatch == "N"):
+            print("Length of response:", response_length)
+            return render_template("job_details.html", job=job_obj, owner=owner)
+        else:
+            print("Length of response batch:", response_length)
+            return render_template("job_details_batch.html", job=job_obj, owner=owner)
     AccessTracker.LogJobAccess(job_id, current_user.rid)
-    return render_template("job_details.html", job=job_obj, owner=owner)
+
+
+
+@user_area.route("/jobs/<job_id>/response", methods=["GET"])
+@check_view_job
+def get_reponse_result(job_id, job=None):
+    print("its in the response ******************** ")
+    pheno = Phenotype.get(job.get_phenotype_id(), current_app.config)
+    geno = Genotype.get(job.get_genotype_id(), current_app.config)
+    job_obj = job.as_object()
+    owner = job.get_owner()
+    if pheno is not None:
+        job_obj["details"]["phenotype"] = pheno.as_object()
+    if geno is not None:
+        job_obj["details"]["genotype"] = geno.as_object()
+    if can_user_edit_job(current_user, job):
+        job_obj["can_edit"] = True
+    else:
+        job_obj["can_edit"] = False
+    #print(job_obj)
+    details = job_obj.get('details')
+    job_id = request.args.get('jobid')
+    responsearg = request.args.get('response')
+    print("responsearg",responsearg)
+    # Access response within details
+
+
+    # Print results
+
+
+    resplist =[]
+    resplist.append(responsearg)
+    job_obj['details']['response'] = resplist
+
+    response = details.get('response') if details else None
+    print("aftetr the update treposn is",response)
+    multibatch = details.get('multibatch') if details else "N"
+
+
+    if response:
+        response_length = len(response)
+        if (response_length == 1):
+            print("Length of response:", response_length)
+            return render_template("job_details.html", job=job_obj, owner=owner)
+        else:
+            return render_template("job_details_batch.html", job=job_obj, owner=owner)
+
+    AccessTracker.LogJobAccess(job_id, current_user.rid)
+
+
+
+
+
 
 @user_area.route("/jobs/<job_id>/output", methods=["get"])
 @check_view_job
@@ -57,7 +129,9 @@ def get_job_output(job_id, job=None):
 
 @user_area.route("/jobs/<job_id>/output/<file_name>", methods=["get"])
 @check_view_job
-def get_job_output_file(job_id, file_name, job=None):
+def get_job_output_file(job_id, file_name, job=None,response=None):
+    print("inside get_job_output_file", response)
+
     short_name = job_id.partition("-")[0]
     send_as = short_name + "-" + file_name
     return get_job_output(job, file_name, True, send_as=send_as)

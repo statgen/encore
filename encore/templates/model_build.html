@@ -331,8 +331,10 @@
 			if (!regionSelect) {
 				let chrs = [{id: "gwas", text: "Genome-wide"}];
 				for(let i=1; i<23; i++) chrs.push({id: "chr" + i, text: "chr" + i});
-				chrs.push({id: "chrX", text: "chrX"})
+				chrs.push({id: "chrX", text: "chrX"});
+				console.log("chrs",chrs);
 				regionSelect = $("#region").select2({"data": chrs}).on("change", formChanged);
+				console.log("regionSelect",regionSelect.val());
 			}
 		}
 

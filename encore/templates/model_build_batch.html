@@ -50,7 +50,8 @@
 
 		function validateForm(form) {
 			var errors = [];
-			var resp =  responseSelect.val();
+			var resp =  responseSelect.val() || [];
+			console.log("responseSelect declared");
 			var covar = covariateSelect.val() || [];
 			var modelInput = $("input[name=model]:checked", "#model-form")
 			if (resp == "") {
@@ -215,7 +216,9 @@
 				});
 				return results;
 			}
-			var response = responseSelect.find("option:selected").text();
+			var response = responseSelect.find("option:selected");
+
+
 			if (!response) {
 				return "";
 			}
@@ -226,7 +229,8 @@
 			}
 			var name = model + ": " + response; 
 			var covar = covariateSelect.find("option:selected");
-			var covarnames = covar.map(function() {return [[$(this).text(),1]];}).get() 
+			var covarnames = covar.map(function() {return [[$(this).text(),1]];}).get() ;
+			console.log(covarnames);
 			var genocovar = genophenoSelect.find("option:selected");
 			if (genocovar.length) {
 				var othernames = digitCollapser(genocovar.map(function() {return $(this).text();}).get());
@@ -239,11 +243,19 @@
 			} else if (covarcount>0) {
 				name = name + " = " + covarnames.map(function(a) {return a[0];}).join(" + ");
 			}
-
-			var region = regionSelect.val();
-			if (region != "gwas") {
-				name = name + " [" + region + "]";
+			updateRegions();
+			try {
+				var region = regionSelect.val();
+				if (region != "gwas") {
+					name = name + " [" + region + "]";
+				}
+			}catch(e){
+				if(e){
+					console.log("got the problem");
+				}
 			}
+
+
 			return name;
 		}
 
@@ -263,9 +275,10 @@
 					});
 				}
 				responseSelect.html("").select2(
-					{"data": [""].concat(opts),
-					placeholder: "",
-					minimumResultsForSearch: 4});
+					{"data":opts,
+					placeholder: ""
+					});
+				console.log("response select html is ",responseSelect.html);
 				covariateSelect.html("").select2({"data": opts});
 				formChanged();
 			});
@@ -329,10 +342,13 @@
 
 		function updateRegions() {
 			if (!regionSelect) {
+				console.log("its in the regionselect loop");
 				let chrs = [{id: "gwas", text: "Genome-wide"}];
 				for(let i=1; i<23; i++) chrs.push({id: "chr" + i, text: "chr" + i});
-				chrs.push({id: "chrX", text: "chrX"})
+				chrs.push({id: "chrX", text: "chrX"});
 				regionSelect = $("#region").select2({"data": chrs}).on("change", formChanged);
+				console.log("regionSelect",regionSelect);
+
 			}
 		}
 
@@ -354,6 +370,7 @@
 			$("#covar_add_all").click(function(evt) {
 				evt.preventDefault();
 				var resp = responseSelect.val();
+				console.log("from add all",resp)
 				var opts = [];
 				covars.forEach(function(col) {
 					if (col.name != resp) {
@@ -403,9 +420,7 @@
 					phenos.push({id: p.id, text:p.name});
 				});
 				responseSelect = $("#response").select2({
-					data: [""],
-					placeholder: "",
-					minimumResultsForSearch: 5
+					data: [""]
 				}).on("change", formChanged);
 				covariateSelect = $("#covariates").select2({
 					data: [""] 
@@ -559,7 +574,7 @@
 					<label for="response" class="control-label col-xs-2">Response</label>
 					<div class="col-xs-10">
 						<select id="response" name="response" class="form-control" multiple="multiple"></select>
-						<br/><a href="#" id="resp_add_all">Add All</a> - <a href="#" id="resp_remove_all">Remove All</a>
+						<br/>
 
 					</div>
 				</div>

@@ -149,7 +149,18 @@ def create_new_job():
     job_desc["phenotype"] = phenotype_id
     job_desc["name"] = form_data["job_name"]
     job_desc["description"] = form_data.get("description", default=None)
-    job_desc["response"] =  form_data["response"] 
+    response_list=  form_data.getlist("response")
+    relist = len(response_list)
+    job_desc["response"] = response_list
+
+    if(relist > 1):
+        job_desc["multibatch"] = "Y"
+    else:
+        job_desc["multibatch"] = "N"
+
+
+
+
     if form_data.get("response_invnorm", False):
         job_desc["response_invnorm"] = True
     job_desc["covariates"] =  form_data.getlist("covariates")
@@ -365,9 +376,19 @@ def get_job_results(job_id, job=None):
 
     return Response(generate(), mimetype="text/plain")
 
-def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None):
+def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None,response=None):
     try:
-        output_file = job.relative_path(filename)
+
+        multibatch = job.as_object().get('details').get('multibatch')
+        print(multibatch)
+        print("reponse",response)
+        if (multibatch=="Y"):
+            output_file = job.relative_path(filename,response=response)
+        else:
+            output_file = job.relative_path(filename)
+
+
+
         if tail or head:
             if tail and head:
                 return "Cannot specify tail AND head", 500
@@ -390,30 +411,36 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
 @api.route("/jobs/<job_id>/tables/susieeqtl", methods=["GET"])
 @check_view_job
 def get_job_susieeqtl(job_id, job=None):
-    print("got inside susieeqtl")
+
     return get_job_output(job, "susieeqtl.json", False)
 
 
 @api.route("/jobs/<job_id>/tables/condeqtl", methods=["GET"])
 @check_view_job
 def get_job_condeqtl(job_id, job=None):
-    print("got inside condeqtl")
+
     return get_job_output(job, "condeqtl.json", False)
 
 @api.route("/jobs/<job_id>/tables/top", methods=["GET"])
 @check_view_job
 def get_job_tophits(job_id, job=None):
-    return get_job_output(job, "tophits.json", False)
+    response = request.args.get('response', None)
+    return get_job_output(job, "tophits.json", False,response=response)
 
 @api.route("/jobs/<job_id>/plots/qq", methods=["GET"])
 @check_view_job
 def get_api_job_qq(job_id, job=None):
-    return get_job_output(job, "qq.json")
+    response = request.args.get('response', None)
+    print("got inside manhattan",response)
+    return get_job_output(job, "qq.json",response=response)
 
 @api.route("/jobs/<job_id>/plots/manhattan", methods=["GET"])
 @check_view_job
 def get_api_job_manhattan(job_id, job=None):
-    return get_job_output(job, "manhattan.json")
+    response = request.args.get('response', None)
+    print("got inside manhattan",response)
+
+    return get_job_output(job, "manhattan.json",response=response)
 
 @api.route("/jobs/<job_id>/plots/zoom", methods=["GET"])
 @check_view_job

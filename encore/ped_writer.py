@@ -1,6 +1,8 @@
 import re
 from itertools import chain
 
+# cleans a string x for the header. it prepends "X".
+
 def sanitize(x):
     if re.match(r'^[^A-Za-z]', x):
         x = "X" + x

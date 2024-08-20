@@ -45,7 +45,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `jobs` (
   `id` BINARY(16) NOT NULL,
-  `q` INT UNSIGNED NOT NULL,
+  `user_id` INT UNSIGNED NOT NULL,
   `name` VARCHAR(128) NOT NULL,
   `description` VARCHAR(5000),
   `error_message` VARCHAR(512) NULL,

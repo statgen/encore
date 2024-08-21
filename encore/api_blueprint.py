@@ -137,18 +137,20 @@ def get_genotype_jobs(geno_id):
 @api.route("/jobs", methods=["POST"])
 def create_new_job():
     user = current_user
+    print(user)
     if not user.can_analyze:
         raise ApiException("USER ACTION NOT ALLOWED", 403)
     job_desc = dict()
     if request.method != 'POST':
         raise ApiException("NOT A POST REQUEST", 405)
     form_data = request.form
+    print("form_data",form_data)
     genotype_id = form_data["genotype"]
     phenotype_id = form_data["phenotype"]
     job_desc["genotype"] = genotype_id
     job_desc["phenotype"] = phenotype_id
     job_desc["name"] = form_data["job_name"]
-    job_desc["description"] = form_data.get("description", default=None)
+    job_desc["description"] = form_data.get("description", default=None
     response_list=  form_data.getlist("response")
     relist = len(response_list)
     job_desc["response"] = response_list
@@ -157,10 +159,6 @@ def create_new_job():
         job_desc["multibatch"] = "Y"
     else:
         job_desc["multibatch"] = "N"
-
-
-
-
     if form_data.get("response_invnorm", False):
         job_desc["response_invnorm"] = True
     job_desc["covariates"] =  form_data.getlist("covariates")
@@ -176,15 +174,18 @@ def create_new_job():
     if not job_id:
         raise ApiException("COULD NOT GENERATE JOB ID")
     job_directory =  os.path.join(current_app.config.get("JOB_DATA_FOLDER", "./"), job_id)
-
+    print("job_desc", job_desc)
     job = SlurmJob(job_id, job_directory, current_app.config) 
     try:
         model = job.get_model(job_desc)
+        print("model from get_model",model)
     except ValueError as e:
         raise ApiException("INVALID MODEL REQUEST", details=str(e))
     # valid model type
     try:
+        print("before validate model spec")
         model.validate_model_spec(job_desc)
+        print("after validate model")
     except Exception as e:
         print(e)
         raise ApiException("INVALID MODEL REQUEST", details=str(e))
@@ -217,6 +218,7 @@ def create_new_job():
         raise ApiException("COULD NOT SAVE JOB DESCRIPTION")
     # file has been saved to disc
     try:
+        print("in submit job")
         job.submit_job(job_desc)
     except Exception as e:
         print(e)
@@ -226,6 +228,7 @@ def create_new_job():
     # job submitted to queue
     try:
         job_desc["param_hash"] = param_hash
+        print("job create")
         Job.create(job_id, job_desc)
     except Exception as e:
         shutil.rmtree(job_directory)
@@ -378,7 +381,6 @@ def get_job_results(job_id, job=None):
 
 def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, head=None,response=None):
     try:
-
         multibatch = job.as_object().get('details').get('multibatch')
         print(multibatch)
         print("reponse",response)
@@ -386,9 +388,6 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
             output_file = job.relative_path(filename,response=response)
         else:
             output_file = job.relative_path(filename)
-
-
-
         if tail or head:
             if tail and head:
                 return "Cannot specify tail AND head", 500

@@ -12,12 +12,17 @@ def sanitize(x):
 class ColumnFactory:
     @staticmethod
     def get_by_name(name, pr):
+        print("inside get by name",  name)
+        print(pr.meta["columns"])
         if isinstance(name, dict):
             options = name
             name = name.get("name", "")
         else:
             options = None
+        print("1")    
         coldef = next((x for x in pr.meta["columns"] if x["name"]==name), None)
+        print("2")
+        print(coldef)
         return ColumnFactory.__get_column_class(coldef, pr, options) 
 
     @staticmethod
@@ -35,6 +40,7 @@ class ColumnFactory:
 
     @staticmethod
     def __get_column_class(coldef, pr, options=None):
+        print("coldef is", coldef)
         if not "class" in coldef:
             raise Exception("Invalid Column Definition")
         colclass = coldef["class"]
@@ -176,9 +182,11 @@ class PedWriter:
     def __init__(self, phenoreader=None, resp=None, covar=None, samples=None):
         pedcols = ["family_id", "sample_id", "father_id", "mother_id", "sex"]
         self.pedcols = [ColumnFactory.get_by_special_class(x, phenoreader) for x in pedcols]
-        self.respcols = [ColumnFactory.get_by_name(resp, phenoreader)]
+        print("resp is", resp)
+        self.respcols = [ColumnFactory.get_by_name(x, phenoreader) for x in resp]
         self.covarcols = [ColumnFactory.get_by_name(x, phenoreader) for x in covar]
         self.allcols = self.pedcols + self.respcols + self.covarcols
+        print("allcols",self.allcols)
         for row in phenoreader.row_extractor(samples=samples):
             for col in self.allcols:
                 col.append(row)
@@ -227,10 +235,12 @@ class PedWriter:
                 uniqued.append(newval)
             assert len(vals) == len(uniqued)
             return uniqued
-
+        print("predcolss", self.pedcols)
         self.pedheaders = uniqueify(flatten([x.headers() for x in self.pedcols]), [])
         self.headers = self.pedheaders
+        print("self.respcols",self.respcols)
         self.respheaders = uniqueify(flatten([x.headers() for x in self.respcols]), self.headers)
+        print("self.headers",self.respheaders)
         self.headers = self.headers + self.respheaders
         self.covarheaders = uniqueify(flatten([x.headers() for x in self.covarcols]), self.headers)
         self.headers = self.headers + self.covarheaders

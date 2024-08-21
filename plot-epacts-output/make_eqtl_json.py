@@ -1,26 +1,6 @@
 import json
-from flask import current_app
 import sqlite3
 
-
-class JSONOutFile:
-    def __init__(self, path):
-        self.path = path
-
-    def __enter__(self):
-        if self.path:
-            assert os.path.exists(os.path.dirname(os.path.abspath(self.path)))
-            self.f = open(self.path, 'w')
-        else:
-            self.f = sys.stdout
-        return self
-
-    def __exit__(self, type, value, traceback):
-        if self.f is not sys.stdout:
-            self.f.close()
-
-    def write(self, data):
-        json.dump(data, self.f, indent=0)
 
 def read_json_file(json_file):
     with open(json_file, 'r') as f:
@@ -30,7 +10,6 @@ def read_json_file(json_file):
 def extract_variant_ids(json_data):
     variant_ids = []
     for entry in json_data['data']:
-
         combined_string = f"{entry['chrom']}_{entry['pos']}_{entry['other']['ref']}_{entry['other']['alt']}"
         variant_ids.append(combined_string)
 
@@ -152,6 +131,3 @@ if __name__ == "__main__":
 
     with open(args.output_file, 'w') as f:
         json.dump(json_data, f, indent=0)
-
-#python make_eqtl_json.py --json_file /Users/snehalpatil/Documents/AbecasisLab/encorejobs/34a90c56-dcba-4e05-bd12-698141a1362b/tophits2.json --db_file /Users/snehalpatil/Documents/AbecasisLab/GithubEncoreFinal/SingularityBranch/encore/plot-epacts-output/eqtl.db
-#plot-epacts-output snehalpatil$ python make_eqtl_json.py --json_file /Users/snehalpatil/Documents/AbecasisLab/encorejobs/34a90c56-dcba-4e05-bd12-698141a1362b/tophits2.json --db_file /Users/snehalpatil/Documents/AbecasisLab/GithubEncoreFinal/SingularityBranch/encore/plot-epacts-output/eqtl.db --output_file /Users/snehalpatil/Documents/AbecasisLab/encorejobs/34a90c56-dcba-4e05-bd12-698141a1362b/susieeqtl.json

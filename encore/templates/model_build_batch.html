@@ -51,7 +51,10 @@
 		function validateForm(form) {
 			var errors = [];
 			var resp =  responseSelect.val() || [];
+<<<<<<< Updated upstream
 			console.log("responseSelect declared");
+=======
+>>>>>>> Stashed changes
 			var covar = covariateSelect.val() || [];
 			var modelInput = $("input[name=model]:checked", "#model-form")
 			if (resp == "") {
@@ -216,21 +219,40 @@
 				});
 				return results;
 			}
+<<<<<<< Updated upstream
 			var response = responseSelect.find("option:selected");
 
 
 			if (!response) {
 				return "";
 			}
+=======
+			var responses = responseSelect.find("option:selected").map(function() { return $(this).text(); }).get();
+			
+			console.log("response", response);
+			if (responses.length === 0) {
+        return "";
+    }
+
+			var responseText = responses.join(", ")
+                        
+
+>>>>>>> Stashed changes
 			var model = $("input[name=model]:checked", "#model-form").val();
 			var logtran = $("input[name=response_invnorm]", "#model-form").prop("checked");
 			if (logtran) {
-				response = "invNorm(" + response + ")";
+				response = "invNorm(" + respnames + ")";
 			}
-			var name = model + ": " + response; 
+			var name = model + ": " + responseText; 
 			var covar = covariateSelect.find("option:selected");
+<<<<<<< Updated upstream
 			var covarnames = covar.map(function() {return [[$(this).text(),1]];}).get() ;
 			console.log(covarnames);
+=======
+			console.log("covar",covar);
+			var covarnames = covar.map(function() {return [[$(this).text(),1]];}).get() 
+		        console.log("covarnames",covarnames);
+>>>>>>> Stashed changes
 			var genocovar = genophenoSelect.find("option:selected");
 			if (genocovar.length) {
 				var othernames = digitCollapser(genocovar.map(function() {return $(this).text();}).get());
@@ -243,7 +265,11 @@
 			} else if (covarcount>0) {
 				name = name + " = " + covarnames.map(function(a) {return a[0];}).join(" + ");
 			}
+<<<<<<< Updated upstream
 			updateRegions();
+=======
+                        updateRegions();
+>>>>>>> Stashed changes
 			try {
 				var region = regionSelect.val();
 				if (region != "gwas") {
@@ -256,6 +282,10 @@
 			}
 
 
+<<<<<<< Updated upstream
+=======
+		
+>>>>>>> Stashed changes
 			return name;
 		}
 
@@ -274,12 +304,17 @@
 						}
 					});
 				}
+<<<<<<< Updated upstream
 				responseSelect.html("").select2(
 					{"data":opts,
 					placeholder: ""
 					});
 				console.log("response select html is ",responseSelect.html);
+=======
+				responseSelect.html("").select2({"data":opts});
+>>>>>>> Stashed changes
 				covariateSelect.html("").select2({"data": opts});
+				console.log("response select html is ",responseSelect.val());
 				formChanged();
 			});
 		}
@@ -370,7 +405,11 @@
 			$("#covar_add_all").click(function(evt) {
 				evt.preventDefault();
 				var resp = responseSelect.val();
+<<<<<<< Updated upstream
 				console.log("from add all",resp)
+=======
+		console.log("from add all",resp);
+>>>>>>> Stashed changes
 				var opts = [];
 				covars.forEach(function(col) {
 					if (col.name != resp) {
@@ -420,7 +459,12 @@
 					phenos.push({id: p.id, text:p.name});
 				});
 				responseSelect = $("#response").select2({
+<<<<<<< Updated upstream
 					data: [""]
+=======
+					data: [""],
+					placeholder: ""
+>>>>>>> Stashed changes
 				}).on("change", formChanged);
 				covariateSelect = $("#covariates").select2({
 					data: [""] 
@@ -474,11 +518,12 @@
 					var nm = function(x) {return x.name || x;}
 					promise = $.getJSON("/api/jobs/" + qs.like).then(function(x){
 						var opts = {p: p, g: g};
+						console.log("x is", x);
 						if (x.details) {
 							opts.p = x.details.phenotype;
 							opts.g = x.details.genotype;
 							opts.m = x.details.type;
-							opts.r = nm(x.details.response);
+							opts.r = x.details.response;
 							opts.inv = x.details.response_invnorm || false;
 							opts.c = x.details.covariates;
 							opts.gp = x.details.genopheno || [];
@@ -507,6 +552,7 @@
 						genoSelect.val(opts.g);
 					}
 					if (opts.r) {
+						consloe.log("opts.r is". opts.r);
 						responseSelect.val(opts.r).trigger("change");
 					}
 					if (opts.inv) {

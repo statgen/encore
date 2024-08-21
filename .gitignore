@@ -10,4 +10,4 @@ build/
 encore.conf
 encore.wsgi
 venv_3.6/
-
+plot-epacts-output/eqtl.db

@@ -88,7 +88,8 @@ class savantModel(BaseModel):
         return opts
 
     def get_analysis_commands(self, model_spec, geno, pheno, ped):
-        pipeline = self.app_config["SAVANT_SIF_FILE"][0]
+        pipeline = self.app_config["SAVANT_SIF_FILE"]
+        print("pipeline", pipeline)
         if "SAVANT_BINARY" in self.app_config:
             binary = self.app_config["SAVANT_BINARY"]
         if isinstance(binary, tuple):
@@ -96,16 +97,20 @@ class savantModel(BaseModel):
         if not binary:
             raise Exception("Unable to find Savant sif file file  (pipeline: {})".format(pipeline))
         #for dev singularity exec -B /net/wonderland:/net/wonderland:ro,/net/dumbo:/net/dumbo:ro
-        cmd = "singularity exec -B /net/encore1/savant:/net/encore1/savant:ro -B /net/encore1/encoredata:/net/encore1/encoredata {} ".format(pipeline) + \
+        #cmd = "singularity exec -B /net/encore1/savant:/net/encore1/savant:ro -B /net/encore1/encoredata:/net/encore1/encoredata {} ".format(pipeline) + \
+        cmd = "singularity exec -B /net/wonderland:/net/wonderland:ro  -B /net/dumbo:/net/dumbo {} ".format(pipeline) + \
               " snakemake --snakefile {}".format(binary)+ \
               " -j ${SLURM_CPUS_PER_TASK}"
 
         optlist = self.get_opts(model_spec, geno)
+        print("optlist" , optlist)
+
         optlist["input_vcf_expression"]= geno.get_sav_path(1).replace("chr1", "{chrom}")
         optlist["pheno_file"]= ped.get("path")
-
-        for resp in ped.get("response"):
+        resp = ped.get("response")
+        if len(resp)>0:
             optlist['response']=resp
+
         covars = ped.get("covars")
         if len(covars)>0:
             optlist['covariates']=covars
@@ -152,6 +157,7 @@ class savantModel(BaseModel):
 
         try:
             ped_writer = self.get_ped_writer(model_spec, geno, pheno)
+            print("red_writer",ped_writer.get_response_headers())
             with open(ped_file_path, "w") as pedfile:
                 ped_writer.write_to_file(pedfile, comment_header=False)
             return {

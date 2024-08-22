@@ -88,8 +88,14 @@ class savantModel(BaseModel):
         return opts
 
     def get_analysis_commands(self, model_spec, geno, pheno, ped):
-        pipeline = self.app_config["SAVANT_SIF_FILE"]
-        print("pipeline", pipeline)
+        if model_spec.get("multibatch", False):
+            print("multibatch",model_spec.get("multibatch"))
+            multibatch=model_spec.get("multibatch")
+
+        if (multibatch =="N"):
+            pipeline = self.app_config["SAVANT_SIF_FILE"][0]
+        else:
+            pipeline = self.app_config["SAVANT_SIF_BATCH_FILE"][0]
         if "SAVANT_BINARY" in self.app_config:
             binary = self.app_config["SAVANT_BINARY"]
         if isinstance(binary, tuple):
@@ -103,13 +109,17 @@ class savantModel(BaseModel):
               " -j ${SLURM_CPUS_PER_TASK}"
 
         optlist = self.get_opts(model_spec, geno)
-        print("optlist" , optlist)
-
+        optlist["post_processing_script_dir"]=self.app_config["POST_PROCESSING_SCRIPT"]
+        optlist["gene_annotation_bed"]=self.app_config["NEAREST_GENE_BED"]
         optlist["input_vcf_expression"]= geno.get_sav_path(1).replace("chr1", "{chrom}")
         optlist["pheno_file"]= ped.get("path")
-        resp = ped.get("response")
-        if len(resp)>0:
-            optlist['response']=resp
+
+        for resp in ped.get("response"):
+            if (multibatch =="N"):
+                optlist['response']=resp
+            else:
+                optlist['responses']=resp
+
 
         covars = ped.get("covars")
         if len(covars)>0:

@@ -150,7 +150,7 @@ def create_new_job():
     job_desc["genotype"] = genotype_id
     job_desc["phenotype"] = phenotype_id
     job_desc["name"] = form_data["job_name"]
-    job_desc["description"] = form_data.get("description", default=None
+    job_desc["description"] = form_data.get("description", default=None)
     response_list=  form_data.getlist("response")
     relist = len(response_list)
     job_desc["response"] = response_list

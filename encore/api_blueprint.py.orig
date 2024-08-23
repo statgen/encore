@@ -151,7 +151,7 @@ def create_new_job():
     job_desc["phenotype"] = phenotype_id
     job_desc["name"] = form_data["job_name"]
     job_desc["description"] = form_data.get("description", default=None)
-    response_list=  form_data.getlist("response")
+    response_list=form_data.getlist("response")
     relist = len(response_list)
     job_desc["response"] = response_list
 
@@ -383,12 +383,11 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
     try:
         multibatch = job.as_object().get('details').get('multibatch')
         print(multibatch)
-        print("reponse from get_job_output",response)
+        print("reponse",response)
         if (multibatch=="Y"):
             output_file = job.relative_path(filename,response=response)
         else:
             output_file = job.relative_path(filename)
-        print(output_file)
         if tail or head:
             if tail and head:
                 return "Cannot specify tail AND head", 500

@@ -162,9 +162,11 @@ function init_manhattan(job_id, selector,response) {
 
 
 
-function init_qqplot(job_id, selector, data_url) {
+function init_qqplot(job_id, selector, response) {
     selector = selector || "#tab2";
-    data_url = data_url || "/api/jobs/" + job_id + "/plots/qq"; 
+    
+    responseString = response[0];
+    data_url = '/api/jobs/' + job_id + '/plots/qq?response='+encodeURIComponent(responseString);
     $.getJSON(data_url).done(function(data)
     {
         /*_.sortBy(_.pairs(data.overall.gc_lambda)).forEach(function(d)

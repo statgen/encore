@@ -95,7 +95,7 @@ class savantModel(BaseModel):
         if (multibatch =="N"):
             pipeline = self.app_config["SAVANT_SIF_FILE"][0]
         else:
-            pipeline = self.app_config["SAVANT_SIF_BATCH_FILE"][0]
+            pipeline = self.app_config["SAVANT_SIF_BATCH_FILE"]
         if "SAVANT_BINARY" in self.app_config:
             binary = self.app_config["SAVANT_BINARY"]
         if isinstance(binary, tuple):
@@ -114,11 +114,12 @@ class savantModel(BaseModel):
         optlist["input_vcf_expression"]= geno.get_sav_path(1).replace("chr1", "{chrom}")
         optlist["pheno_file"]= ped.get("path")
 
-        for resp in ped.get("response"):
+        resplist = ped.get("response")
+        if len(resplist)>0:
             if (multibatch =="N"):
-                optlist['response']=resp
+                optlist['response']=resplist
             else:
-                optlist['responses']=resp
+                optlist['responses']=resplist
 
 
         covars = ped.get("covars")

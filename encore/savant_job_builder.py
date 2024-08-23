@@ -95,7 +95,7 @@ class savantModel(BaseModel):
         if (multibatch =="N"):
             pipeline = self.app_config["SAVANT_SIF_FILE"][0]
         else:
-            pipeline = self.app_config["SAVANT_SIF_BATCH_FILE"][0]
+            pipeline = self.app_config["SAVANT_SIF_BATCH_FILE"]
         if "SAVANT_BINARY" in self.app_config:
             binary = self.app_config["SAVANT_BINARY"]
         if isinstance(binary, tuple):

@@ -168,7 +168,7 @@
 							data-link="{{ url_for("user.get_model_build", like=job.job_id) }}">
 							New Like This</button>
 						{%if job.is_active %}
-							<button class="btn btn-info" name="share_job" 
+							<button class="btn" style="background-color: #b35d00; color: #ffffff;" name="share_job" 
 								data-link="{{ url_for("user.get_job_share_page", job_id=job.job_id) }}">
 								Share {% if job.users|length>1 %}({{ job.users | length -1}}){% endif %}</button>
 						{% endif %}
@@ -178,7 +178,7 @@
 							Cancel Job</button>
 						{% else %}
 							{%if job.is_active %}
-							<button class="btn btn-danger" name="delete_job"
+							<button class="btn" style="background-color: #c9302c; color: #ffffff;" name="delete_job"
 								data-action="{{ url_for("api.retire_job", job_id=job.job_id) }}">
 								Delete</button>
 							{%endif%} 

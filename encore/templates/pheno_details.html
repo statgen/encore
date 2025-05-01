@@ -78,7 +78,7 @@
 						<button class="btn btn-success" name="new_job" 
 							data-link="{{ url_for("user.get_model_build", pheno=pheno.pheno_id) }}">
 							New Job</button>
-						<button class="btn btn-danger" name="delete_pheno"
+						<button class="btn" style="background-color: #c9302c; color: #ffffff;"  name="delete_pheno"
 							data-action="{{ url_for("api.retire_pheno", pheno_id=pheno.pheno_id) }}">
 							Delete</button>
 					{% endif %}

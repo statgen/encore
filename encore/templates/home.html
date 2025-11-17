@@ -2,10 +2,15 @@
 {% block header %}
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/job_list.css') }}">
 	<script type="text/javascript" src="{{ url_for('static', filename='js/job_list.js') }}"></script>
+<link rel="stylesheet"
+	  href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
 
-	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
-	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+
+
 	<script type="text/javascript" src="{{ url_for('static', filename='js/dt_api_interface.js') }}"></script>
+
 
 	<style>
 		.home-nav-list li {padding: 10px 0}
@@ -99,6 +104,11 @@
 			<div class="section-title">
 				<h2>Jobs</h2>
 			</div>
-			<table id="jobs-table" width="100%"></table>
+			<div class="container-fluid mt-3">
+				<div class="dt-wrap table-responsive">
+					<table id="jobs-table" class="table table-sm table-striped table-bordered align-middle w-100"></table>
+				</div>
+			</div>
+
 		</div>
 {% endblock %}

@@ -4,15 +4,28 @@
 <title>Encore | Submit Job </title>
 {% endblock %}
 {% block header%}
-	<link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
-	<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/ejs.js') }}"></script>
+
+<link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/ejs.js') }}"></script>
 	<style>
 		form div {width:500px}
 		.chklabel {font-weight: normal;}
 		label .radio-title {display: block; font-weight: bold;}
 		label .radio-desc {display: block; padding: 5px 0}
 		.not-available {color: #cecece;}
+		.inline-radios .form-check-label {
+			display: flex;
+			flex-direction: column;
+			line-height: 1.2;
+		}
+		.inline-radios .form-check-input {
+			margin-top: .25rem; /* aligns circle with title */
+		}
+
+
+
 	</style>
 	<script type="text/javascript">
 		var phenoSelect;
@@ -92,14 +105,27 @@
 		}
 
 		function showDuplicateMessage(dup_jobs) {
-			var $box = $("#duplicateModal");
-			var list = $("<ul></ul>").append(dup_jobs.map(function(x) {
-				return $("<li></li>").
-					append($("<a></a>", {text: x.job_name, href: x.url_job})).
-					append(" (" + x.creation_date + ")")
-			}));
-			$box.find(".dup-list").empty().append(list);
-			$box.modal();
+			const items = Array.isArray(dup_jobs) ? dup_jobs : Object.values(dup_jobs || {});
+			const $ul = $('<ul/>');
+
+			items.forEach(x => {
+				const name = String(x?.job_name ?? '(unnamed job)');
+				const url  = String(x?.url_job ?? '#');
+				const date = x?.creation_date != null ? String(x.creation_date) : '';
+
+				const $li = $('<li/>');
+				$('<a/>', { href: url }).text(name).appendTo($li);
+				if (date) $('<span/>').text(` (${date})`).appendTo($li);
+
+				$ul.append($li);
+			});
+
+			$('#duplicateModal .dup-list').empty().append($ul);
+
+			const el = document.getElementById('duplicateModal');
+			if (el && window.bootstrap) new bootstrap.Modal(el).show();
+
+			/*$box.modal();*/
 		}
 
 		function showModelErrors(modelErrors) {
@@ -109,7 +135,9 @@
 				return $("<li></li>").append(x)
 			}));
 			$box.find(".err-list").empty().append(list);
-			$box.modal();
+			var modal = new bootstrap.Modal($box[0]);  // or document.getElementById('yourModalId')
+			modal.show();
+
 		}
 
 		function submitModel(e) {
@@ -333,7 +361,7 @@
 				for(let i=1; i<23; i++) chrs.push({id: "chr" + i, text: "chr" + i});
 				chrs.push({id: "chrX", text: "chrX"});
 				console.log("chrs",chrs);
-				regionSelect = $("#region").select2({"data": chrs}).on("change", formChanged);
+				regionSelect = $("#region").select2({"data": chrs,width: '100%',minimumResultsForSearch: -1}).on("change", formChanged);
 				console.log("regionSelect",regionSelect.val());
 			}
 		}
@@ -534,9 +562,14 @@
 		<% models.forEach(function(m) { %>
 		<div class="radio">
 			<label for="model-<%= m.code %>">
-			<input type="radio" name="model" id="model-<%= m.code %>" value="<%= m.code %>" />
-			<span class="radio-title"><%= m.name %> (<%= m.code %>)</span>
-			<span class="radio-desc"><%= m.description %></span></label>
+
+			<input type="radio" class="form-check-input"  name="model" id="model-<%= m.code %>" value="<%= m.code %>" />
+			<label class="form-check-label" for="model-<%= m.code %>">
+			  <span class="fw-semibold d-block"><%= m.name %> (<%= m.code %>)</span>
+			  <small class="text-muted d-block"><%= m.description %></small>
+			</label>
+<!--			<span class="radio-title"><%= m.name %> (<%= m.code %>)</span>-->
+<!--			<span class="radio-desc"><%= m.description %></span></label>-->
 		</div>
 		<% }); %>
 	</script>
@@ -545,105 +578,123 @@
 	<h1>Build your model...</h1>
         <div class="section">
             <form class="form-horizontal vflex" method="post" action="/api/jobs" id="model-form" style="visibility:hidden">
-				<div class="form-group">
-					<label for="genotype" class="control-label col-xs-2">Genotypes</label>
-					<div class="col-xs-10">
-						<select id="genotype" name="genotype" class="form-control"></select>
-					</div>
+				<div class="row mb-3">
+				<label for="genotype" class="col-sm-3 col-form-label">Genotypes</label>
+				<div class="col-sm-9">
+					<select id="genotype" name="genotype" class="form-control"></select>
 				</div>
-				<div class="form-group">
-					<label for="phenotype" class="control-label col-xs-2">Phenotypes</label>
-					<div class="col-xs-10">
+				</div>
+
+				`<div class="row mb-3">
+					<label for="phenotype" class="col-sm-3 col-form-label">Phenotypes</label>
+					<div class="col-sm-9">
 						<select id="phenotype" name="phenotype" class="form-control"></select>
 					</div>
 				</div>
-				<div class="form-group">
-					<label for="response" class="control-label col-xs-2">Response</label>
-					<div class="col-xs-10">
+
+				<!-- Response -->
+				<div class="row mb-2">
+					<label for="response" class="col-sm-3 col-form-label">Response</label>
+					<div class="col-sm-9">
 						<select id="response" name="response" class="form-control"></select>
 					</div>
 				</div>
-				<div class="form-group">
-					<div class="col-xs-offset-2 col-xs-10">
-						<label class="chklabel"><input id="response_invnorm" name="response_invnorm" type="checkbox"/> Inverse Normalize Response</label>
+
+				<!-- Inverse normalize -->
+				<div class="row mb-3">
+					<div class="offset-sm-3 col-sm-9">
+						<div class="form-check">
+							<input class="form-check-input" id="response_invnorm" name="response_invnorm" type="checkbox">
+							<label for="response_invnorm" class="form-check-label">Inverse Normalize Response</label>
+						</div>
 					</div>
 				</div>
-				<div class="form-group">
-					<label for="covariates" class="control-label col-xs-2">Covariates</label>
-					<div class="col-xs-10">
+				<div class="row mb-3">
+					<label for="covariates" class="col-sm-3 col-form-label">Covariates</label>
+					<div class="col-sm-9">
 						<select id="covariates" name="covariates" class="form-control" multiple="multiple"></select>
-						<br/><a href="#" id="covar_add_all">Add All</a> - <a href="#" id="covar_remove_all">Remove All</a>
+						<div class="mt-2">
+							<a href="#" id="covar_add_all">Add All</a> - <a href="#" id="covar_remove_all">Remove All</a>
+						</div>
 					</div>
 				</div>
-				<div class="form-group" id="genopheno_input">
-					<label for="genopheno" class="control-label col-xs-2">Pop Adjust</label>
-					<div class="col-xs-10">
+
+				<div class="row mb-3" id="genopheno_input">
+					<label for="genopheno" class="col-sm-3 col-form-label">Pop Adjust</label>
+					<div class="col-sm-9">
 						<select id="genopheno" name="genopheno" class="form-control" multiple="multiple"></select>
-						<br/><a href="#" id="genopheno_add_all">Add All</a> - <a href="#" id="genopheno_remove_all">Remove All</a>
+						<div class="mt-2">
+							<a href="#" id="genopheno_add_all">Add All</a> - <a href="#" id="genopheno_remove_all">Remove All</a>
+						</div>
 					</div>
 				</div>
-				<div class="form-group">
-					<label class="control-label col-xs-2">Model</label>
-					<div class="col-xs-10" id="model-type"></div>
+				<!-- Model (radios) -->
+				<div class="row mb-3">
+					<label class="col-sm-3 col-form-label">Model</label>
+					<div class="col-sm-9" id="model-type"></div>
 				</div>
-				<div class="form-group" id="filter_input">
-					<label for="response" class="control-label col-xs-2">Filter</label>
-					<div class="col-xs-10">
+				<!-- Filter -->
+				<div class="row mb-3" id="filter_input">
+					<label for="filter-type" class="col-sm-3 col-form-label">Filter</label>
+					<div class="col-sm-9">
 						<select id="filter-type" name="variant_filter" class="form-control"></select>
 					</div>
 				</div>
-				<div class="form-group" id="region_input">
-					<label for="region" class="control-label col-xs-2">Region</label>
-					<div class="col-xs-10">
+				<div class="row mb-3" id="region_input">
+					<label for="region" class="col-sm-3 col-form-label">Region</label>
+					<div class="col-sm-3 col-form-label">
 						<select id="region" name="region" class="form-control"></select>
 					</div>
 				</div>
-				<div class="form-group">
-					<label for="job_name" class="control-label col-xs-2">Name</label>
-					<div class="col-xs-10">
+				<!-- Name -->
+				<div class="row mb-3">
+					<label for="job_name" class="col-sm-3 col-form-label">Name</label>
+					<div class="col-sm-9">
 						<input id="job_name" name="job_name" class="form-control" />
 					</div>
 				</div>
-				<div class="form-group">
-					<div class="col-xs-offset-2 col-xs-10">
-						<button class="btn-success submit-button">Submit</button>
+				<!-- Submit -->
+				<div class="row mb-4">
+					<div class="offset-sm-3 col-sm-9">
+						<button type="submit" class="btn btn-success submit-button">Submit</button>
 					</div>
 				</div>
             </form>
         </div>
-		<div class="modal fade" id="errorModal" role="dialog">
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
-						<h4 class="modal-title">Model Error</h4>
-					</div>
-					<div class="modal-body">
-						<p>The following problems were found with your model:</p>
-						<div class="err-list"></div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					</div>
-				</div>
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="errorModalLabel">Model Error</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>The following problems were found with your model:</p>
+				<div class="err-list"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 			</div>
 		</div>
-		<div class="modal fade" id="duplicateModal" role="dialog">
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
-						<h4 class="modal-title">Duplicate Job</h4>
-					</div>
-					<div class="modal-body">
-						<p>You have previously submitted a job with these same
-						parameters. The results will not be different.</p>
-						<div class="dup-list"></div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					</div>
-				</div>
+	</div>
+</div>
+
+<!-- Duplicate Modal (Bootstrap 5) -->
+<div class="modal fade" id="duplicateModal" tabindex="-1" aria-labelledby="duplicateModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="duplicateModalLabel">Duplicate Job</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>You have previously submitted a job with these same parameters. The results will not be different.</p>
+				<div class="dup-list"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 			</div>
 		</div>
+	</div>
+</div>
 {% endblock %}

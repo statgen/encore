@@ -1,8 +1,8 @@
 {% set navigation_links = {} %} 
 {% extends "layout.html" %}
 {% block content %}
-	<div class="row vertical-align">
-		<div class="col-xs-6" style="text-align:center">
+<div class="row align-items-center">
+	<div class="col-md-6 text-center">
 			<img src="{{url_for("static",filename="img/encore-e-blue.png")}}" alt="Encore Logo""/>
 			<h1>Encore</h1>
 			<p>Encore is a web-based tool for running association
@@ -14,7 +14,7 @@
 				for integrative omics analysis of the TOPMed Data.</p>
 			<p>
 		</div>
-		<div class="col-xs-6 text-center">
+		<div class="col-sm-6 text-center">
 			<p>To proceed, please sign in with a Google ID.</p>
 			<form class="vflex" style="margin: 1em auto; width: 300px; height: 100px; border: 1px solid #333333; border-radius: 4px;">
 				<button name="authorize" type="submit" style="margin-top: 2em">Sign In With Google</button>
@@ -22,6 +22,7 @@
 			</form>
 			<p>If you do not already have a Google ID, you can create one at
 			<a href="https://accounts.google.com/SignUp">accounts.google.com</a>
+			using any e-mail address.</p>
 			using any e-mail address.</p>
 			{% if config["HELP_EMAIL"] %}
 			<p>To request an account, contact

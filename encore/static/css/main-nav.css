@@ -11,8 +11,8 @@ body
 .app-desc {margin-right: 7px;}
 .navbar-brand, .navbar-text {color: #F0F0F0;}
 .navbar-brand:hover, .navbar-brand:visited {color: #F0F0F0;}
-.navbar-header .navbar-brand img {display: inline; margin-top: -5px; padding-right: 10px;} 
-.navbar-sections .navbar-nav > li > a {
+navbar-header .navbar-brand img {display: inline; margin-top: -5px; padding-right: 10px;}
+.navbar-sections .navbar-nav .nav-link  {
 	padding-top:6px !important; padding-bottom:0 !important;
 	height: 32px;
 }
@@ -20,6 +20,16 @@ body
     color: #333333;
 }
 .navbar-sections {min-height:32px !important;}
+.navbar-sections .navbar-collapse {
+    display: flex !important;
+}
+
+/* this is the key: push the right UL to the far right */
+.navbar-sections .navbar-nav.ms-auto {
+    margin-left: auto !important;
+}
+
+
 .nav-tabs > li > a {padding: 5px 10px; background: #f8f8f8; border-color: #e7e7e7}
 #footer {
     width: 100%;
@@ -186,7 +196,7 @@ button[disabled]
 
 #content
 {
-    margin: 15px 75px;
+    margin: 5px 5px;
     flex: 1;
 }
 

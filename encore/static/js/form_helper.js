@@ -4,6 +4,7 @@ function FormHelper(source_id, item_name) {
     var resolve = null;
     var actionCallBack = null;
     var itemName = item_name || "Item";
+    var bsModal = bootstrap.Modal.getOrCreateInstance($modal[0]);
     
     var inputs = {} 
     $modal.find("input,textarea,select").each((idx, ele) => {
@@ -108,7 +109,7 @@ function FormHelper(source_id, item_name) {
     this.show_add_form = function(vals, cb) {
         this.set_text({"title": "New " + itemName, "action": "Add"});
         this.set_values(vals);
-        $modal.modal();
+        bsModal.show();
         return this.return_promise(cb)
     }
     this.show_update_form = function(vals, cb) {

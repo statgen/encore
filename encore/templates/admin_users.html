@@ -33,8 +33,11 @@
 		function show_add_form() {
 			if (user_form) {
 				var data = {can_analyze: true, is_active: true};
+				console.log("Showing add form with data:", data);
 				user_form.show_add_form(data, (data) => {
+
 					var add_url = "{{ url_for("api.add_user") }}";
+
 					return postFormData(add_url, data).then( function() {
 						var table = $("#users-table").DataTable();
 						table.clearCache();
@@ -80,6 +83,7 @@
 			init_addform();
 		}
 		$(document).ready(function() {
+			console.log("Initializing admin users page");
 			init_page();
 		});
 	</script>

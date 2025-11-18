@@ -857,8 +857,10 @@ def add_user():
     try: 
         values = request.values.to_dict(flat=True)
         result = User.create(values)
+        print("created user:", result)
         result["user"] = result["user"].as_object()
         result["created"] = True
+
         return ApiResult(result)
     except Exception as e:
         print(e)

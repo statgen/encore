@@ -19,17 +19,18 @@ def create_app(config=None):
         app.config.from_pyfile(config)
     elif isinstance(config, dict):
         app.config.update(config)
-        app.config.update(
-            SESSION_COOKIE_HTTPONLY=True,
-            SESSION_COOKIE_SECURE=True,
-            SESSION_COOKIE_SAMESITE="Lax",
-            REMEMBER_COOKIE_HTTPONLY=True,   # if using Flask-Login
-            REMEMBER_COOKIE_SECURE=True,
-        )
     elif config is None:
         pass
     else:
         raise Exception("Unknown config type")
+
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        REMEMBER_COOKIE_HTTPONLY=True,   # if using Flask-Login
+        REMEMBER_COOKIE_SECURE=True,
+    )
 
     app.config["PROPAGATE_EXCEPTIONS"] = True
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60*5 # seconds

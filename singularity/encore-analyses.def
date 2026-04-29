@@ -45,12 +45,14 @@ From: ubuntu:20.04
   make install
 
   #git clone https://github.com/statgen/savant /savant
-  mkdir /savant/build
+  git clone --branch feature/qtl https://github.com/statgen/savant.git /savant
+  cd /savant
 
   cd /savant
   cget ignore xz
   cget install zlib,https://zlib.net/fossils/zlib-1.2.11.tar.gz
   cget install -f requirements.txt
+  mkdir -p build
   cd build
   cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cget/cget/cget.cmake ..
   make

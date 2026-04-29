@@ -1,0 +1,154 @@
+import os
+import math
+
+
+configfile: "config.yml"
+
+
+def get_regions_for_contig(c_length, region_size):
+    ret = []
+    num_regions = int(math.ceil(c_length / region_size))
+    for i in range(0, num_regions):
+        start = i * region_size
+        end = start + region_size
+        ret.append(str(start + 1) + "_" + str(min(end, c_length)))
+    return ret
+
+
+def get_region_strings(contigs):
+    ret = []
+    region_size = config["region_size"]
+    for c, c_length in contigs.items():
+        for r in get_regions_for_contig(c_length, region_size):
+            ret.append(c + "_" + r)
+    return ret
+
+
+def get_concatenated_results_input(wc):
+    return ["tmp/out.savant-lm." + r + "." + wc.pheno + ".tsv.gz".format(pheno=wc.pheno) for r in get_region_strings(config["contigs"])]
+  
+
+def get_oks_input(wc):
+    return ["tmp/out.savant-lm." + r + ".ok" for r in get_region_strings(config["contigs"])]
+
+
+rule all_concatenated_results:
+    input:
+        [("batch_results/{pheno}/manhattan.json".format(pheno=p), "batch_results/{pheno}/qq.json".format(pheno=p), "batch_results/{pheno}/tophits.json".format(pheno=p), "batch_results/{pheno}/output.filtered.001.tsv.gz".format(pheno=p)) for p in config["responses"]]
+
+
+rule concatenated_results:
+    input:
+        data = get_concatenated_results_input,
+        oks = get_oks_input
+    output:
+        "batch_results/{pheno}/results.tsv.gz"
+    shell:
+        """
+        set -uo pipefail
+
+        skip=0
+        for f in {input.data}; do gzip -cd $f | awk 'NR>'$skip; skip=1; done | bgzip > {output}.tmp
+        tabix -s1 -b2 -e2 {output}.tmp
+        mv {output}.tmp {output}
+        mv {output}.tmp.tbi {output}.tbi
+        """
+
+
+rule manhattan_json:
+    input:
+        rules.concatenated_results.output
+    output:
+        "batch_results/{pheno}/manhattan.json"
+    shell:
+        """
+        set -eu
+        {config[post_processing_script_dir]}/make_manhattan_json.py {input} {output}
+        """
+
+
+rule qq_json:
+    input:
+        rules.concatenated_results.output
+    output:
+        "batch_results/{pheno}/qq.json"
+    shell:
+        """
+        set -eu
+        {config[post_processing_script_dir]}/make_qq_json.py {input} {output}
+        """
+
+
+rule tophits_json:
+    input:
+        rules.concatenated_results.output
+    output:
+        "batch_results/{pheno}/tophits.json"
+    shell:
+        """
+        set -eu
+        {config[post_processing_script_dir]}/make_top_hits_json.py {input} {output} --gene {config[gene_annotation_bed]}
+        """
+
+
+rule filtered_results:
+    input:
+        rules.concatenated_results.output
+    output:
+        "batch_results/{pheno}/output.filtered.001.tsv.gz"
+    shell:
+        """
+        set -eu
+        zcat -f {input} | awk -F"\t" 'BEGIN {{OFS="\t"}} NR==1 {{for (i=1; i<=NF; ++i) {{if($i=="pvalue") pcol=i}}; if (pcol<1) exit 1; print}} ($pcol < 0.001) {{print}}' | bgzip > {output}
+        """
+
+
+rule split_variables:
+    input: 
+        config["pheno_file"]
+    params:
+        pheno_names = config["responses"],
+        cov_names = " ".join(config.get("covariates", [])) if "covariates" in config else ""
+    output: 
+        "phenos.tsv"
+    shell:
+        """
+        set -eu
+
+        first_line="$(head -n 1 {input})"
+        
+        p_idx=2; for v in {params.pheno_names}; do p_idx="$p_idx,$(echo "$first_line" | tr "\t" "\n" | grep -n $v | cut -f1 -d':')"; done
+        cut -f $p_idx {input} > {output}
+
+        if [[ "{params.cov_names}" ]]; then
+          c_idx=2; for v in {params.cov_names}; do c_idx="$c_idx,$(echo "$first_line" | tr "\t" "\n" | grep -n $v | cut -f1 -d':')"; done 
+          cut -f $c_idx {input} > covs.tsv
+        fi
+        """
+
+
+rule savant_result_chunk:
+    input:
+        vcf = config["input_vcf_expression"],
+        pheno = rules.split_variables.output #config["pheno_file"]
+    output:
+        [temp("tmp/out.savant-lm.{chrom}_{beg}_{end}.ok")] + [temp("tmp/out.savant-lm.{chrom}_{beg}_{end}." + p + ".tsv.gz") for p in config["responses"]]
+    params:
+        output_prefix="tmp/out.savant-lm.{chrom}_{beg}_{end}.",
+        cov_file = "--cov covs.tsv" if "covariates" in config else "",
+        region = lambda wc: wc.chrom + ":" + wc.beg + "-" + wc.end,
+        mac_arg = "--min-mac " + str(config["min_mac"]) if "min_mac" in config else "",
+        maf_arg = "--min-maf " + str(config["min_maf"]) if "min_maf" in config else "",
+        invnorm_arg = "--inv-norm" if config.get("inv_norm", False) else ""
+    shell:
+        """
+        set -eu
+        savant qtl {input.vcf} {input.pheno} \
+          {params.cov_file} \
+          --region {params.region} \
+          --output {params.output_prefix} --split-output \
+          {params.mac_arg} {params.maf_arg} {params.invnorm_arg}
+
+        touch {output[0]}
+        """
+

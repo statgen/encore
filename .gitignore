@@ -12,3 +12,4 @@ encore.wsgi
 venv_3.6/
 
 venv_3.8/
+singularity/savant-feature-qtl.sif

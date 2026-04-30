@@ -1,8 +1,7 @@
-Bootstrap: library
+Bootstrap: docker
 From: ubuntu:20.04
 
 %files
-  ./savant /savant
   ./plot-requirements.txt /plot-requirements.txt
 
 %environment

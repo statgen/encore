@@ -79,6 +79,16 @@ def get_gene_chunk_progress(output_file_glob, input_file_glob, min_done_age=0):
     return {"data": {"total": len(in_files), "complete": len(out_files)}, 
         "header": {"format": "progress"}}
 
+
+def get_chr_file_progress(output_file_glob, expected_total=23):
+    """Return count-based progress for one completed file per chromosome."""
+    files = glob.glob(output_file_glob)
+    return {
+        "data": {"total": expected_total, "complete": len(files)},
+        "header": {"format": "progress"},
+    }
+
+
 def get_chr_chunk_progress(output_file_glob, fileregex):
     files = glob.glob(output_file_glob)
     now = time.mktime(time.localtime())
@@ -102,4 +112,3 @@ def get_chr_chunk_progress(output_file_glob, fileregex):
         return {"data": []}
 
             
-

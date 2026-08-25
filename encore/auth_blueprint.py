@@ -146,6 +146,7 @@ def get_sign_in_view(target):
             error_message = "Not an authorized user ({})".format(user_data["email"])
             return render_template("/sign_in.html", error_message=error_message)
     elif "authorize" in request.args:
+        print("redirect_uri",signin_url)
         return redirect(oauth_service.get_authorize_url(
             scope="email",
             response_type="code",

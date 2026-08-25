@@ -1,7 +1,8 @@
 ## The following requirements were added by pip freeze:
 atomicwrites
 attrs
-blist
+##blist DEpreceated
+sortedcontainers
 certifi
 chardet
 Click

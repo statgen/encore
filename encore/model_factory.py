@@ -1,5 +1,5 @@
 from .epacts_job_builder import LMEpactsModel, LMMEpactsModel, SkatOEpactsModel, MMSkatOEpactsModel, MMVTEpactsModel, MMSkatEpactsModel, MMCMCEpactsModel
-from .saige_job_builder import LinearSaigeModel, BinarySaigeModel
+from .saige_job_builder_original import LinearSaigeModel, BinarySaigeModel
 from .savant_job_builder import LinearSavantModel,BinarySavantModel
 
 class ModelFactory:

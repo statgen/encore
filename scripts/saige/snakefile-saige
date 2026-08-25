@@ -1,0 +1,370 @@
+configfile: "config.yaml"
+
+import os
+import glob
+
+# Required for process substitution: <(printf ...)
+shell.executable("/bin/bash")
+
+
+
+# Contig parameter is read from config.yaml file and then depedneing on the whole region or defined value will be passed.
+chroms = config["contigs"]
+if not isinstance(chroms, list) or not chroms:
+    raise ValueError(
+        "config['contigs'] must be a non-empty list"
+    )
+
+# Optionally split each requested chromosome into fixed-size intervals using the
+# FASTA index.
+
+reference_fasta = config.get("reference_fasta")
+region_size = int(config.get("region_size", 500000))
+if region_size <= 0:
+    raise ValueError("config['region_size'] must be greater than zero")
+
+
+def build_regions(contigs, fasta):
+    if not fasta:
+        return []
+
+    fai = config.get("reference_fasta_index", f"{fasta}.fai")
+    if not os.path.isfile(fai):
+        raise FileNotFoundError(
+            f"FASTA index not found: {fai}. Create it with: samtools faidx {fasta}"
+        )
+
+    lengths = {}
+    with open(fai) as handle:
+        for line in handle:
+            fields = line.rstrip("\n").split("\t")
+            if len(fields) >= 2:
+                lengths[fields[0]] = int(fields[1])
+
+    missing = [chrom for chrom in contigs if chrom not in lengths]
+    if missing:
+        raise ValueError(
+            "Chromosome(s) missing from FASTA index {}: {}".format(
+                fai, ", ".join(missing)
+            )
+        )
+
+    return [
+        (chrom, start, min(start + region_size - 1, lengths[chrom]))
+        for chrom in contigs
+        for start in range(1, lengths[chrom] + 1, region_size)
+    ]
+
+
+regions = build_regions(chroms, reference_fasta)
+use_regions = bool(regions)
+if use_regions:
+    expected_step2_files = [
+        f"step2.bin.{chrom}.{start}.{end}.txt"
+        for chrom, start, end in regions
+    ]
+    expected_step2_logs = [
+        f"step2_SPAtests_{chrom}.{start}.{end}.log"
+        for chrom, start, end in regions
+    ]
+else:
+    expected_step2_files = expand("step2.bin.{chrom}.txt", chrom=chroms)
+    expected_step2_logs = expand("step2_SPAtests_{chrom}.log", chrom=chroms)
+
+base_dir = config.get("savs_path")  # e.g., "/path/to/sav_dir"
+sample_file = config.get("samples_file")
+sample_file_male = config.get("samplesfile_male")
+
+bgzip = config.get("bgzip")
+tabix = config.get("tabix")
+
+if not base_dir:
+    raise ValueError(
+        "config['savs_path'] is required"
+    )
+
+if not sample_file:
+    raise ValueError(
+        "config['samples_file'] is required"
+    )
+
+if not bgzip or not tabix:
+    raise ValueError("bgzip or tabix path not defined in config.yaml")
+
+
+lof = config.get("lof", False)
+
+# ------------------------------------------------------------------
+# Final output paths
+# ------------------------------------------------------------------
+
+outdir  = config.get("output_dir", ".")
+outname = config.get("outname", "results.txt.gz")
+logname = config.get("logname", "saige.log")  # step1 log file name from shell below
+
+if outdir != "." and not outdir.endswith("/"):
+    outdir += "/"
+
+final_bgz = f"{outdir}{outname}"
+final_tbi = f"{final_bgz}.tbi"
+log_gz    = f"{outdir}{logname}.gz"
+
+# ------------------------------------------------------------------
+# Helper functions
+#
+
+
+def create_sav_dict():
+    """
+    Map 'chrN' -> '/path/to/chrN.sav' by scanning base_dir.
+    """
+    if not base_dir:
+        raise ValueError("config['savs_path'] is not set; cannot locate .sav files")
+
+    sav_files = glob.glob(os.path.join(base_dir, "chr*.sav"))
+    sav_paths = {}
+    for sav_file in sav_files:
+        filename = os.path.basename(sav_file)  # e.g., "chr1.sav"
+        if filename.startswith("chr") and filename.endswith(".sav"):
+            chrom = filename.replace("chr", "").replace(".sav", "")  # e.g., "1"
+            sav_paths[f"chr{chrom}"] = sav_file
+    return sav_paths
+
+# Build once at import
+sav_paths = create_sav_dict()
+
+def resolve_sav_file(wildcards):
+    # Helpful logging; appears in Snakemake stdout
+    print("Chromosome is", wildcards.chrom)
+    return get_sav_file(wildcards.chrom)
+
+
+def get_sav_file(chrom):
+    """
+    Retrieve the exact .sav file for the given chromosome (e.g., 'chr1' -> chr1.sav).
+    """
+    if chrom in sav_paths:
+        return sav_paths[chrom]
+    raise FileNotFoundError(f"No .sav file found for chromosome {chrom} in {base_dir}")
+
+def resolve_step2_chrom_arg(wildcards):
+    """
+    Return the chromosome argument for step2_SPAtests.
+
+    If lof is true:
+        chr2 -> 2
+    otherwise:
+        chr2 -> chr2
+    """
+    chrom = wildcards.chrom
+    if lof and chrom.lower().startswith("chr"):
+        return chrom[3:]
+    return chrom
+
+
+def get_x_args(wildcards):
+    if wildcards.chrom != "chrX":
+        return ""
+    if not sample_file_male:
+        raise ValueError("config['samplesfile_male'] is required for chrX")
+    x_par_region = config.get(
+        "X_PARregion", "10001-2781479,155701383-156030895"
+    )
+    return (
+        f"--sampleFile_male={sample_file_male} "
+        f"--X_PARregion={x_par_region} "
+        "--is_rewrite_XnonPAR_forMales=TRUE"
+    )
+
+
+rule all:
+    input:
+        final_tbi,
+        log_gz
+
+
+rule step1_fitNULLGLMM:
+    input:
+        phenoFile = config["phenoFile"]
+    output:
+        GMMATmodelFile = "step1.rda",
+        varianceRatioFile = "step1.varianceRatio.txt"
+    log:
+        "saige.log"
+    params:
+        plinkFile = config["plinkFile"],
+        sampleIDColinphenoFile = config["sampleIDColinphenoFile"],
+        traitType = config["traitType"],
+        outputPrefix = config["outputPrefix"],
+        nThreads = config["nThreads"],
+        IsOverwriteVarianceRatioFile = config["IsOverwriteVarianceRatioFile"],
+        phenoCol = config["response"],
+        covarArg = (
+            "--covarColList={}".format(config["covarColList"])
+            if config.get("covarColList")
+            else ""
+        ),
+        qCovarArg = (
+            "--qCovarColList={}".format(config["qCovarColList"])
+            if config.get("qCovarColList")
+            else ""
+        ),
+        invNormalize = str(config.get("inv_norm", False)).upper()
+    threads:
+        config["nThreads"]
+    shell:
+        r"""
+        set -euo pipefail
+        echo "Output prefix: {params.outputPrefix}"
+
+        step1_fitNULLGLMM.R \
+          --plinkFile={params.plinkFile} \
+          --phenoFile={input.phenoFile} \
+          --phenoCol={params.phenoCol} \
+          --covarColList={params.covarColList} \
+          --qCovarColList= {params.qCovarArg}   \
+          --sampleIDColinphenoFile={params.sampleIDColinphenoFile} \
+          --traitType={params.traitType} \
+          --invNormalize={params.invNormalize} \
+          --outputPrefix={params.outputPrefix} \
+          --nThreads={params.nThreads} \
+          --IsOverwriteVarianceRatioFile={params.IsOverwriteVarianceRatioFile} \
+          > {log} 2>&1
+        """
+
+
+
+
+if use_regions:
+    rule step2_SPAtests:
+        input:
+            savFile = resolve_sav_file,
+            sampleFile = sample_file,
+            GMMATmodelFile = "step1.rda",
+            varianceRatioFile = "step1.varianceRatio.txt"
+        output:
+            SAIGEOutputFile = temp("step2.bin.{chrom}.{start}.{end}.txt")
+        log:
+            "step2_SPAtests_{chrom}.{start}.{end}.log"
+        threads: 1
+        params:
+            chromVal = resolve_step2_chrom_arg,
+            xArgs = get_x_args,
+            min_maf = config.get("min_maf", 0),
+            min_mac = config.get("min_mac", 0),
+            pCutoffforFirth = config.get("pCutoffforFirth", 0.05)
+        shell:
+            r"""
+            set -euo pipefail
+            step2_SPAtests.R \
+              --savFile={input.savFile} \
+              --sampleFile={input.sampleFile} \
+              --vcfField=GT \
+              --SAIGEOutputFile={output.SAIGEOutputFile} \
+              --chrom={params.chromVal} \
+              --rangestoIncludeFile=<(printf '%s\t%s\t%s\n' \
+                '{params.chromVal}' '{wildcards.start}' '{wildcards.end}') \
+              --minMAF={params.min_maf} \
+              --minMAC={params.min_mac} \
+              --GMMATmodelFile={input.GMMATmodelFile} \
+              --varianceRatioFile={input.varianceRatioFile} \
+              --is_Firth_beta=FALSE \
+              --pCutoffforFirth={params.pCutoffforFirth} \
+              --is_output_moreDetails=TRUE \
+              --LOCO=FALSE \
+              {params.xArgs} \
+              > {log} 2>&1
+            """
+else:
+    rule step2_SPAtests:
+        input:
+            savFile = resolve_sav_file,
+            sampleFile = sample_file,
+            GMMATmodelFile = "step1.rda",
+            varianceRatioFile = "step1.varianceRatio.txt"
+        output:
+            SAIGEOutputFile = temp("step2.bin.{chrom}.txt")
+        log:
+            "step2_SPAtests_{chrom}.log"
+        threads: 1
+        params:
+            chromVal = resolve_step2_chrom_arg,
+            xArgs = get_x_args,
+            min_maf = config.get("min_maf", 0),
+            min_mac = config.get("min_mac", 0),
+            isFirth = lambda wildcards: (
+                "TRUE" if config["traitType"] == "binary" else "FALSE"
+            ),
+            pCutoffforFirth = config.get("pCutoffforFirth", 0.05)
+        shell:
+            r"""
+            set -euo pipefail
+            step2_SPAtests.R \
+              --savFile={input.savFile} \
+              --sampleFile={input.sampleFile} \
+              --vcfField=GT \
+              --SAIGEOutputFile={output.SAIGEOutputFile} \
+              --chrom={params.chromVal} \
+              --minMAF={params.min_maf} \
+              --minMAC={params.min_mac} \
+              --GMMATmodelFile={input.GMMATmodelFile} \
+              --varianceRatioFile={input.varianceRatioFile} \
+              --is_Firth_beta={params.isFirth} \
+              --pCutoffforFirth={params.pCutoffforFirth} \
+              --is_output_moreDetails=TRUE \
+              --LOCO=FALSE \
+              {params.xArgs} \
+              > {log} 2>&1
+            """
+
+# ----------------------------
+# Merge results (after ALL step2 files are produced)
+# Equivalent to your Makefile awk|tr|bgzip
+# ----------------------------
+rule merge_step2_results:
+    input:
+        expected_step2_files
+    output:
+        final_bgz
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{outdir}"
+        awk 'FNR!=1 || NR==1' {input} \
+          | tr " " "\t" \
+          | {bgzip} -c > {output}.tmp
+        mv {output}.tmp {output}
+        """
+
+# ----------------------------
+# Tabix index (creates .tbi)
+# ----------------------------
+rule tabix_index_results:
+    input:
+        final_bgz
+    output:
+        final_tbi
+    shell:
+        r"""
+        set -euo pipefail
+        {tabix} -s1 -b2 -e2 -S1 {input}
+        """
+
+# ----------------------------
+# Combine logs into one gz
+# Equivalent to: cat LOGNAME STEP2LOGS | gzip -c > LOGNAME.gz
+# ----------------------------
+rule gzip_logs:
+    input:
+        base_log = "saige.log",
+        step2_logs = expected_step2_logs,
+        tbi = final_tbi
+    output:
+        log_gz
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{outdir}"
+        cat {input.base_log} {input.step2_logs} | gzip -c > {output}.tmp
+        mv {output}.tmp {output}
+        """

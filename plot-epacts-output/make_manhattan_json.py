@@ -17,25 +17,25 @@ import re
 import json
 import math
 import collections
-import bisect
-import blist
+import heapq
+
 
 
 class Heap():
     '''A priority queue in which the items with the largest priorities get removed first'''
     def __init__(self):
-        self._q = blist.blist()
+        self._q = []
         self._items = {}
         self._idx = 0 # Handle uncomparable items
 
     def add(self, item, priority):
         idx = self._idx
         self._idx += 1
-        bisect.insort(self._q, (-priority, idx))
+        heapq.heappush(self._q, (-priority, idx))
         self._items[idx] = item
 
     def pop(self):
-        priority, idx = self._q.pop(0)
+        priority, idx = heapq.heappop(self._q)
         return self._items.pop(idx)
 
     def __len__(self):
@@ -166,7 +166,7 @@ class AssocResultReader:
                    "pos": "BEGIN",
                    "POS": "BEGIN",
                    "SNPID": "MARKER_ID",
-                   "variant_id": "MARKER_ID",
+                   "MarkerID": "MARKER_ID",
                    "N": "NS",
                    "p.value": "PVALUE",
                    "pvalue": "PVALUE",

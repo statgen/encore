@@ -137,6 +137,35 @@ def test_autosome_without_covariates_omits_arguments(tmp_path):
     assert "step2.bin.chr2.txt" in output
 
 
+@pytest.mark.parametrize(
+    ("configured_filters", "expected_options"),
+    [
+        ({}, set()),
+        ({"min_mac": 20}, {"--minMAC=20"}),
+        ({"min_maf": 0.001}, {"--minMAF=0.001"}),
+        ({"min_maf": 0.001, "min_mac": 20}, {"--minMAF=0.001", "--minMAC=20"}),
+    ],
+)
+def test_step2_only_adds_filters_present_in_config(
+    tmp_path, configured_filters, expected_options
+):
+    config_path = _write_config(tmp_path, ["chr2"])
+    config = yaml.safe_load(config_path.read_text())
+    config.pop("min_maf")
+    config.pop("min_mac")
+    config.update(configured_filters)
+    config_path.write_text(yaml.safe_dump(config))
+
+    output = _dry_run(tmp_path, config_path)
+
+    for option in expected_options:
+        assert option in output
+    if "min_maf" not in configured_filters:
+        assert "--minMAF=" not in output
+    if "min_mac" not in configured_filters:
+        assert "--minMAC=" not in output
+
+
 def test_fasta_index_splits_chromosome_into_regions(tmp_path):
     config_path = _write_config(tmp_path, ["chr20"])
     _add_reference_config(config_path, tmp_path, {"chr20": 1200}, region_size=500)
@@ -146,7 +175,8 @@ def test_fasta_index_splits_chromosome_into_regions(tmp_path):
     assert "step2.bin.chr20.1.500.txt" in output
     assert "step2.bin.chr20.501.1000.txt" in output
     assert "step2.bin.chr20.1001.1200.txt" in output
-    assert "--start=1001 --end=1200" in output
+    assert '--rangestoIncludeFile="$range_file"' in output
+    assert 'grep -qF "No markers are left in VCF"' in output
 
 
 def test_binary_chr_x_uses_x_and_firth_arguments(tmp_path):

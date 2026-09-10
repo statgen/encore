@@ -3,7 +3,7 @@ configfile: "config.yaml"
 import os
 import glob
 
-# Required for process substitution: <(printf ...)
+# Run shell blocks with Bash and strict error handling.
 shell.executable("/bin/bash")
 
 
@@ -19,6 +19,7 @@ if not isinstance(chroms, list) or not chroms:
 # FASTA index.
 
 reference_fasta = config.get("reference_fasta")
+reference_fasta_index = reference_fasta + ".fai"
 region_size = int(config.get("region_size", 500000))
 if region_size <= 0:
     raise ValueError("config['region_size'] must be greater than zero")
@@ -29,6 +30,7 @@ def build_regions(contigs, fasta):
         return []
 
     fai = config.get("reference_fasta_index", f"{fasta}.fai")
+
     if not os.path.isfile(fai):
         raise FileNotFoundError(
             f"FASTA index not found: {fai}. Create it with: samtools faidx {fasta}"
@@ -73,7 +75,6 @@ else:
 
 base_dir = config.get("savs_path")  # e.g., "/path/to/sav_dir"
 sample_file = config.get("samples_file")
-sample_file_male = config.get("samplesfile_male")
 
 bgzip = config.get("bgzip")
 tabix = config.get("tabix")
@@ -135,7 +136,7 @@ sav_paths = create_sav_dict()
 
 def resolve_sav_file(wildcards):
     # Helpful logging; appears in Snakemake stdout
-    print("Chromosome is", wildcards.chrom)
+
     return get_sav_file(wildcards.chrom)
 
 
@@ -162,19 +163,9 @@ def resolve_step2_chrom_arg(wildcards):
     return chrom
 
 
-def get_x_args(wildcards):
-    if wildcards.chrom != "chrX":
-        return ""
-    if not sample_file_male:
-        raise ValueError("config['samplesfile_male'] is required for chrX")
-    x_par_region = config.get(
-        "X_PARregion", "10001-2781479,155701383-156030895"
-    )
-    return (
-        f"--sampleFile_male={sample_file_male} "
-        f"--X_PARregion={x_par_region} "
-        "--is_rewrite_XnonPAR_forMales=TRUE"
-    )
+def optional_config_arg(config_key, option_name):
+    value = config.get(config_key)
+    return f"--{option_name}={value}" if value is not None else ""
 
 
 rule all:
@@ -221,8 +212,8 @@ rule step1_fitNULLGLMM:
           --plinkFile={params.plinkFile} \
           --phenoFile={input.phenoFile} \
           --phenoCol={params.phenoCol} \
-          --covarColList={params.covarColList} \
-          --qCovarColList= {params.qCovarArg}   \
+           {params.covarArg} \
+           {params.qCovarArg}  \
           --sampleIDColinphenoFile={params.sampleIDColinphenoFile} \
           --traitType={params.traitType} \
           --invNormalize={params.invNormalize} \
@@ -235,6 +226,8 @@ rule step1_fitNULLGLMM:
 
 
 
+
+
 if use_regions:
     rule step2_SPAtests:
         input:
@@ -242,6 +235,7 @@ if use_regions:
             sampleFile = sample_file,
             GMMATmodelFile = "step1.rda",
             varianceRatioFile = "step1.varianceRatio.txt"
+
         output:
             SAIGEOutputFile = temp("step2.bin.{chrom}.{start}.{end}.txt")
         log:
@@ -249,31 +243,49 @@ if use_regions:
         threads: 1
         params:
             chromVal = resolve_step2_chrom_arg,
-            xArgs = get_x_args,
-            min_maf = config.get("min_maf", 0),
-            min_mac = config.get("min_mac", 0),
+            min_maf_arg = optional_config_arg("min_maf", "minMAF"),
+            min_mac_arg = optional_config_arg("min_mac", "minMAC"),
             pCutoffforFirth = config.get("pCutoffforFirth", 0.05)
         shell:
             r"""
             set -euo pipefail
+
+            range_file="$(mktemp)"
+            trap 'rm -f "$range_file"' EXIT
+
+            printf '%s\t%s\t%s\n' \
+              '{params.chromVal}' \
+              '{wildcards.start}' \
+              '{wildcards.end}' \
+              > "$range_file"
+
+            set +e
             step2_SPAtests.R \
               --savFile={input.savFile} \
               --sampleFile={input.sampleFile} \
               --vcfField=GT \
               --SAIGEOutputFile={output.SAIGEOutputFile} \
               --chrom={params.chromVal} \
-              --rangestoIncludeFile=<(printf '%s\t%s\t%s\n' \
-                '{params.chromVal}' '{wildcards.start}' '{wildcards.end}') \
-              --minMAF={params.min_maf} \
-              --minMAC={params.min_mac} \
+              --rangestoIncludeFile="$range_file" \
+              {params.min_maf_arg} \
+              {params.min_mac_arg} \
               --GMMATmodelFile={input.GMMATmodelFile} \
               --varianceRatioFile={input.varianceRatioFile} \
               --is_Firth_beta=FALSE \
               --pCutoffforFirth={params.pCutoffforFirth} \
               --is_output_moreDetails=TRUE \
               --LOCO=FALSE \
-              {params.xArgs} \
               > {log} 2>&1
+            saige_status=$?
+            set -e
+
+            if grep -qF "No markers are left in VCF" {log}; then
+              echo "No markers found in this region; creating an empty result." >> {log}
+              : > {output.SAIGEOutputFile}
+            elif [ "$saige_status" -ne 0 ]; then
+              cat {log} >&2
+              exit "$saige_status"
+            fi
             """
 else:
     rule step2_SPAtests:
@@ -289,9 +301,8 @@ else:
         threads: 1
         params:
             chromVal = resolve_step2_chrom_arg,
-            xArgs = get_x_args,
-            min_maf = config.get("min_maf", 0),
-            min_mac = config.get("min_mac", 0),
+            min_maf_arg = optional_config_arg("min_maf", "minMAF"),
+            min_mac_arg = optional_config_arg("min_mac", "minMAC"),
             isFirth = lambda wildcards: (
                 "TRUE" if config["traitType"] == "binary" else "FALSE"
             ),
@@ -305,15 +316,14 @@ else:
               --vcfField=GT \
               --SAIGEOutputFile={output.SAIGEOutputFile} \
               --chrom={params.chromVal} \
-              --minMAF={params.min_maf} \
-              --minMAC={params.min_mac} \
+              {params.min_maf_arg} \
+              {params.min_mac_arg} \
               --GMMATmodelFile={input.GMMATmodelFile} \
               --varianceRatioFile={input.varianceRatioFile} \
               --is_Firth_beta={params.isFirth} \
               --pCutoffforFirth={params.pCutoffforFirth} \
               --is_output_moreDetails=TRUE \
               --LOCO=FALSE \
-              {params.xArgs} \
               > {log} 2>&1
             """
 

@@ -1,0 +1,41 @@
+Bootstrap: docker
+From: wzhou88/saige:1.5.1
+
+%labels
+    Author Encore
+    Description "SAIGE 1.5.1 with Snakemake, bgzip, and tabix"
+    SAIGE_VERSION 1.5.1
+    SNAKEMAKE_VERSION 9.14.7
+
+%post
+    set -eu
+
+    # The SAIGE base image already supplies curl and tar. Avoid apt here so the
+    # image can be built on clusters with root-mapped (incomplete) fakeroot.
+    curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest \
+        | tar -xj -C /usr/local/bin --strip-components=1 bin/micromamba
+
+    MAMBA_ROOT_PREFIX=/opt/micromamba \
+        /usr/local/bin/micromamba create -y -n workflow \
+        --channel conda-forge \
+        --channel bioconda \
+        --strict-channel-priority \
+        snakemake=9.14.7 \
+        htslib=1.24
+
+    MAMBA_ROOT_PREFIX=/opt/micromamba \
+        /usr/local/bin/micromamba clean --all --yes
+
+%environment
+    export MAMBA_ROOT_PREFIX=/opt/micromamba
+    export PATH=/opt/micromamba/envs/workflow/bin:$PATH
+
+%test
+    step1_fitNULLGLMM.R --help >/dev/null
+    step2_SPAtests.R --help >/dev/null
+    snakemake --version
+    bgzip --version
+    tabix --version
+
+%runscript
+    exec "$@"

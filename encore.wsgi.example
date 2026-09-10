@@ -12,7 +12,8 @@ def activate_venv(__file__):
 	if sys.platform == 'win32':
 		site_packages = os.path.join(base, 'Lib', 'site-packages')
 	else:
-		site_packages = os.path.join(base, 'lib', 'python%s' % sys.version[:3], 'site-packages')
+        python_version = "{}.{}".format(sys.version_info.major,sys.version_info.minor,)
+        site_packages = os.path.join(base, 'lib',"python{}".format(python_version),'site-packages')
 	prev_sys_path = list(sys.path)
 	import site
 	site.addsitedir(site_packages)

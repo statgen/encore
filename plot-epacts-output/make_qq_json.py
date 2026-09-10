@@ -181,7 +181,7 @@ class AssocResultReader:
            "chrom": "CHROM",
            "POS": "BEGIN",
            "pos": "BEGIN",
-           "variant_id":"MARKER_ID",
+           "MarkerID":"MARKER_ID",
            "SNPID": "MARKER_ID",
            "N": "NS",
            "pvalue": "PVALUE",

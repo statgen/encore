@@ -117,6 +117,16 @@ def get_genotype(geno_id):
         raise ApiException("GENOTYPE NOT FOUND", 404)
     return ApiResult(g.as_object())
 
+@api.route("/genos/<geno_id>", methods=["POST"])
+@admin_required
+def update_genotype(geno_id):
+    try:
+        values = request.values.to_dict(flat=True)
+        Genotype.update(geno_id, values, config=current_app.config)
+        return ApiResult({"updated": True})
+    except Exception as e:
+        raise ApiException("COULD NOT UPDATE GENOTYPE", details=str(e))
+
 @api.route("/genos/<geno_id>/info", methods=["GET"])
 def get_genotype_info_stats(geno_id):
     g = Genotype.get(geno_id, current_app.config)
@@ -730,6 +740,7 @@ def post_pheno():
     if existing_pheno:
         shutil.rmtree(pheno_directory)
         pheno_id = existing_pheno.pheno_id
+        existing_pheno.ensure_meta(current_app.config)
         pheno_dict = existing_pheno.as_object()
         pheno_dict["id"] = pheno_id
         pheno_dict["url_model"] = url_for("user.get_model_build", pheno=pheno_id)
@@ -1094,4 +1105,3 @@ class ApiException(Exception):
         if self.details:
             result["details"] = self.details
         return ApiResult(result, status=self.status)
-

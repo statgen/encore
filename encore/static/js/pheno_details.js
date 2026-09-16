@@ -61,7 +61,7 @@ function init_pheno_delete_button(selector) {
         evt.preventDefault();
         var url = $(evt.target).data("action");
         $("#deleteModal button.delete-pheno").data("action", url);
-        $("#deleteModal").modal();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById("deleteModal")).show();
     });
     $("#deleteModal button.delete-pheno").click(function(evt) {
         evt.preventDefault();

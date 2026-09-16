@@ -28,6 +28,13 @@ class Phenotype:
         meta_path = os.path.expanduser(os.path.join(pheno_folder, "meta.json"))
         with open(meta_path, "w") as f:
             json.dump(meta, f, indent=2)
+
+    def ensure_meta(self, config):
+        """Rebuild metadata for uploads that saved pheno.txt but not meta.json."""
+        if not self.meta or not self.meta.get("columns"):
+            reader = PhenoReader(self.get_raw_path())
+            self.set_meta(reader.meta, config)
+        return self.meta
        
     def get_raw_path(self):
         return self.relative_path("pheno.txt")

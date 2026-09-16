@@ -3,9 +3,23 @@
 	<link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css"/>
 	<script type="text/javascript" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
 	<script type="text/javascript" src="{{ url_for('static', filename='js/dt_api_interface.js') }}"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='js/form_helper.js') }}"></script>
 
 	<script type="text/javascript">
 		$(document).ready(function() {
+			var genoForm = new FormHelper("#genoEditModal", "Genotype");
+			$("#edit-geno-button").click(function(evt) {
+				evt.preventDefault();
+				var values = {
+					name: {{ geno.name | tojson }},
+					build: {{ geno.build | tojson }},
+					is_active: {{ geno.is_active | tojson }}
+				};
+				genoForm.show_update_form(values, function(newValues) {
+					return postFormData({{ url_for('api.update_genotype', geno_id=geno.geno_id) | tojson }}, newValues)
+						.then(function() { window.location.reload(); });
+				});
+			});
 			$("#jobs-table").DataTable({
 				serverSide: true,
 				ajax: encoreApi( "{{url_for("api.get_api_genotype_jobs_all", geno_id=geno.geno_id)}}" ),
@@ -56,10 +70,8 @@
 					<h2 id="geno_main_title">{{ geno.name }}</h2>
 				</div>
 				<div class="col-md-2 geno-actions">
-					{% if geno.is_active %}
-						<button class="btn btn-success link-button" disabled="true"> 
-							Edit</button>
-					{% endif %}
+					<button class="btn btn-success" id="edit-geno-button">
+						Edit</button>
 				</div>
             </div>
         </div>
@@ -141,6 +153,38 @@
 		<pre>{{ geno.meta | tojson(indent=2) }} </pre>
 
 		{% endif %}
+
+		<div class="modal fade" id="genoEditModal" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Edit Genotype</h4>
+					</div>
+					<div class="modal-body">
+						<div class="alert alert-danger error-message" role="alert" style="display:none"></div>
+						<form class="form-horizontal">
+							<div class="form-group">
+								<label for="geno-name">Name</label>
+								<input class="form-control" id="geno-name" data-bind="name" data-focus="me" required>
+							</div>
+							<div class="form-group">
+								<label for="geno-build">Build</label>
+								<input class="form-control" id="geno-build" data-bind="build" required>
+							</div>
+							<div class="form-group">
+								<label for="geno-active">Is Active</label>
+								<input type="checkbox" id="geno-active" data-bind="is_active">
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-success modal-action">Update</button>
+					</div>
+				</div>
+			</div>
+		</div>
 
         <div class="section">
             <div class="section-title">

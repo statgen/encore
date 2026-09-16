@@ -383,3 +383,29 @@ class Genotype:
         result = {"geno": new_geno}
         return result
 
+    @staticmethod
+    def update(geno_id, new_values, db=None, config=None):
+        updateable_fields = ["name", "build", "is_active"]
+        fields = list(new_values.keys())
+        bad_fields = [x for x in fields if x not in updateable_fields]
+        if bad_fields:
+            raise Exception("Invalid update field: {}".format(", ".join(bad_fields)))
+        if not fields:
+            raise Exception("No genotype fields were provided")
+        if "name" in new_values and not new_values["name"].strip():
+            raise Exception("Name cannot be empty")
+        if "build" in new_values:
+            builds = config.get("BUILD_REF", {}).keys()
+            if new_values["build"] not in builds:
+                raise Exception("Unrecognized build: {} (known: {})".format(
+                    new_values["build"], ", ".join(builds)))
+        if db is None:
+            db = sql_pool.get_conn()
+        sql = "UPDATE genotypes SET " + \
+            ", ".join(("{}=%s".format(k) for k in fields)) + \
+            " WHERE id=uuid_to_bin(%s)"
+        cur = db.cursor()
+        cur.execute(sql, list(new_values.values()) + [geno_id])
+        if cur.rowcount == 0 and Genotype.get(geno_id, config=config) is None:
+            raise Exception("Genotype not found")
+        db.commit()

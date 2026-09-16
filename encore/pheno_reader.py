@@ -131,7 +131,8 @@ def get_comments(item, token="#"):
     for line in item:
         s = line.strip()
         if not s.startswith(token) and len(s)>0:
-            raise StopIteration
+            #raise StopIteration
+            return
         yield s
 
 def sniff_file(csvfile):

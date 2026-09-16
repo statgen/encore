@@ -41,7 +41,7 @@ function FormHelper(source_id, item_name) {
                     .then( (value) => {
                         resolve({done: true, value});
                         resolve = null;
-                        $modal.modal('hide');
+                        bsModal.hide();
                     })
                     .catch( (err) => {
                         this.show_error(err)
@@ -115,7 +115,7 @@ function FormHelper(source_id, item_name) {
     this.show_update_form = function(vals, cb) {
         this.set_text({"title": "Update " + itemName, "action": "Update"});
         this.set_values(vals || {});
-        $modal.modal();
+        bsModal.show();
         return this.return_promise(cb)
     }
 }

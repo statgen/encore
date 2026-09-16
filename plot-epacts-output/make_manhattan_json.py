@@ -155,7 +155,8 @@ class AssocResultReader:
     def __exit__(self, type, value, traceback):
         if self.f is not sys.stdin:
             self.f.close()
-
+##CHR     POS     MarkerID        Allele1 Allele2 AC_Allele2      AF_Allele2      MissingRate     BETA    SE      Tstat   var     p.value p.value.NA      Is.SPA  AF_case AF_ctrl N_case  N_ctrl  N_case_hom      N_ca
+#se_het  N_ctrl_hom      N_ctrl_het
     def __parseheader(self, line):
         if line.startswith("#"):
             line = line[1:]

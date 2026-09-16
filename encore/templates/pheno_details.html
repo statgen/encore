@@ -185,7 +185,7 @@
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 						<h4 class="modal-title">Edit Phenotype Details</h4>
 					</div>
 					<div class="modal-body">
@@ -203,7 +203,7 @@
 						</form>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						<button type="button" class="btn btn-success modal-action" >Save</button>
 					</div>
 				</div>
@@ -213,7 +213,7 @@
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 						<h4 class="modal-title">Delete Phenotype File</h4>
 					</div>
 					<div class="modal-body">
@@ -221,7 +221,7 @@
 						from the server? This action cannot be undone.</p>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						<button type="button" class="btn btn-danger delete-pheno">Delete</button>
 					</div>
 				</div>
@@ -231,7 +231,7 @@
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 						<h4 class="modal-title">Set Sample ID Column</h4>
 					</div>
 					<div class="modal-body">
@@ -240,7 +240,7 @@
 						<form class="form-horizontal">
 						<div class="form-group row">
 							<label class="col-sm-2 control-label" for="sample_id_col">Column</label>
-							<div class="col-sm-10"><select class="form-control" data-bind="column" id="sample_id_col"/>
+							<div class="col-sm-10"><select class="form-control" data-bind="column" id="sample_id_col">
 								{% for col in pheno.meta.columns %} <option>{{ col.name }}</option>
 								{% endfor %}</select>
 							</div>
@@ -249,7 +249,7 @@
 						</form>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 						<button type="button" class="btn btn-success modal-action">Update</button>
 					</div>
 				</div>

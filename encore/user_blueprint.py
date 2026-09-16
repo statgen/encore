@@ -128,6 +128,7 @@ def get_phenos():
 @user_area.route("/phenos/<pheno_id>", methods=["GET"])
 @check_view_pheno
 def get_pheno(pheno_id, pheno=None):
+    pheno.ensure_meta(current_app.config)
     pheno_obj = pheno.as_object()
     pheno_obj["overlap"] = calculate_overlaps(pheno)
     if can_user_edit_pheno(current_user, pheno):
@@ -203,4 +204,3 @@ def get_job_output(job, filename, as_attach=False, mimetype=None, tail=None, hea
     except Exception as e:
         print(e)
         return "File Not Found", 404
-

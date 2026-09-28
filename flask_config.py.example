@@ -25,6 +25,7 @@ DEFAULT_CONFIG = {
     'MYSQL_HOST': 'localhost',
     'MYSQL_DB': 'my_db',
     'MYSQL_USER': 'my_user',
+    'SAIGE_USE_REGIONS': False,
     'MYSQL_PASSWORD': 'my_pwd',
     'SECRET_KEY': os.urandom(24),
     'JWT_SECRET_KEY': None,

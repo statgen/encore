@@ -8,7 +8,7 @@ shell.executable("/bin/bash")
 
 
 
-# Contig parameter is read from config.yaml file and then depedneing on the whole region or defined value will be passed.
+# Contig parameter is read from config.yaml file and then depending on the whole region or defined value will be passed.
 chroms = config["contigs"]
 if not isinstance(chroms, list) or not chroms:
     raise ValueError(
@@ -19,7 +19,7 @@ if not isinstance(chroms, list) or not chroms:
 # FASTA index.
 
 reference_fasta = config.get("reference_fasta")
-reference_fasta_index = reference_fasta + ".fai"
+use_regions = config.get("use_regions", False)
 region_size = int(config.get("region_size", 500000))
 if region_size <= 0:
     raise ValueError("config['region_size'] must be greater than zero")
@@ -57,9 +57,8 @@ def build_regions(contigs, fasta):
         for start in range(1, lengths[chrom] + 1, region_size)
     ]
 
-
-regions = build_regions(chroms, reference_fasta)
-use_regions = bool(regions)
+#we had issue with using region with sav 1.5.1 version so for now just using chr wise till we have patch available.
+regions = build_regions(chroms, reference_fasta) if use_regions else []
 if use_regions:
     expected_step2_files = [
         f"step2.bin.{chrom}.{start}.{end}.txt"
@@ -115,38 +114,18 @@ log_gz    = f"{outdir}{logname}.gz"
 #
 
 
-def create_sav_dict():
-    """
-    Map 'chrN' -> '/path/to/chrN.sav' by scanning base_dir.
-    """
-    if not base_dir:
-        raise ValueError("config['savs_path'] is not set; cannot locate .sav files")
-
-    sav_files = glob.glob(os.path.join(base_dir, "chr*.sav"))
-    sav_paths = {}
-    for sav_file in sav_files:
-        filename = os.path.basename(sav_file)  # e.g., "chr1.sav"
-        if filename.startswith("chr") and filename.endswith(".sav"):
-            chrom = filename.replace("chr", "").replace(".sav", "")  # e.g., "1"
-            sav_paths[f"chr{chrom}"] = sav_file
-    return sav_paths
-
-# Build once at import
-sav_paths = create_sav_dict()
 
 def resolve_sav_file(wildcards):
-    # Helpful logging; appears in Snakemake stdout
+    sav_file = os.path.join(base_dir, f"{wildcards.chrom}.sav")
 
-    return get_sav_file(wildcards.chrom)
+    if not os.path.isfile(sav_file):
+        raise FileNotFoundError(
+            f"No .sav file found for chromosome {wildcards.chrom}: {sav_file}"
+        )
+
+    return sav_file
 
 
-def get_sav_file(chrom):
-    """
-    Retrieve the exact .sav file for the given chromosome (e.g., 'chr1' -> chr1.sav).
-    """
-    if chrom in sav_paths:
-        return sav_paths[chrom]
-    raise FileNotFoundError(f"No .sav file found for chromosome {chrom} in {base_dir}")
 
 def resolve_step2_chrom_arg(wildcards):
     """
@@ -320,7 +299,7 @@ else:
               {params.min_mac_arg} \
               --GMMATmodelFile={input.GMMATmodelFile} \
               --varianceRatioFile={input.varianceRatioFile} \
-              --is_Firth_beta={params.isFirth} \
+              --is_Firth_beta=FALSE  \
               --pCutoffforFirth={params.pCutoffforFirth} \
               --is_output_moreDetails=TRUE \
               --LOCO=FALSE \

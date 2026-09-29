@@ -74,13 +74,13 @@ function init_job_delete_button(job_id, selector) {
     selector = selector || "button[name=delete_job]";
     $(selector).click(function(evt) {
         evt.preventDefault();
-        var url = $(evt.target).data("action");
+        var url = $(evt.currentTarget).data("action");
         $("button.delete-job").data("action", url);
-        $("#deleteModal").modal();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById("deleteModal")).show();
     });
     $("#deleteModal button.delete-job").click(function(evt) {
         evt.preventDefault();
-        var url = $(evt.target).data("action");
+        var url = $(evt.currentTarget).data("action");
         $.ajax({
             url: url, 
             type: "DELETE",

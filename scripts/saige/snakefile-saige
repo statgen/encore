@@ -75,6 +75,7 @@ else:
 base_dir = config.get("savs_path")  # e.g., "/path/to/sav_dir"
 sample_file = config.get("samples_file")
 
+
 bgzip = config.get("bgzip")
 tabix = config.get("tabix")
 
@@ -116,7 +117,18 @@ log_gz    = f"{outdir}{logname}.gz"
 
 
 def resolve_sav_file(wildcards):
-    sav_file = os.path.join(base_dir, f"{wildcards.chrom}.sav")
+    sav_directory = os.path.dirname(base_dir)
+    sav_filename = os.path.basename(base_dir)
+
+    if "chr1" not in sav_filename:
+        raise ValueError(
+             f"savs_path must contain a chr1 filename: {base_dir}"
+            )
+
+    sav_file = os.path.join(
+            sav_directory,
+            sav_filename.replace("chr1", wildcards.chrom, 1)
+        )
 
     if not os.path.isfile(sav_file):
         raise FileNotFoundError(

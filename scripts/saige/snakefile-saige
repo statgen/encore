@@ -59,9 +59,19 @@ def build_regions(contigs, fasta):
 
 #we had issue with using region with sav 1.5.1 version so for now just using chr wise till we have patch available.
 regions = build_regions(chroms, reference_fasta) if use_regions else []
+regions = build_regions(chroms, reference_fasta) if use_regions else []
+
 if use_regions:
     expected_step2_files = [
         f"step2.bin.{chrom}.{start}.{end}.txt"
+        for chrom, start, end in regions
+    ]
+    expected_step2_indexes = [
+        f"step2.bin.{chrom}.{start}.{end}.txt.index"
+        for chrom, start, end in regions
+    ]
+    expected_step2_done = [
+        f"step2.bin.{chrom}.{start}.{end}.done"
         for chrom, start, end in regions
     ]
     expected_step2_logs = [
@@ -69,8 +79,23 @@ if use_regions:
         for chrom, start, end in regions
     ]
 else:
-    expected_step2_files = expand("step2.bin.{chrom}.txt", chrom=chroms)
-    expected_step2_logs = expand("step2_SPAtests_{chrom}.log", chrom=chroms)
+    expected_step2_files = expand(
+        "step2.bin.{chrom}.txt",
+        chrom=chroms
+    )
+    expected_step2_indexes = expand(
+        "step2.bin.{chrom}.txt.index",
+        chrom=chroms
+    )
+    expected_step2_done = expand(
+        "step2.bin.{chrom}.done",
+        chrom=chroms
+    )
+    expected_step2_logs = expand(
+        "step2_SPAtests_{chrom}.log",
+        chrom=chroms
+    )
+
 
 base_dir = config.get("savs_path")  # e.g., "/path/to/sav_dir"
 sample_file = config.get("samples_file")
@@ -228,7 +253,9 @@ if use_regions:
             varianceRatioFile = "step1.varianceRatio.txt"
 
         output:
-            SAIGEOutputFile = temp("step2.bin.{chrom}.{start}.{end}.txt")
+            SAIGEOutputFile = temp("step2.bin.{chrom}.{start}.{end}.txt"),
+            SAIGEIndexFile = temp("step2.bin.{chrom}.{start}.{end}.txt.index"),
+            completed = temp( "step2.bin.{chrom}.{start}.{end}.done")
         log:
             "step2_SPAtests_{chrom}.{start}.{end}.log"
         threads: 1
@@ -268,15 +295,18 @@ if use_regions:
               --LOCO=FALSE \
               > {log} 2>&1
             saige_status=$?
+
             set -e
 
             if grep -qF "No markers are left in VCF" {log}; then
               echo "No markers found in this region; creating an empty result." >> {log}
               : > {output.SAIGEOutputFile}
+              : > {output.SAIGEIndexFile}
             elif [ "$saige_status" -ne 0 ]; then
               cat {log} >&2
               exit "$saige_status"
             fi
+            touch {output.completed}
             """
 else:
     rule step2_SPAtests:
@@ -286,7 +316,9 @@ else:
             GMMATmodelFile = "step1.rda",
             varianceRatioFile = "step1.varianceRatio.txt"
         output:
-            SAIGEOutputFile = temp("step2.bin.{chrom}.txt")
+            SAIGEOutputFile = temp("step2.bin.{chrom}.txt"),
+            SAIGEIndexFile = temp("step2.bin.{chrom}.txt.index"),
+            completed = temp( "step2.bin.{chrom}.done")
         log:
             "step2_SPAtests_{chrom}.log"
         threads: 1
@@ -316,6 +348,7 @@ else:
               --is_output_moreDetails=TRUE \
               --LOCO=FALSE \
               > {log} 2>&1
+              touch {output.completed}
             """
 
 # ----------------------------
@@ -359,6 +392,8 @@ rule gzip_logs:
     input:
         base_log = "saige.log",
         step2_logs = expected_step2_logs,
+        indexes = expected_step2_indexes,
+        completed = expected_step2_done,
         tbi = final_tbi
     output:
         log_gz
@@ -368,4 +403,5 @@ rule gzip_logs:
         mkdir -p "{outdir}"
         cat {input.base_log} {input.step2_logs} | gzip -c > {output}.tmp
         mv {output}.tmp {output}
+        rm -f {input.step2_logs}
         """

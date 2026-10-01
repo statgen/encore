@@ -122,10 +122,33 @@ class SaigeModel(BaseModel):
 
     def get_postprocessing_commands(self, geno, result_file="./results.txt.gz"):
         cmds = []
+        # Added support for the N_case column in binary results and the N column in quantitative results.
         cmds.append("zcat -f {} | ".format(result_file) + \
-                    'awk -F"\\t" \'BEGIN {OFS="\\t"} NR==1 {for (i=1; i<=NF; ++i) {if($i=="p.value") pcol=i; if($i=="N_case") ncol=i}; if (pcol<1 || ncol<1) exit 1; print} ' + \
-                    '($ncol > 0 && $pcol < 0.001) {print}\' | ' + \
-                    "{} -c > output.filtered.001.gz".format(self.app_config.get("BGZIP_BINARY", "bgzip")))
+                    'awk -F"\\t" \'BEGIN {OFS="\\t"} ' + \
+                    'NR==1 {' + \
+                    'for (i=1; i<=NF; ++i) {' + \
+                    'if ($i=="p.value") pcol=i; ' + \
+                    'if ($i=="N") ncol=i; ' + \
+                    'if ($i=="N_case") ncasecol=i' + \
+                    '}; ' + \
+                    'if (pcol<1) {' + \
+                    'print "ERROR: p.value column not found" > "/dev/stderr"; ' + \
+                    'exit 1' + \
+                    '}; ' + \
+                    'if (ncol<1 && ncasecol<1) {' + \
+                    'print "ERROR: neither N nor N_case column found" > "/dev/stderr"; ' + \
+                    'exit 1' + \
+                    '}; ' + \
+                    'print; next' + \
+                    '} ' + \
+                    '($pcol!="NA" && $pcol<0.001 && ' + \
+                    '((ncol>0 && $ncol>0) || ' + \
+                    '(ncasecol>0 && $ncasecol>0))) {print}' + \
+                    '\' | ' + \
+                    "{} -c > output.filtered.001.gz".format(
+                        self.app_config.get("BGZIP_BINARY", "bgzip")
+                    )
+                    )
         if self.app_config.get("MANHATTAN_BINARY"):
             cmd = "{} {} ./manhattan.json".format(self.app_config.get("MANHATTAN_BINARY", ""), result_file)
             cmds.append(cmd)
@@ -167,7 +190,8 @@ class SaigeModel(BaseModel):
         return {"commands": cmds}
 
     def get_progress(self):
-        output_file_glob = self.relative_path("step2.bin.*.txt")
+        #output_file_glob = self.relative_path("step2.bin.*.txt")
+        output_file_glob = self.relative_path("step2.bin.*.done")
         config_path = self.relative_path("config.yaml")
         expected_total = 23
 
